@@ -1,0 +1,41 @@
+version: "3.9"
+
+
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: streamhub-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: streamhub_user
+      POSTGRES_PASSWORD: streamhub_password
+      POSTGRES_DB: streamhub
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U streamhub_user -d streamhub"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    image: migrate/migrate
+    container_name: streamhub-migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../migrations:/migrations              # <-- your SQL folder
+    command:
+      [
+        "-path=/migrations",
+        "-database=postgres://streamhub_user:streamhub_password@5332:5432/streamhub?sslmode=disable",
+        "up"
+      ]
+    restart: "on-failure"
+
+volumes:
+  pgdata:

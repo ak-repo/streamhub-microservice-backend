@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package cron;
+option go_package = "./api/cronpb";
+
+// -----------------------------
+// Requests & Responses
+// -----------------------------
+message FileCleanupRequest {
+  string older_than = 1; // e.g., "30d" for 30 days
+}
+
+message FileCleanupResponse {
+  int32 deleted_files_count = 1;
+  string message = 2;
+}
+
+message SubscriptionExpiryRequest {}
+message SubscriptionExpiryResponse {
+  int32 expired_subscriptions = 1;
+  string message = 2;
+}
+
+message ReminderRequest {
+  string type = 1; // "subscription", "payment", "file_upload"
+}
+
+message ReminderResponse {
+  int32 reminders_sent = 1;
+  string message = 2;
+}
+
+// -----------------------------
+// Service Definition
+// -----------------------------
+service CronService {
+  rpc CleanupFiles (FileCleanupRequest) returns (FileCleanupResponse);
+  rpc ExpireSubscriptions (SubscriptionExpiryRequest) returns (SubscriptionExpiryResponse);
+  rpc SendReminders (ReminderRequest) returns (ReminderResponse);
+}

@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package subscription;
+option go_package = "./api/subscriptionpb";
+
+// ============================
+// Models
+// ============================
+message Plan {
+  string id = 1;
+  string name = 2;
+  int64 storage_gb = 3;
+  int64 duration_days = 4;
+  double price = 5;
+}
+
+message Subscription {
+  string id = 1;
+  string user_id = 2;
+  string plan_id = 3;
+  string start_at = 4;
+  string expire_at = 5;
+  bool active = 6;
+}
+
+message Payment {
+  string id = 1;
+  string user_id = 2;
+  string subscription_id = 3;
+  double amount = 4;
+  string status = 5; // paid, failed, pending
+  string created_at = 6;
+}
+
+// ============================
+// Requests & Responses
+// ============================
+message CreateSubscriptionRequest {
+  string user_id = 1;
+  string plan_id = 2;
+}
+
+message CreateSubscriptionResponse {
+  Subscription subscription = 1;
+}
+
+message ValidateSubscriptionRequest {
+  string user_id = 1;
+}
+
+message ValidateSubscriptionResponse {
+  bool is_valid = 1;
+  string expire_at = 2;
+}
+
+// ============================
+// Service RPC
+// ============================
+service SubscriptionService {
+  rpc CreateSubscription(CreateSubscriptionRequest) returns (CreateSubscriptionResponse);
+  rpc ValidateSubscription(ValidateSubscriptionRequest) returns (ValidateSubscriptionResponse);
+}

@@ -1,0 +1,135 @@
+syntax = "proto3";
+
+package auth;
+option go_package = "./gen/authpb";
+
+// ============================
+// Auth User Model
+// ============================
+message AuthUser {
+  string id = 1;
+  string email = 2;
+  string username = 3;
+  string role = 4;          // user / admin
+  bool email_verified = 5;
+  string created_at = 6;
+}
+
+// ============================
+// Registration & Login
+// ============================
+message RegisterRequest {
+  string username = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message RegisterResponse {
+  AuthUser user = 3;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  AuthUser user = 2;
+}
+
+// ============================
+// Magic Link Authentication
+// ============================
+message SendMagicLinkRequest {
+  string email = 1;
+}
+
+message SendMagicLinkResponse {
+  string magic_link = 2;
+  string expires_at = 3;
+}
+
+message VerifyMagicLinkRequest {
+  string token = 1;
+  string email = 2;
+}
+
+message VerifyMagicLinkResponse {
+  AuthUser user = 1;
+}
+
+// ============================
+// OAuth Login (Google / GitHub)
+// ============================
+message OAuthLoginRequest {
+  string provider = 1; // google, github, etc.
+  string oauth_token = 2;
+}
+
+message OAuthLoginResponse {
+  AuthUser user = 1;
+}
+
+// ============================
+// Password Reset
+// ============================
+message PasswordResetRequest {
+  string email = 1;
+}
+
+message PasswordResetResponse {
+  string message = 1;
+}
+
+message PasswordResetVerifyRequest {
+  string token = 1;
+  string new_password = 2;
+}
+
+message PasswordResetVerifyResponse {
+  string message = 1;
+}
+
+// ============================
+// User Lookup
+// ============================
+message FindByEmailRequest {
+  string email = 1;
+}
+
+message FindByIdRequest {
+  string id = 1;
+}
+
+message FindUserResponse {
+  AuthUser user = 1;
+}
+
+
+
+
+// ============================
+// Auth Service Definition
+// ============================
+service AuthService {
+  // Registration & Login
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+
+  // Magic Link
+  rpc SendMagicLink(SendMagicLinkRequest) returns (SendMagicLinkResponse);
+  rpc VerifyMagicLink(VerifyMagicLinkRequest) returns (VerifyMagicLinkResponse);
+
+  // OAuth
+  rpc OAuthLogin(OAuthLoginRequest) returns (OAuthLoginResponse);
+
+  // Password Reset
+  rpc RequestPasswordReset(PasswordResetRequest) returns (PasswordResetResponse);
+  rpc VerifyPasswordReset(PasswordResetVerifyRequest) returns (PasswordResetVerifyResponse);
+
+  // User Lookup
+  rpc FindByEmail(FindByEmailRequest) returns (FindUserResponse);
+  rpc FindById(FindByIdRequest) returns (FindUserResponse);
+
+
+}

@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package admin;
+option go_package = "./gen/adminpb";
+
+// -----------------------------
+// Models
+// -----------------------------
+message UserSummary {
+  string id = 1;
+  string email = 2;
+  string username = 3;
+  string role = 4;
+  bool is_banned = 5;
+  string created_at = 6;
+}
+
+message LogEntry {
+  string id = 1;
+  string admin_id = 2;
+  string action = 3;
+  string target_user_id = 4;
+  string created_at = 5;
+}
+
+// -----------------------------
+// Requests & Responses
+// -----------------------------
+message GetAllUsersRequest {}
+message GetAllUsersResponse {
+  repeated UserSummary users = 1;
+}
+
+message GetLogsRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message GetLogsResponse {
+  repeated LogEntry logs = 1;
+}
+
+// ----- Ban & Unban Users -----
+message BanUserRequest {
+  string user_id = 1;
+}
+
+message BanUserResponse {
+  string message = 1;
+}
+
+message UnbanUserRequest {
+  string user_id = 1;
+}
+
+message UnbanUserResponse {
+  string message = 1;
+}
+
+// ----- System config -----
+message UpdateConfigRequest {
+  string key = 1;
+  string value = 2;
+}
+
+message UpdateConfigResponse {
+  string message = 1;
+}
+
+message GetConfigRequest {
+  string key = 1;
+}
+
+message GetConfigResponse {
+  string key = 1;
+  string value = 2;
+}
+
+// -----------------------------
+// Service Definition
+// -----------------------------
+service AdminService {
+  rpc GetAllUsers (GetAllUsersRequest) returns (GetAllUsersResponse);
+  rpc GetLogs (GetLogsRequest) returns (GetLogsResponse);
+
+  rpc BanUser (BanUserRequest) returns (BanUserResponse);
+  rpc UnbanUser (UnbanUserRequest) returns (UnbanUserResponse);
+
+  rpc UpdateConfig (UpdateConfigRequest) returns (UpdateConfigResponse);
+  rpc GetConfig (GetConfigRequest) returns (GetConfigResponse);
+}

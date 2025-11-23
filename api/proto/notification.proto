@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package notifications;
+option go_package = "./api/notificationspb";
+
+message Notification {
+  string id = 1;
+  string recipient_id = 2;
+  string actor_id = 3; // who triggered it
+  string entity_id = 4; // file or chat
+  string type = 5; // new_message, file_shared
+  string title = 6;
+  bool is_read = 7;
+  string created_at = 8;
+}
+
+message SubscribeRequest {
+  string user_id = 1;
+}
+
+message SubscribeResponse {
+  string message = 1;
+}
+
+message ListNotificationsRequest {
+  string user_id = 1;
+}
+
+message ListNotificationsResponse {
+  repeated Notification notifications = 1;
+}
+
+message MarkReadRequest {
+  string notification_id = 1;
+}
+
+message MarkReadResponse {
+  string message = 1;
+}
+
+// Service RPC
+service NotificationService {
+  rpc Subscribe(SubscribeRequest) returns (SubscribeResponse);
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  rpc MarkRead(MarkReadRequest) returns (MarkReadResponse);
+}

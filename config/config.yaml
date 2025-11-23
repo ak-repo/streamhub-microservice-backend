@@ -1,0 +1,76 @@
+# Application Configuration
+app:
+  name: stream-hub
+  version: 1.0.0
+  environment: development # development, staging, production
+
+# Database Configuration
+database:
+  host: postgres
+  port: 5432
+  user: streamhub_user
+  password: streamhub_password
+  name: streamhub
+  sslmode: disable
+  pool:
+    max_connections: 25
+    min_connections: 5
+    max_conn_lifetime: 5m
+    max_conn_idle_time: 1m
+    health_check_period: 1m
+
+# JWT Configuration
+jwt:
+  secret: your-super-secret-jwt-key-change-this
+  expiry: 24h
+  issuer: stream-hub
+
+# MinIO Configuration
+minio:
+  endpoint: minio:9000
+  access_key: minioadmin
+  secret_key: minioadmin
+  bucket: files
+  use_ssl: false
+  region: us-east-1
+
+# Service Ports
+services:
+  auth:
+    port: 50051
+    host: auth-service
+  file:
+    port: 50052
+    v: file-service
+  chat:
+    port: 50053
+    host: chat-service
+  notification:
+    port: 50054
+    host: notification-service
+  users:
+    port: 50055
+    host: users-service
+  gateway:
+    port: 8080
+    host: api-gateway
+  front:
+    host: localhost
+    port: 5173
+
+# Logging Configuration
+logging:
+  level: info # debug, info, warn, error
+  format: json # json or console
+  output: stdout
+
+# Server Configuration
+server:
+  read_timeout: 15s
+  write_timeout: 15s
+  idle_timeout: 60s
+  shutdown_timeout: 30s
+
+sendgrid:
+  api_key: key
+  template_id: id

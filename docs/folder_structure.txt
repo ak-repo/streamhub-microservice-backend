@@ -1,0 +1,144 @@
+├── api                              # 1. PROTOCOL DEFINITIONS (Contracts)
+│   └── proto
+│       └── v1                       # Versioning for future API changes
+│           ├── admin.proto          # Admin-only operations
+│           ├── auth.proto           # Register/Login/Magic link/OAuth
+│           ├── chats.proto          # WebSocket/gRPC chat streaming
+│           ├── cron.proto           # Cron → background job endpoints
+│           ├── files.proto          # File upload/download/metadata
+│           ├── notification.proto   # Email/SMS/Push events
+│           └── subscription.proto   # Plans/Billing/Payments
+│
+├── api                              # GENERATED CODE
+│   └── gen
+│       └── go                       # Go-specific generated code
+│           ├── admin
+│           ├── auth
+│           ├── chats
+│           ├── cron
+│           ├── files
+│           ├── notification
+│           └── subscription
+│
+├── cmd                              # 2. ENTRY POINTS (Runnable binaries)
+│   ├── api-gateway                  # REST → gRPC Gateway
+│   │   └── main.go
+│   ├── auth-service                 # Auth microservice
+│   │   └── main.go
+│   ├── chat-service                 # Chat microservice
+│   │   └── main.go
+│   ├── cron-service                 # Cron job scheduler
+│   │   └── main.go
+│   ├── file-service                 # File microservice
+│   │   └── main.go
+│   └── notification-service         # Optional: async email/push worker
+│       └── main.go
+│
+├── configs                          # 3. SERVICE-LEVEL CONFIG
+│   ├── auth.yaml
+│   ├── chat.yaml
+│   ├── cron.yaml
+│   ├── files.yaml
+│   ├── notification.yaml
+│   └── gateway.yaml
+│
+├── docker
+│   └── docker-compose.yml           # DB, Redis, MinIO, Jaeger, Prometheus
+│
+├── internal                         # 4. BUSINESS LOGIC + SERVICE MODULES
+│   # === AUTH MODULE =======================================================
+│   ├── auth
+│   │   ├── domain                   # Pure structs (User, Sessions)
+│   │   ├── port                     # Interfaces
+│   │   │   ├── repository.go        # AuthRepository interface
+│   │   │   └── service.go           # AuthService interface 
+│   │   ├── app                      # Use-case logic
+│   │   │   ├── service.go           # Register/Login
+│   │   │   └── oauth.go             # Google/Github login
+│   │   └── adapter                  # Technical implementation
+│   │       ├── storage/postgres     # SQL implementation
+│   │       │   └── user_repo.go
+│   │       └── grpc                 # gRPC endpoints
+│   │           └── server.go
+│
+│   # === FILE SERVICE =======================================================
+│   ├── files
+│   │   ├── domain                   # FileMetadata, AccessControl
+│   │   ├── port                     # FileRepository
+│   │   ├── app                      # Upload/Download logic
+│   │   └── adapter
+│   │       ├── storage/s3.go        # MinIO/S3 integration
+│   │       └── grpc/server.go       # UploadStream, DownloadStream
+│
+│   # === CHAT SERVICE =======================================================
+│   ├── chat
+│   │   ├── domain
+│   │   ├── port
+│   │   ├── app
+│   │   └── adapter
+│   │       ├── storage/postgres
+│   │       └── grpc
+│
+│   # === GATEWAY ============================================================
+│   └── gateway                      # REST HTTP API
+│       ├── handlers
+│       │   ├── auth_handler.go
+│       │   ├── chat_handler.go
+│       │   └── files_handler.go
+│       ├── middleware
+│       │   ├── jwt.go
+│       │   └── cors.go
+│       └── routes.go
+│
+├── migrations                       # 5. DATABASE MIGRATIONS
+│   ├── auth
+│   │   ├── 001_create_users.up.sql
+│   │   └── 001_create_users.down.sql
+│   ├── files
+│   │   ├── 001_create_files.up.sql
+│   │   └── 001_create_files.down.sql
+│   └── chat
+│       ├── 001_create_messages.up.sql
+│       └── 001_create_messages.down.sql
+│
+├── pkg                              # 6. SHARED, REUSABLE TOOLING
+│   ├── constant
+│   ├── db                           # PostgreSQL driver (pgx)
+│   ├── errors                       # App & gRPC error wrappers
+│   ├── logger                       # Zap wrapper
+│   ├── utils                        # Hashing, JWT, UUID
+│   ├── middlewares                  # Common middlewares
+│   └── config                       # YAML loader
+│
+├── scripts
+│   └── gen-proto.sh                 # protoc generation automation
+│
+├── Makefile                         # build/run/migrate/test automation
+├── go.mod
+├── go.sum
+└── README.md
+
+
+
+
+
+(1) User → REST API
+      POST /auth/register
+          |
+(2) Gateway Handler (HTTP)
+      Converts JSON → gRPC request
+          |
+(3) Auth gRPC Server
+      Converts gRPC → internal DTO
+          |
+(4) App Layer (Register Use Case)
+      handles logic
+          |
+(5) Repository Interface
+      Create user
+          |
+(6) Repository Implementation (Postgres)
+      SQL INSERT INTO users...
+          |
+(7) Domain
+      user struct shared across layers

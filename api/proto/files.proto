@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package files;
+option go_package = "./api/filespb";
+
+message File {
+  string id = 1;
+  string owner_id = 2;
+  string filename = 3;
+  int64 size = 4;
+  string mime_type = 5;
+  string storage_path = 6;
+  bool is_public = 7;
+  string created_at = 8;
+}
+
+message UploadFileRequest {
+  string owner_id = 1;
+  string filename = 2;
+  int64 size = 3;
+  string mime_type = 4;
+}
+
+message UploadFileResponse {
+  File file = 1;
+}
+
+message FileListRequest {
+  string owner_id = 1;
+}
+
+message FileListResponse {
+  repeated File files = 1;
+}
+
+message DeleteFileRequest {
+  string file_id = 1;
+}
+
+message DeleteFileResponse {
+  string message = 1;
+}
+
+// File Service RPC
+service FileService {
+  rpc UploadFile(UploadFileRequest) returns (UploadFileResponse);
+  rpc ListFiles(FileListRequest) returns (FileListResponse);
+  rpc DeleteFile(DeleteFileRequest) returns (DeleteFileResponse);
+}
