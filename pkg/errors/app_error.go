@@ -33,12 +33,14 @@ func New(code, message string, err error) *AppError {
 // ===== AppError Codes =====
 
 const (
-	CodeInvalidInput = "invalid_input"
-	CodeNotFound     = "not_found"
-	CodeConflict     = "conflict"
-	CodeUnauthorized = "unauthorized"
-	CodeInternal     = "internal_error"
-	CodeBadRequest   = "not allowed"
+	CodeInvalidInput  = "invalid_input"
+	CodeNotFound      = "not_found"
+	CodeConflict      = "conflict"
+	CodeUnauthorized  = "unauthorized"
+	CodeInternal      = "internal_error"
+	CodeBadRequest    = "not allowed"
+	CodeAlreadyExists = "already in db"
+	CodeForbidden     = "forbidden"
 )
 
 // ===== Check if error is AppError =====

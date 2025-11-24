@@ -25,14 +25,14 @@ jwt:
   expiry: 24h
   issuer: stream-hub
 
-# MinIO Configuration
-minio:
-  endpoint: minio:9000
-  access_key: minioadmin
-  secret_key: minioadmin
-  bucket: files
-  use_ssl: false
-  region: us-east-1
+# # MinIO Configuration
+# minio:
+#   endpoint: minio:9001
+#   access_key: minioadmin
+#   secret_key: minioadmin
+#   bucket: files
+#   use_ssl: false
+#   region: us-east-1
 
 # Service Ports
 services:
@@ -74,3 +74,37 @@ server:
 sendgrid:
   api_key: key
   template_id: id
+
+# Redis (NEW)
+redis:
+  host: localhost
+  port: 6379
+  db: 0
+  password: ""
+  ttl:
+    upload_session: 10m
+    presign: 5m
+
+# MinIO / S3 (ALREADY EXISTS — but add these if missing)
+minio:
+  endpoint: localhost:9000
+  access_key: minioadmin
+  secret_key: minioadmin
+  bucket: files
+  region: us-east-1
+  use_ssl: false
+
+# File Service (NEW)
+file_service:
+  upload_url_expiry: 15m
+  download_url_expiry: 30m
+  max_upload_size: 50MB
+  allowed_mime_types:
+    - image/jpeg
+    - image/png
+    - application/pdf
+    - video/mp4
+  antivirus:
+    enabled: false
+    host: clamav
+    port: 3310

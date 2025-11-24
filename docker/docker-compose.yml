@@ -1,7 +1,5 @@
 version: "3.9"
 
-
-
 services:
   postgres:
     image: postgres:16
@@ -28,14 +26,51 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      - ../migrations:/migrations              # <-- your SQL folder
+      - ../migrations:/migrations
     command:
       [
         "-path=/migrations",
-        "-database=postgres://streamhub_user:streamhub_password@5332:5432/streamhub?sslmode=disable",
+        "-database=postgres://streamhub_user:streamhub_password@postgres:5432/streamhub?sslmode=disable",
         "up"
       ]
     restart: "on-failure"
 
+  # ------------------------------------------------------
+  # MinIO Object Storage (for file uploads)
+  # ------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: streamhub-minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"     # S3 API
+      - "9001:9001"     # MinIO Web Console
+    volumes:
+      - minio_data:/data
+
+  # ------------------------------------------------------
+  # Redis (for temp file store / caching / sessions)
+  # ------------------------------------------------------
+  redis:
+    image: redis:7
+    container_name: streamhub-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "PING"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   pgdata:
+  minio_data:
+  redis_data:

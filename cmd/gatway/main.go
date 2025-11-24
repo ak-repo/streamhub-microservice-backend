@@ -5,6 +5,7 @@ import (
 
 	"github.com/ak-repo/stream-hub/config"
 	"github.com/ak-repo/stream-hub/gen/authpb"
+	"github.com/ak-repo/stream-hub/gen/filespb"
 	"github.com/ak-repo/stream-hub/internal/gateway/clients"
 	"github.com/ak-repo/stream-hub/internal/gateway/routes"
 	"github.com/ak-repo/stream-hub/pkg/helper"
@@ -46,6 +47,15 @@ func main() {
 		&clientContainer.Auth,
 	)
 
+	// Initialize File Client
+	initClient(
+		clientContainer,
+		cfg.Services.File.Host,
+		cfg.Services.File.Port,
+		func(conn *grpc.ClientConn) interface{} { return filespb.NewFileServiceClient(conn) },
+		&clientContainer.File,
+	)
+
 	// Clean up gRPC connections on exit
 	defer clientContainer.CloseAll()
 
@@ -77,7 +87,8 @@ func initClient(
 	switch t := target.(type) {
 	case *authpb.AuthServiceClient:
 		*t = cli.(authpb.AuthServiceClient)
-
+	case *filespb.FileServiceClient:
+		*t = cli.(filespb.FileServiceClient)
 	default:
 		logger.Log.Fatal("unsupported client type")
 	}

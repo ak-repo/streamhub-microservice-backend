@@ -130,3 +130,5 @@ func (s *authService) VerifyMagicLink(ctx context.Context, token, email string) 
 	user.PasswordHash = ""
 	return user, nil
 }
+
+
