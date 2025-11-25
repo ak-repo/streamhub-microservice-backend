@@ -21,7 +21,7 @@ database:
 
 # JWT Configuration
 jwt:
-  secret: your-super-secret-jwt-key-change-this
+  secret: super-secret
   expiry: 24h
   issuer: stream-hub
 

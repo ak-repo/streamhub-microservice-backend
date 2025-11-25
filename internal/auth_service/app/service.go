@@ -32,10 +32,10 @@ func NewAuthService(repo port.UserRepository, jwtMgr *jwt.JWTManager, cfg *confi
 }
 
 // -------------------- REGISTER --------------------
-func (s *authService) Register(ctx context.Context, email, username, password string) (*domain.User, error) {
+func (s *authService) Register(ctx context.Context, email, username, password string) error {
 	existing, _ := s.repo.FindByEmail(ctx, email)
 	if existing != nil {
-		return nil, errors.New(errors.CodeConflict, ErrUserExists, nil)
+		return errors.New(errors.CodeConflict, ErrUserExists, nil)
 	}
 
 	hashed, _ := utils.HashPassword(password)
@@ -48,10 +48,10 @@ func (s *authService) Register(ctx context.Context, email, username, password st
 	}
 
 	if err := s.repo.Create(ctx, user); err != nil {
-		return nil, err
+		return errors.New(errors.CodeInternal, "database saving failed", err)
 	}
 
-	return user, nil
+	return nil
 }
 
 func (s *authService) Login(ctx context.Context, email, password string) (*domain.User, error) {
@@ -107,28 +107,25 @@ func (s *authService) SendMagicLink(email string) (string, string, error) {
 
 }
 
-func (s *authService) VerifyMagicLink(ctx context.Context, token, email string) (*domain.User, error) {
+func (s *authService) VerifyMagicLink(ctx context.Context, token, email string) error {
 
 	claims, err := s.jwt.ValidateToken(token)
 	if err != nil {
-		return nil, err
+		return errors.New(errors.CodeUnauthorized, "link verification failed", err)
 	}
 
 	if claims.Email != email {
-		return nil, errors.New(errors.CodeUnauthorized, "token email mismatch", nil)
+		return errors.New(errors.CodeUnauthorized, "token email mismatch", nil)
 	}
 
 	user, err := s.repo.FindByEmail(ctx, email)
 	if err != nil {
-		return nil, errors.New(errors.CodeNotFound, ErrUserNotFound, err)
+		return errors.New(errors.CodeNotFound, ErrUserNotFound, err)
 	}
 
 	if err := s.repo.Update(ctx, user); err != nil {
-		return nil, errors.New(errors.CodeInternal, "database update error", err)
+		return errors.New(errors.CodeInternal, "database update error", err)
 	}
 
-	user.PasswordHash = ""
-	return user, nil
+	return nil
 }
-
-

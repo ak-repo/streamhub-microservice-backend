@@ -5,7 +5,6 @@ import (
 
 	"github.com/ak-repo/stream-hub/gen/authpb"
 	"github.com/ak-repo/stream-hub/internal/auth_service/port"
-	"github.com/ak-repo/stream-hub/pkg/helper"
 )
 
 type AuthServer struct {
@@ -18,19 +17,12 @@ func NewAuthServer(s port.AuthService) *AuthServer {
 }
 
 func (s *AuthServer) Register(ctx context.Context, req *authpb.RegisterRequest) (*authpb.RegisterResponse, error) {
-	user, err := s.service.Register(ctx, req.Email, req.Username, req.Password)
+	err := s.service.Register(ctx, req.Email, req.Username, req.Password)
 	if err != nil {
 		return nil, err
 	}
-
-	resp := &authpb.AuthUser{
-		Id:       user.ID,
-		Email:    user.Email,
-		Username: user.Username,
-	}
-
 	return &authpb.RegisterResponse{
-		User: resp,
+		Success: true,
 	}, nil
 }
 
@@ -41,9 +33,11 @@ func (s *AuthServer) Login(ctx context.Context, req *authpb.LoginRequest) (*auth
 	}
 
 	resp := &authpb.AuthUser{
-		Id:       user.ID,
-		Email:    user.Email,
-		Username: user.Username,
+		Id:            user.ID,
+		Email:         user.Email,
+		Username:      user.Username,
+		EmailVerified: user.EmailVerified,
+		Role:          user.Role,
 	}
 	return &authpb.LoginResponse{
 		User: resp,
@@ -79,18 +73,10 @@ func (s *AuthServer) SendMagicLink(ctx context.Context, req *authpb.SendMagicLin
 // Verify Magic Link
 func (s *AuthServer) VerifyMagicLink(ctx context.Context, req *authpb.VerifyMagicLinkRequest) (*authpb.VerifyMagicLinkResponse, error) {
 
-	user, err := s.service.VerifyMagicLink(ctx, req.Token, req.Email)
+	err := s.service.VerifyMagicLink(ctx, req.Token, req.Email)
 	if err != nil {
 		return nil, err
 	}
 
-	resp := &authpb.AuthUser{
-		Id:            user.ID,
-		Email:         user.Email,
-		Role:          user.Role,
-		EmailVerified: user.EmailVerified,
-		CreatedAt:     helper.TimeToString(user.CreatedAt),
-	}
-
-	return &authpb.VerifyMagicLinkResponse{User: resp}, nil
+	return &authpb.VerifyMagicLinkResponse{Success: true}, nil
 }

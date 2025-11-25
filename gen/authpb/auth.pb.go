@@ -173,7 +173,7 @@ func (x *RegisterRequest) GetPassword() string {
 
 type RegisterResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	User          *AuthUser              `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -208,11 +208,11 @@ func (*RegisterResponse) Descriptor() ([]byte, []int) {
 	return file_api_proto_auth_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *RegisterResponse) GetUser() *AuthUser {
+func (x *RegisterResponse) GetSuccess() bool {
 	if x != nil {
-		return x.User
+		return x.Success
 	}
-	return nil
+	return false
 }
 
 type LoginRequest struct {
@@ -464,7 +464,7 @@ func (x *VerifyMagicLinkRequest) GetEmail() string {
 
 type VerifyMagicLinkResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	User          *AuthUser              `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -499,11 +499,11 @@ func (*VerifyMagicLinkResponse) Descriptor() ([]byte, []int) {
 	return file_api_proto_auth_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *VerifyMagicLinkResponse) GetUser() *AuthUser {
+func (x *VerifyMagicLinkResponse) GetSuccess() bool {
 	if x != nil {
-		return x.User
+		return x.Success
 	}
-	return nil
+	return false
 }
 
 // ============================
@@ -943,9 +943,9 @@ const file_api_proto_auth_proto_rawDesc = "" +
 	"\x0fRegisterRequest\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
-	"\bpassword\x18\x03 \x01(\tR\bpassword\"6\n" +
-	"\x10RegisterResponse\x12\"\n" +
-	"\x04user\x18\x03 \x01(\v2\x0e.auth.AuthUserR\x04user\"@\n" +
+	"\bpassword\x18\x03 \x01(\tR\bpassword\",\n" +
+	"\x10RegisterResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"@\n" +
 	"\fLoginRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"3\n" +
@@ -960,9 +960,9 @@ const file_api_proto_auth_proto_rawDesc = "" +
 	"expires_at\x18\x03 \x01(\tR\texpiresAt\"D\n" +
 	"\x16VerifyMagicLinkRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x14\n" +
-	"\x05email\x18\x02 \x01(\tR\x05email\"=\n" +
-	"\x17VerifyMagicLinkResponse\x12\"\n" +
-	"\x04user\x18\x01 \x01(\v2\x0e.auth.AuthUserR\x04user\"P\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\"3\n" +
+	"\x17VerifyMagicLinkResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"P\n" +
 	"\x11OAuthLoginRequest\x12\x1a\n" +
 	"\bprovider\x18\x01 \x01(\tR\bprovider\x12\x1f\n" +
 	"\voauth_token\x18\x02 \x01(\tR\n" +
@@ -1030,34 +1030,32 @@ var file_api_proto_auth_proto_goTypes = []any{
 	(*FindUserResponse)(nil),            // 17: auth.FindUserResponse
 }
 var file_api_proto_auth_proto_depIdxs = []int32{
-	0,  // 0: auth.RegisterResponse.user:type_name -> auth.AuthUser
-	0,  // 1: auth.LoginResponse.user:type_name -> auth.AuthUser
-	0,  // 2: auth.VerifyMagicLinkResponse.user:type_name -> auth.AuthUser
-	0,  // 3: auth.OAuthLoginResponse.user:type_name -> auth.AuthUser
-	0,  // 4: auth.FindUserResponse.user:type_name -> auth.AuthUser
-	1,  // 5: auth.AuthService.Register:input_type -> auth.RegisterRequest
-	3,  // 6: auth.AuthService.Login:input_type -> auth.LoginRequest
-	5,  // 7: auth.AuthService.SendMagicLink:input_type -> auth.SendMagicLinkRequest
-	7,  // 8: auth.AuthService.VerifyMagicLink:input_type -> auth.VerifyMagicLinkRequest
-	9,  // 9: auth.AuthService.OAuthLogin:input_type -> auth.OAuthLoginRequest
-	11, // 10: auth.AuthService.RequestPasswordReset:input_type -> auth.PasswordResetRequest
-	13, // 11: auth.AuthService.VerifyPasswordReset:input_type -> auth.PasswordResetVerifyRequest
-	15, // 12: auth.AuthService.FindByEmail:input_type -> auth.FindByEmailRequest
-	16, // 13: auth.AuthService.FindById:input_type -> auth.FindByIdRequest
-	2,  // 14: auth.AuthService.Register:output_type -> auth.RegisterResponse
-	4,  // 15: auth.AuthService.Login:output_type -> auth.LoginResponse
-	6,  // 16: auth.AuthService.SendMagicLink:output_type -> auth.SendMagicLinkResponse
-	8,  // 17: auth.AuthService.VerifyMagicLink:output_type -> auth.VerifyMagicLinkResponse
-	10, // 18: auth.AuthService.OAuthLogin:output_type -> auth.OAuthLoginResponse
-	12, // 19: auth.AuthService.RequestPasswordReset:output_type -> auth.PasswordResetResponse
-	14, // 20: auth.AuthService.VerifyPasswordReset:output_type -> auth.PasswordResetVerifyResponse
-	17, // 21: auth.AuthService.FindByEmail:output_type -> auth.FindUserResponse
-	17, // 22: auth.AuthService.FindById:output_type -> auth.FindUserResponse
-	14, // [14:23] is the sub-list for method output_type
-	5,  // [5:14] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	0,  // 0: auth.LoginResponse.user:type_name -> auth.AuthUser
+	0,  // 1: auth.OAuthLoginResponse.user:type_name -> auth.AuthUser
+	0,  // 2: auth.FindUserResponse.user:type_name -> auth.AuthUser
+	1,  // 3: auth.AuthService.Register:input_type -> auth.RegisterRequest
+	3,  // 4: auth.AuthService.Login:input_type -> auth.LoginRequest
+	5,  // 5: auth.AuthService.SendMagicLink:input_type -> auth.SendMagicLinkRequest
+	7,  // 6: auth.AuthService.VerifyMagicLink:input_type -> auth.VerifyMagicLinkRequest
+	9,  // 7: auth.AuthService.OAuthLogin:input_type -> auth.OAuthLoginRequest
+	11, // 8: auth.AuthService.RequestPasswordReset:input_type -> auth.PasswordResetRequest
+	13, // 9: auth.AuthService.VerifyPasswordReset:input_type -> auth.PasswordResetVerifyRequest
+	15, // 10: auth.AuthService.FindByEmail:input_type -> auth.FindByEmailRequest
+	16, // 11: auth.AuthService.FindById:input_type -> auth.FindByIdRequest
+	2,  // 12: auth.AuthService.Register:output_type -> auth.RegisterResponse
+	4,  // 13: auth.AuthService.Login:output_type -> auth.LoginResponse
+	6,  // 14: auth.AuthService.SendMagicLink:output_type -> auth.SendMagicLinkResponse
+	8,  // 15: auth.AuthService.VerifyMagicLink:output_type -> auth.VerifyMagicLinkResponse
+	10, // 16: auth.AuthService.OAuthLogin:output_type -> auth.OAuthLoginResponse
+	12, // 17: auth.AuthService.RequestPasswordReset:output_type -> auth.PasswordResetResponse
+	14, // 18: auth.AuthService.VerifyPasswordReset:output_type -> auth.PasswordResetVerifyResponse
+	17, // 19: auth.AuthService.FindByEmail:output_type -> auth.FindUserResponse
+	17, // 20: auth.AuthService.FindById:output_type -> auth.FindUserResponse
+	12, // [12:21] is the sub-list for method output_type
+	3,  // [3:12] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_api_proto_auth_proto_init() }

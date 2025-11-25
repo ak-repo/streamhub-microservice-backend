@@ -21,11 +21,11 @@ type FileService interface {
 	ConfirmUpload(ctx context.Context, fileID string) (*domain.File, error)
 
 	// Step 3: Generate a download URL (presigned)
-	GenerateDownloadURL(ctx context.Context, fileID string, exp int64) (downloadURL string, err error)
+	GenerateDownloadURL(ctx context.Context, fileID, rerequesterID string, exp int64) (downloadURL string, err error)
 
 	// List user files
 	ListFiles(ctx context.Context, ownerID string) ([]*domain.File, error)
 
 	// Delete file (metadata + S3 object)
-	DeleteFile(ctx context.Context, fileID string) error
+	DeleteFile(ctx context.Context, fileID, requesterID string) error
 }

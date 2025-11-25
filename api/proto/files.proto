@@ -51,7 +51,8 @@ message ConfirmUploadResponse {
 // ------------------------------
 message GenerateDownloadURLRequest {
   string file_id = 1;
-  int64 expire_seconds = 2;
+  string owner_id = 2;
+  int64 expire_seconds = 3;
 }
 
 message GenerateDownloadURLResponse {
@@ -75,6 +76,9 @@ message FileListResponse {
 // ------------------------------
 message DeleteFileRequest {
   string file_id = 1;
+   string owner_id = 2;
+
+
 }
 
 message DeleteFileResponse {

@@ -52,10 +52,18 @@ func (h *AuthHandler) Login(ctx *fiber.Ctx) error {
 		HTTPOnly: true,
 	})
 
+	ctx.Cookie(&fiber.Cookie{
+		Name:     "access",
+		Value:    access,
+		Path:     "/",
+		Expires:  aExp,
+		HTTPOnly: true,
+	})
+
 	// Use success response helper
 	return response.Success(ctx, "login successful", fiber.Map{
 		"token": access,
-		"exp":   aExp,
+		"user":  resp.User,
 	})
 }
 

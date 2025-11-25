@@ -56,7 +56,7 @@ func (s *FileServer) GenerateDownloadURL(ctx context.Context, req *pb.GenerateDo
 	if req.ExpireSeconds > 0 {
 		exp = req.ExpireSeconds
 	}
-	url, err := s.service.GenerateDownloadURL(ctx, req.FileId, exp)
+	url, err := s.service.GenerateDownloadURL(ctx, req.FileId, req.OwnerId, exp)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (s *FileServer) ListFiles(ctx context.Context, req *pb.FileListRequest) (*p
 }
 
 func (s *FileServer) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest) (*pb.DeleteFileResponse, error) {
-	if err := s.service.DeleteFile(ctx, req.FileId); err != nil {
+	if err := s.service.DeleteFile(ctx, req.FileId, req.OwnerId); err != nil {
 		return nil, err
 	}
 	return &pb.DeleteFileResponse{Message: "deleted"}, nil

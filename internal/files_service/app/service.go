@@ -7,22 +7,23 @@ import (
 
 	"github.com/ak-repo/stream-hub/internal/files_service/domain"
 	"github.com/ak-repo/stream-hub/internal/files_service/port"
+	"github.com/ak-repo/stream-hub/pkg/errors"
 	"github.com/google/uuid"
 )
 
 // fileService implements port.FileService
 type fileService struct {
-	repo port.FileRepository
-	ts   port.TempFileStore
-	st   port.FileStorage
-	ttl  time.Duration
+	repo  port.FileRepository
+	redis port.TempFileStore
+	store port.FileStorage
+	ttl   time.Duration
 }
 
-func NewFileService(repo port.FileRepository, ts port.TempFileStore, st port.FileStorage, ttl time.Duration) port.FileService {
-	return &fileService{repo: repo, ts: ts, st: st, ttl: ttl}
+func NewFileService(repo port.FileRepository, redis port.TempFileStore, st port.FileStorage, ttl time.Duration) port.FileService {
+	return &fileService{repo: repo, redis: redis, store: st, ttl: ttl}
 }
 
-// GenerateUploadURL: store temp metadata in Redis, return presigned PUT
+// GenerateUploadURL creates a temp metadata entry in Redis and returns a presigned PUT URL
 func (s *fileService) GenerateUploadURL(ctx context.Context, ownerID, filename string, size int64, mime string, isPublic bool) (string, string, string, error) {
 	fileID := uuid.NewString()
 	key := fmt.Sprintf("uploads/%s_%s", fileID, filename)
@@ -36,54 +37,87 @@ func (s *fileService) GenerateUploadURL(ctx context.Context, ownerID, filename s
 		IsPublic:    isPublic,
 		CreatedAt:   time.Now().UTC(),
 	}
-	// save temp
-	if err := s.ts.SaveTemp(ctx, f); err != nil {
-		return "", "", "", err
+
+	if err := s.redis.SaveTemp(ctx, f); err != nil {
+		return "", "", "", errors.New(errors.CodeInternal, fmt.Sprintf("failed to save temp metadata for file %s", fileID), err)
 	}
-	// generate presigned url
-	url, err := s.st.GenerateUploadURL(f)
+
+	url, err := s.store.GenerateUploadURL(f)
 	if err != nil {
-		// clean temp on error
-		_ = s.ts.DeleteTemp(ctx, fileID)
-		return "", "", "", err
+		if delErr := s.redis.DeleteTemp(ctx, fileID); delErr != nil {
+			fmt.Printf("warning: failed to cleanup temp metadata for file %s: %v\n", fileID, delErr)
+		}
+		return "", "", "", errors.New(errors.CodeInternal, fmt.Sprintf("failed to generate upload URL for file %s", fileID), err)
 	}
+
 	return url, key, fileID, nil
 }
 
-// ConfirmUpload: read temp metadata, save to DB, delete temp entry
+// ConfirmUpload saves file metadata to DB and deletes temp Redis entry
 func (s *fileService) ConfirmUpload(ctx context.Context, fileID string) (*domain.File, error) {
-	f, err := s.ts.GetTemp(ctx, fileID)
+	f, err := s.redis.GetTemp(ctx, fileID)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(errors.CodeNotFound, fmt.Sprintf("temp metadata missing for file %s", fileID), err)
 	}
-	// Optional: you may stat object in S3 to validate size/content-type
+
 	if err := s.repo.Save(ctx, f); err != nil {
-		return nil, err
+		return nil, errors.New(errors.CodeInternal, fmt.Sprintf("failed to save file metadata to DB for file %s", fileID), err)
 	}
-	_ = s.ts.DeleteTemp(ctx, fileID)
+
+	if err := s.redis.DeleteTemp(ctx, fileID); err != nil {
+		fmt.Printf("warning: failed to delete temp metadata for file %s: %v\n", fileID, err)
+	}
+
 	return f, nil
 }
 
-func (s *fileService) GenerateDownloadURL(ctx context.Context, fileID string, expirySeconds int64) (string, error) {
+// GenerateDownloadURL returns a presigned GET URL if the file is public or owned by caller
+func (s *fileService) GenerateDownloadURL(ctx context.Context, fileID, requesterID string, expirySeconds int64) (string, error) {
 	f, err := s.repo.GetByID(ctx, fileID)
 	if err != nil {
-		return "", err
+		return "", errors.New(errors.CodeNotFound, fmt.Sprintf("file %s not found in DB", fileID), err)
 	}
-	// only allow owner or public; authorization is done in gateway by token
-	return s.st.GenerateDownloadURL(f, expirySeconds)
+
+	// authorization: allow owner or public
+	if !f.IsPublic && f.OwnerID != requesterID {
+		return "", errors.New(errors.CodeForbidden, fmt.Sprintf("access denied for file %s", fileID), nil)
+	}
+
+	url, err := s.store.GenerateDownloadURL(f, expirySeconds)
+	if err != nil {
+		return "", errors.New(errors.CodeInternal, fmt.Sprintf("failed to generate download URL for file %s", fileID), err)
+	}
+
+	return url, nil
 }
 
+// ListFiles returns all files owned by a specific user
 func (s *fileService) ListFiles(ctx context.Context, ownerID string) ([]*domain.File, error) {
-	return s.repo.GetByOwner(ctx, ownerID)
+	files, err := s.repo.GetByOwner(ctx, ownerID)
+	if err != nil {
+		return nil, errors.New(errors.CodeInternal, fmt.Sprintf("failed to list files for owner %s", ownerID), err)
+	}
+	return files, nil
 }
 
-func (s *fileService) DeleteFile(ctx context.Context, fileID string) error {
+// DeleteFile removes file from storage and DB, requires ownership
+func (s *fileService) DeleteFile(ctx context.Context, fileID, requesterID string) error {
 	f, err := s.repo.GetByID(ctx, fileID)
 	if err != nil {
-		return err
+		return errors.New(errors.CodeNotFound, fmt.Sprintf("file %s not found", fileID), err)
 	}
-	if err := s.st.DeleteObject(f); err != nil {
-		return err
+
+	if f.OwnerID != requesterID {
+		return errors.New(errors.CodeForbidden, fmt.Sprintf("access denied for deleting file %s", fileID), nil)
 	}
-	return s.repo.Delete(ctx, fileID)
+
+	if err := s.store.DeleteObject(f); err != nil {
+		return errors.New(errors.CodeInternal, fmt.Sprintf("failed to delete file object %s", fileID), err)
+	}
+
+	if err := s.repo.Delete(ctx, fileID); err != nil {
+		return errors.New(errors.CodeInternal, fmt.Sprintf("failed to delete file metadata %s", fileID), err)
+	}
+
+	return nil
 }

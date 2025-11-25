@@ -8,8 +8,8 @@ import (
 
 // AuthService describes business-level auth operations.
 type AuthService interface {
-	Register(ctx context.Context, email, username, password string) (*domain.User, error)
+	Register(ctx context.Context, email, username, password string) error
 	Login(ctx context.Context, email, password string) (*domain.User, error)
 	SendMagicLink(email string) (string, string, error)
-	VerifyMagicLink(ctx context.Context, token, email string) (*domain.User, error)
+	VerifyMagicLink(ctx context.Context, token, email string) error
 }

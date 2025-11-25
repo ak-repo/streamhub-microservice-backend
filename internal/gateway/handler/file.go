@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/ak-repo/stream-hub/gen/filespb"
+	"github.com/ak-repo/stream-hub/pkg/errors"
+	"github.com/ak-repo/stream-hub/pkg/response"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -16,83 +18,93 @@ func NewFileHandler(cli filespb.FileServiceClient) *FileHandler {
 	return &FileHandler{client: cli}
 }
 
-func (h *FileHandler) GenerateUploadURL(c *fiber.Ctx) error {
-	var body struct {
+func (h *FileHandler) GenerateUploadURL(ctx *fiber.Ctx) error {
+	var req struct {
 		OwnerID  string `json:"owner_id"`
 		Filename string `json:"filename"`
 		Size     int64  `json:"size"`
 		MimeType string `json:"mime_type"`
 		IsPublic bool   `json:"is_public"`
 	}
-	if err := c.BodyParser(&body); err != nil {
-		return fiber.ErrBadRequest
+	if err := ctx.BodyParser(&req); err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return ctx.Status(code).JSON(body)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	stctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	resp, err := h.client.GenerateUploadURL(ctx, &filespb.GenerateUploadURLRequest{
-		OwnerId:  body.OwnerID,
-		Filename: body.Filename,
-		Size:     body.Size,
-		MimeType: body.MimeType,
-		IsPublic: body.IsPublic,
+	resp, err := h.client.GenerateUploadURL(stctx, &filespb.GenerateUploadURLRequest{
+		OwnerId:  req.OwnerID,
+		Filename: req.Filename,
+		Size:     req.Size,
+		MimeType: req.MimeType,
+		IsPublic: req.IsPublic,
 	})
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		code, body := errors.GRPCToFiber(err)
+		return ctx.Status(code).JSON(body)
 	}
-	return c.JSON(resp)
+	return response.Success(ctx, "url generated", resp)
 }
 
-func (h *FileHandler) ConfirmUpload(c *fiber.Ctx) error {
-	var body struct {
+func (h *FileHandler) ConfirmUpload(ctx *fiber.Ctx) error {
+	var req struct {
 		FileID string `json:"file_id"`
 	}
-	if err := c.BodyParser(&body); err != nil {
-		return fiber.ErrBadRequest
+	if err := ctx.BodyParser(&req); err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return ctx.Status(code).JSON(body)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	stctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	resp, err := h.client.ConfirmUpload(ctx, &filespb.ConfirmUploadRequest{FileId: body.FileID})
+	resp, err := h.client.ConfirmUpload(stctx, &filespb.ConfirmUploadRequest{FileId: req.FileID})
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		code, body := errors.GRPCToFiber(err)
+		return ctx.Status(code).JSON(body)
 	}
-	return c.JSON(resp.File)
+	return response.Success(ctx, "file uploaded successfully", resp)
 }
 
-func (h *FileHandler) GenerateDownloadURL(c *fiber.Ctx) error {
-	var body struct {
+func (h *FileHandler) GenerateDownloadURL(ctx *fiber.Ctx) error {
+	var req struct {
 		FileID        string `json:"file_id"`
 		ExpireSeconds int64  `json:"expire_seconds"`
 	}
-	if err := c.BodyParser(&body); err != nil {
-		return fiber.ErrBadRequest
+	if err := ctx.BodyParser(&req); err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return ctx.Status(code).JSON(body)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	clictx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	resp, err := h.client.GenerateDownloadURL(ctx, &filespb.GenerateDownloadURLRequest{FileId: body.FileID, ExpireSeconds: body.ExpireSeconds})
+	resp, err := h.client.GenerateDownloadURL(clictx, &filespb.GenerateDownloadURLRequest{FileId: req.FileID, ExpireSeconds: req.ExpireSeconds})
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		code, body := errors.GRPCToFiber(err)
+		return ctx.Status(code).JSON(body)
 	}
-	return c.JSON(resp)
+	return response.Success(ctx, "generated download link", resp)
 }
 
-func (h *FileHandler) ListFiles(c *fiber.Ctx) error {
-	owner := c.Params("owner_id")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func (h *FileHandler) ListFiles(ctx *fiber.Ctx) error {
+	owner := ctx.Params("owner_id")
+	clictx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	resp, err := h.client.ListFiles(ctx, &filespb.FileListRequest{OwnerId: owner})
+	resp, err := h.client.ListFiles(clictx, &filespb.FileListRequest{OwnerId: owner})
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		code, body := errors.GRPCToFiber(err)
+		return ctx.Status(code).JSON(body)
 	}
-	return c.JSON(resp.Files)
+	return response.Success(ctx, "lists", resp)
 }
 
-func (h *FileHandler) DeleteFile(c *fiber.Ctx) error {
-	id := c.Params("file_id")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func (h *FileHandler) DeleteFile(ctx *fiber.Ctx) error {
+	id := ctx.Params("file_id")
+	clictx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_, err := h.client.DeleteFile(ctx, &filespb.DeleteFileRequest{FileId: id})
+	resp, err := h.client.DeleteFile(clictx, &filespb.DeleteFileRequest{FileId: id,
+		OwnerId: "122adf10-3398-46c8-bc8c-86ca83f4a177",
+	})
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		code, body := errors.GRPCToFiber(err)
+		return ctx.Status(code).JSON(body)
 	}
-	return c.SendString("deleted")
+	return response.Success(ctx, "deleted", resp)
 }

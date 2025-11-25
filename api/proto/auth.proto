@@ -25,7 +25,7 @@ message RegisterRequest {
 }
 
 message RegisterResponse {
-  AuthUser user = 3;
+  bool success  = 1;
 }
 
 message LoginRequest {
@@ -55,7 +55,8 @@ message VerifyMagicLinkRequest {
 }
 
 message VerifyMagicLinkResponse {
-  AuthUser user = 1;
+  bool success  = 1;
+
 }
 
 // ============================
