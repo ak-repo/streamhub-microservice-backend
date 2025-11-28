@@ -96,6 +96,17 @@ func (s *chatService) CreateChannel(ctx context.Context, name, creatorID string)
 	return ch, nil
 }
 
+// Get All channels of a user
+func (s *chatService) ListChannels(ctx context.Context, userID string) (map[string]*domain.ChannelWithMembers, error) {
+
+	channels, err := s.repo.ListChannels(ctx, userID)
+	if err != nil {
+		return nil, errors.New(errors.CodeNotFound, "channels not found", err)
+	}
+	return channels, nil
+
+}
+
 func (s *chatService) AddMember(ctx context.Context, channelID, userID string) (*domain.ChannelMember, error) {
 	// Verify channel exists
 	_, err := s.repo.GetChannel(ctx, channelID)

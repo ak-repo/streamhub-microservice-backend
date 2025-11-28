@@ -15,6 +15,7 @@ import (
 	chatredis "github.com/ak-repo/stream-hub/internal/chat_service/adapter/redis"
 	"github.com/ak-repo/stream-hub/internal/chat_service/app"
 	"github.com/ak-repo/stream-hub/pkg/db"
+	"github.com/ak-repo/stream-hub/pkg/grpc/interceptors"
 	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/logger"
 	"github.com/redis/go-redis/v9"
@@ -61,7 +62,8 @@ func main() {
 		log.Fatalf("failed to listen on port %s: %v", port, err)
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(interceptors.AppErrorInterceptor(), interceptors.UnaryLoggingInterceptor()))
 	chatpb.RegisterChatServiceServer(grpcServer, grpcHandler)
 
 	// 6. Graceful shutdown

@@ -95,6 +95,28 @@ func (s *ChatServer) streamMessagesToClient(stream chatpb.ChatService_ConnectSer
 	}
 }
 
+// sent history to user
+func (s *ChatServer) ListMessages(ctx context.Context, req *chatpb.ListMessagesRequest) (*chatpb.ListMessagesResponse, error) {
+
+	messages, err := s.service.GetHistory(ctx, req.ChannelId)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := []*chatpb.MessageInfo{}
+	for _, msg := range messages {
+		m := &chatpb.MessageInfo{
+			MessageId:   msg.ID,
+			SenderId:    msg.SenderID,
+			Content:     msg.Content,
+			TimestampMs: msg.CreatedAt.Unix(),
+			Username:    msg.Username,
+		}
+		resp = append(resp, m)
+	}
+	return &chatpb.ListMessagesResponse{Messages: resp}, nil
+}
+
 // CreateChannel handles channel creation requests.
 func (s *ChatServer) CreateChannel(ctx context.Context, req *chatpb.CreateChannelRequest) (*chatpb.CreateChannelResponse, error) {
 	ch, err := s.service.CreateChannel(ctx, req.GetName(), req.GetCreatorId())
@@ -117,12 +139,54 @@ func (s *ChatServer) GetChannel(ctx context.Context, req *chatpb.GetChannelReque
 		return nil, err
 	}
 
-	return &chatpb.GetChannelResponse{
+	resp := &chatpb.ChannelInfo{
 		ChannelId:   ch.ID,
 		Name:        ch.Name,
 		CreatedBy:   ch.CreatedBy,
 		CreatedAtMs: ch.CreatedAt.UnixMilli(),
+	}
+	return &chatpb.GetChannelResponse{
+		Channel: resp,
 	}, nil
+}
+
+// Get All channels of a user
+func (s *ChatServer) ListChannels(ctx context.Context, req *chatpb.ListChannelsRequest) (*chatpb.ListChannelsResponse, error) {
+
+	// Call service to get grouped channels
+	chans, err := s.service.ListChannels(ctx, req.UserId)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &chatpb.ListChannelsResponse{
+		Channels: []*chatpb.ChannelInfo{},
+	}
+
+	for _, ch := range chans {
+
+		// Convert members
+		var members []*chatpb.MemberInfo
+		for _, m := range ch.Members {
+			members = append(members, &chatpb.MemberInfo{
+				UserId:     m.UserID,
+				JoinedAtMs: m.JoinedAt.UnixMilli(),
+			})
+		}
+
+		// Convert channel
+		chanInfo := &chatpb.ChannelInfo{
+			ChannelId:   ch.Channel.ID,
+			Name:        ch.Channel.Name,
+			CreatedBy:   ch.Channel.CreatedBy,
+			CreatedAtMs: ch.Channel.CreatedAt.UnixMilli(),
+			Members:     members,
+		}
+
+		resp.Channels = append(resp.Channels, chanInfo)
+	}
+
+	return resp, nil
 }
 
 // AddMember adds a user to a channel.
@@ -157,6 +221,7 @@ func (s *ChatServer) ListMembers(ctx context.Context, req *chatpb.ListMembersReq
 	for i, m := range members {
 		chatpbMembers[i] = &chatpb.MemberInfo{
 			UserId:     m.UserID,
+			Username:   m.Username,
 			JoinedAtMs: m.JoinedAt.UnixMilli(),
 		}
 	}

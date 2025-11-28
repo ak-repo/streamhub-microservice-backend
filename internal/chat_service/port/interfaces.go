@@ -15,6 +15,7 @@ type ChatRepository interface {
 	// Channel operations - enables group management
 	CreateChannel(ctx context.Context, ch *domain.Channel) error
 	GetChannel(ctx context.Context, channelID string) (*domain.Channel, error)
+	ListChannels(ctx context.Context, userID string) (map[string]*domain.ChannelWithMembers, error)
 
 	// Membership operations - controls who can access channels
 	AddMember(ctx context.Context, m *domain.ChannelMember) error
@@ -39,6 +40,7 @@ type ChatService interface {
 	// Channel management
 	CreateChannel(ctx context.Context, name, creatorID string) (*domain.Channel, error)
 	GetChannel(ctx context.Context, channelID string) (*domain.Channel, error)
+	ListChannels(ctx context.Context, userID string) (map[string]*domain.ChannelWithMembers, error)
 
 	// Membership management
 	AddMember(ctx context.Context, channelID, userID string) (*domain.ChannelMember, error)

@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"strconv"
 	"time"
 
 	"github.com/ak-repo/stream-hub/gen/chatpb"
+	"github.com/ak-repo/stream-hub/pkg/errors"
+	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/logger"
+	"github.com/ak-repo/stream-hub/pkg/response"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
 	"go.uber.org/zap"
@@ -45,9 +48,7 @@ func (h *ChatHandler) CreateChannel(c *fiber.Ctx) error {
 		Name      string `json:"name"`
 		CreatorID string `json:"creator_id"`
 	}
-	json.Unmarshal(c.Body(), &req)
 
-	log.Println(req)
 	if err := c.BodyParser(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid body")
 	}
@@ -57,10 +58,11 @@ func (h *ChatHandler) CreateChannel(c *fiber.Ctx) error {
 		CreatorId: req.CreatorID,
 	})
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		code, body := errors.GRPCToFiber(err)
+		return c.Status(code).JSON(body)
 	}
 
-	return c.JSON(resp)
+	return response.Success(c, "channel created", resp)
 }
 
 func (h *ChatHandler) JoinChannel(c *fiber.Ctx) error {
@@ -78,10 +80,86 @@ func (h *ChatHandler) JoinChannel(c *fiber.Ctx) error {
 		UserId:    req.UserID,
 	})
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		code, body := errors.GRPCToFiber(err)
+		return c.Status(code).JSON(body)
 	}
 
-	return c.JSON(resp)
+	return response.Success(c, "jointed channel: "+req.ChannelID, resp)
+}
+func (h *ChatHandler) ListChannels(c *fiber.Ctx) error {
+	userID := c.Params("user_id")
+	if userID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid body")
+	}
+
+	ctx, cancel := helper.WithGRPCTimeout()
+	defer cancel()
+	resp, err := h.client.ListChannels(ctx, &chatpb.ListChannelsRequest{UserId: userID})
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return c.Status(code).JSON(body)
+	}
+
+	return response.Success(c, "channels", resp)
+
+}
+
+func (h *ChatHandler) GetChannel(c *fiber.Ctx) error {
+	chanId := c.Params("channel_id")
+	if chanId == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid body")
+	}
+
+	ctx, cancel := helper.WithGRPCTimeout()
+	defer cancel()
+	resp, err := h.client.GetChannel(ctx, &chatpb.GetChannelRequest{ChannelId: chanId})
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return c.Status(code).JSON(body)
+	}
+
+	return response.Success(c, "channel response id:"+chanId, resp)
+}
+func (h *ChatHandler) ListMembers(c *fiber.Ctx) error {
+	chanId := c.Params("channel_id")
+	if chanId == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid body")
+	}
+
+	ctx, cancel := helper.WithGRPCTimeout()
+	defer cancel()
+	resp, err := h.client.ListMembers(ctx, &chatpb.ListMembersRequest{ChannelId: chanId})
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return c.Status(code).JSON(body)
+	}
+
+	return response.Success(c, "member list", resp)
+}
+
+func (h *ChatHandler) ListMessages(c *fiber.Ctx) error {
+	chanID := c.Params("channel_id")
+	if chanID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "channel_id is required")
+	}
+
+	limit, _ := strconv.Atoi(c.Query("limit", "50"))
+	beforeTs, _ := strconv.ParseInt(c.Query("before_timestamp_ms", "0"), 10, 64)
+
+	ctx, cancel := helper.WithGRPCTimeout()
+	defer cancel()
+
+	resp, err := h.client.ListMessages(ctx, &chatpb.ListMessagesRequest{
+		ChannelId:         chanID,
+		Limit:             int32(limit),
+		BeforeTimestampMs: beforeTs,
+	})
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return c.Status(code).JSON(body)
+	}
+
+	return response.Success(c, "previous messages", resp)
 }
 
 // ---------------WebSocket Handler -----------------------

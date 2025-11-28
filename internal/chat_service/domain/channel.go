@@ -1,6 +1,8 @@
 package domain
 
-import "time"
+import (
+	"time"
+)
 
 // Channel represents a chat group where users can exchange messages.
 type Channel struct {
@@ -12,8 +14,17 @@ type Channel struct {
 
 // ChannelMember represents a user's membership in a channel.
 type ChannelMember struct {
-	ID        string    // Unique membership record ID
-	ChannelID string    // Which channel this membership is for
-	UserID    string    // Which user is a member
+	ID        string // Unique membership record ID
+	ChannelID string // Which channel this membership is for
+	UserID    string // Which user is a member
+	Username  string
 	JoinedAt  time.Time // When the user joined the channel
 }
+
+type ChannelWithMembers struct {
+	Channel *Channel
+	Members []*ChannelMember
+}
+
+
+

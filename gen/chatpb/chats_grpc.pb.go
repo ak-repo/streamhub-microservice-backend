@@ -20,7 +20,9 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	ChatService_Connect_FullMethodName       = "/chat.ChatService/Connect"
+	ChatService_ListMessages_FullMethodName  = "/chat.ChatService/ListMessages"
 	ChatService_CreateChannel_FullMethodName = "/chat.ChatService/CreateChannel"
+	ChatService_ListChannels_FullMethodName  = "/chat.ChatService/ListChannels"
 	ChatService_GetChannel_FullMethodName    = "/chat.ChatService/GetChannel"
 	ChatService_AddMember_FullMethodName     = "/chat.ChatService/AddMember"
 	ChatService_RemoveMember_FullMethodName  = "/chat.ChatService/RemoveMember"
@@ -33,8 +35,10 @@ const (
 type ChatServiceClient interface {
 	// Bidirectional streaming for real-time messaging
 	Connect(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[StreamRequest, StreamResponse], error)
+	ListMessages(ctx context.Context, in *ListMessagesRequest, opts ...grpc.CallOption) (*ListMessagesResponse, error)
 	// Unary RPCs for channel management
 	CreateChannel(ctx context.Context, in *CreateChannelRequest, opts ...grpc.CallOption) (*CreateChannelResponse, error)
+	ListChannels(ctx context.Context, in *ListChannelsRequest, opts ...grpc.CallOption) (*ListChannelsResponse, error)
 	GetChannel(ctx context.Context, in *GetChannelRequest, opts ...grpc.CallOption) (*GetChannelResponse, error)
 	AddMember(ctx context.Context, in *AddMemberRequest, opts ...grpc.CallOption) (*AddMemberResponse, error)
 	RemoveMember(ctx context.Context, in *RemoveMemberRequest, opts ...grpc.CallOption) (*RemoveMemberResponse, error)
@@ -62,10 +66,30 @@ func (c *chatServiceClient) Connect(ctx context.Context, opts ...grpc.CallOption
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ChatService_ConnectClient = grpc.BidiStreamingClient[StreamRequest, StreamResponse]
 
+func (c *chatServiceClient) ListMessages(ctx context.Context, in *ListMessagesRequest, opts ...grpc.CallOption) (*ListMessagesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMessagesResponse)
+	err := c.cc.Invoke(ctx, ChatService_ListMessages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *chatServiceClient) CreateChannel(ctx context.Context, in *CreateChannelRequest, opts ...grpc.CallOption) (*CreateChannelResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateChannelResponse)
 	err := c.cc.Invoke(ctx, ChatService_CreateChannel_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) ListChannels(ctx context.Context, in *ListChannelsRequest, opts ...grpc.CallOption) (*ListChannelsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListChannelsResponse)
+	err := c.cc.Invoke(ctx, ChatService_ListChannels_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -118,8 +142,10 @@ func (c *chatServiceClient) ListMembers(ctx context.Context, in *ListMembersRequ
 type ChatServiceServer interface {
 	// Bidirectional streaming for real-time messaging
 	Connect(grpc.BidiStreamingServer[StreamRequest, StreamResponse]) error
+	ListMessages(context.Context, *ListMessagesRequest) (*ListMessagesResponse, error)
 	// Unary RPCs for channel management
 	CreateChannel(context.Context, *CreateChannelRequest) (*CreateChannelResponse, error)
+	ListChannels(context.Context, *ListChannelsRequest) (*ListChannelsResponse, error)
 	GetChannel(context.Context, *GetChannelRequest) (*GetChannelResponse, error)
 	AddMember(context.Context, *AddMemberRequest) (*AddMemberResponse, error)
 	RemoveMember(context.Context, *RemoveMemberRequest) (*RemoveMemberResponse, error)
@@ -137,8 +163,14 @@ type UnimplementedChatServiceServer struct{}
 func (UnimplementedChatServiceServer) Connect(grpc.BidiStreamingServer[StreamRequest, StreamResponse]) error {
 	return status.Errorf(codes.Unimplemented, "method Connect not implemented")
 }
+func (UnimplementedChatServiceServer) ListMessages(context.Context, *ListMessagesRequest) (*ListMessagesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListMessages not implemented")
+}
 func (UnimplementedChatServiceServer) CreateChannel(context.Context, *CreateChannelRequest) (*CreateChannelResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateChannel not implemented")
+}
+func (UnimplementedChatServiceServer) ListChannels(context.Context, *ListChannelsRequest) (*ListChannelsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListChannels not implemented")
 }
 func (UnimplementedChatServiceServer) GetChannel(context.Context, *GetChannelRequest) (*GetChannelResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetChannel not implemented")
@@ -180,6 +212,24 @@ func _ChatService_Connect_Handler(srv interface{}, stream grpc.ServerStream) err
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ChatService_ConnectServer = grpc.BidiStreamingServer[StreamRequest, StreamResponse]
 
+func _ChatService_ListMessages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMessagesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).ListMessages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_ListMessages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).ListMessages(ctx, req.(*ListMessagesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ChatService_CreateChannel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateChannelRequest)
 	if err := dec(in); err != nil {
@@ -194,6 +244,24 @@ func _ChatService_CreateChannel_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ChatServiceServer).CreateChannel(ctx, req.(*CreateChannelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_ListChannels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListChannelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).ListChannels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_ListChannels_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).ListChannels(ctx, req.(*ListChannelsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -278,8 +346,16 @@ var ChatService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ChatServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "ListMessages",
+			Handler:    _ChatService_ListMessages_Handler,
+		},
+		{
 			MethodName: "CreateChannel",
 			Handler:    _ChatService_CreateChannel_Handler,
+		},
+		{
+			MethodName: "ListChannels",
+			Handler:    _ChatService_ListChannels_Handler,
 		},
 		{
 			MethodName: "GetChannel",

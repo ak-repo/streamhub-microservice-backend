@@ -7,14 +7,18 @@ option go_package = "./gen/chatpb";
 service ChatService {
   // Bidirectional streaming for real-time messaging
   rpc Connect(stream StreamRequest) returns (stream StreamResponse);
+   rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
+
 
   // Unary RPCs for channel management
   rpc CreateChannel(CreateChannelRequest) returns (CreateChannelResponse);
+  rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse);
   rpc GetChannel(GetChannelRequest) returns (GetChannelResponse);
   rpc AddMember(AddMemberRequest) returns (AddMemberResponse);
   rpc RemoveMember(RemoveMemberRequest) returns (RemoveMemberResponse);
   rpc ListMembers(ListMembersRequest) returns (ListMembersResponse);
 }
+
 
 // Streaming messages
 message StreamRequest {
@@ -28,6 +32,31 @@ message JoinPayload {
   string user_id = 1;
   string channel_id = 2;
 }
+
+
+// Request for loading channel history
+message ListMessagesRequest {
+  string channel_id = 1;
+  int64 before_timestamp_ms = 2; // Optional: fetch older messages
+  int32 limit = 3;               // Optional: number of messages (default 50)
+}
+
+// Single message in history
+message MessageInfo {
+  string message_id = 1;
+  string sender_id = 2;
+  string content = 3;
+  int64 timestamp_ms = 4;
+  string username = 5; // Optional: to avoid extra DB lookup
+}
+
+// Response containing messages
+message ListMessagesResponse {
+  repeated MessageInfo messages = 1;
+}
+
+
+
 
 message MessagePayload {
   string user_id = 1;
@@ -61,10 +90,7 @@ message GetChannelRequest {
 }
 
 message GetChannelResponse {
-  string channel_id = 1;
-  string name = 2;
-  string created_by = 3;
-  int64 created_at_ms = 4;
+ ChannelInfo channel = 1;
 }
 
 message AddMemberRequest {
@@ -96,7 +122,24 @@ message ListMembersResponse {
   repeated MemberInfo members = 1;
 }
 
+message ListChannelsRequest {
+  string user_id = 1;
+}
+
+message ListChannelsResponse {
+  repeated ChannelInfo channels = 1;
+}
+message ChannelInfo{
+  string channel_id = 1;
+  string name = 2;
+  string created_by = 3;
+  int64 created_at_ms = 4;
+  repeated MemberInfo members = 5;
+}
+
 message MemberInfo {
   string user_id = 1;
   int64 joined_at_ms = 2;
+  string username = 3;
+
 }

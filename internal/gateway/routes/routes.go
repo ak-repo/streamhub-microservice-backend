@@ -65,7 +65,11 @@ func ChatRoutes(api fiber.Router, client chatpb.ChatServiceClient) {
 
 	r := api.Group("/channels")
 	// REST → gRPC
+	r.Get("/:user_id", handler.ListChannels)
 	r.Post("/create", handler.CreateChannel)
 	r.Post("/join", handler.JoinChannel)
+	r.Get("/channel/:channel_id", handler.GetChannel)
+	r.Get("/members/:channel_id", handler.ListMembers)
+	r.Get("/:channel_id/history", handler.ListMessages)
 
 }
