@@ -1,67 +1,102 @@
 syntax = "proto3";
 
 package chat;
-option go_package = "./api/chatpb";
 
-message Room {
-  string id = 1;
-  string name = 2;
-  bool is_group = 3;
-  string created_at = 4;
+option go_package = "./gen/chatpb";
+
+service ChatService {
+  // Bidirectional streaming for real-time messaging
+  rpc Connect(stream StreamRequest) returns (stream StreamResponse);
+
+  // Unary RPCs for channel management
+  rpc CreateChannel(CreateChannelRequest) returns (CreateChannelResponse);
+  rpc GetChannel(GetChannelRequest) returns (GetChannelResponse);
+  rpc AddMember(AddMemberRequest) returns (AddMemberResponse);
+  rpc RemoveMember(RemoveMemberRequest) returns (RemoveMemberResponse);
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse);
 }
 
-message Message {
-  string id = 1;
-  string room_id = 2;
-  string sender_id = 3;
-  string content = 4;
-  bool has_attachment = 5;
-  string created_at = 6;
+// Streaming messages
+message StreamRequest {
+  oneof payload {
+    JoinPayload join = 1;
+    MessagePayload message = 2;
+  }
 }
 
-message CreateRoomRequest {
-  string name = 1;
-  repeated string members = 2;
-  bool is_group = 3;
+message JoinPayload {
+  string user_id = 1;
+  string channel_id = 2;
 }
 
-message CreateRoomResponse {
-  Room room = 1;
-}
-
-message SendMessageRequest {
-  string room_id = 1;
-  string sender_id = 2;
+message MessagePayload {
+  string user_id = 1;
+  string channel_id = 2;
   string content = 3;
-  bool has_attachment = 4;
 }
 
-message SendMessageResponse {
-  Message message = 1;
+message StreamResponse {
+  string message_id = 1;
+  string sender_id = 2;
+  string channel_id = 3;
+  string content = 4;
+  int64 timestamp_ms = 5; // FIXED: Changed from created_at string to timestamp_ms int64
 }
 
-message GetMessagesRequest {
-  string room_id = 1;
-  int32 limit = 2;
+// Channel management messages
+message CreateChannelRequest {
+  string name = 1;
+  string creator_id = 2;
 }
 
-message GetMessagesResponse {
-  repeated Message messages = 1;
+message CreateChannelResponse {
+  string channel_id = 1;
+  string name = 2;
+  string created_by = 3;
+  int64 created_at_ms = 4;
+}
+
+message GetChannelRequest {
+  string channel_id = 1;
+}
+
+message GetChannelResponse {
+  string channel_id = 1;
+  string name = 2;
+  string created_by = 3;
+  int64 created_at_ms = 4;
 }
 
 message AddMemberRequest {
-  string room_id = 1;
+  string channel_id = 1;
   string user_id = 2;
 }
 
 message AddMemberResponse {
-  string message = 1;
+  string member_id = 1;
+  string channel_id = 2;
+  string user_id = 3;
+  int64 joined_at_ms = 4;
 }
 
-// Service RPC
-service ChatService {
-  rpc CreateRoom(CreateRoomRequest) returns (CreateRoomResponse);
-  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
-  rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
-  rpc AddMember(AddMemberRequest) returns (AddMemberResponse);
+message RemoveMemberRequest {
+  string channel_id = 1;
+  string user_id = 2;
+}
+
+message RemoveMemberResponse {
+  bool success = 1;
+}
+
+message ListMembersRequest {
+  string channel_id = 1;
+}
+
+message ListMembersResponse {
+  repeated MemberInfo members = 1;
+}
+
+message MemberInfo {
+  string user_id = 1;
+  int64 joined_at_ms = 2;
 }

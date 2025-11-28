@@ -64,10 +64,7 @@ func (s *S3Storage) DeleteObject(file *domain.File) error {
 	return s.client.RemoveObject(ctx, s.bucket, file.StoragePath, minio.RemoveObjectOptions{})
 }
 
-// Delete object
-func (s *S3Storage) Delete(file *domain.File) error {
-	return s.client.RemoveObject(context.Background(), s.bucket, file.StoragePath, minio.RemoveObjectOptions{})
-}
+
 
 func (s *S3Storage) Upload(file *domain.File, data []byte) error {
 	_, err := s.client.PutObject(context.Background(), s.bucket, file.StoragePath, bytes.NewReader(data), file.Size, minio.PutObjectOptions{

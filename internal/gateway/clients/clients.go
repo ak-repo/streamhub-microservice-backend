@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ak-repo/stream-hub/gen/authpb"
+	"github.com/ak-repo/stream-hub/gen/chatpb"
 	"github.com/ak-repo/stream-hub/gen/filespb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -12,6 +13,7 @@ import (
 type Clients struct {
 	Auth  authpb.AuthServiceClient
 	File  filespb.FileServiceClient
+	Chat  chatpb.ChatServiceClient
 	conns []*grpc.ClientConn
 }
 

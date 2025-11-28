@@ -5,6 +5,7 @@ import (
 
 	"github.com/ak-repo/stream-hub/config"
 	"github.com/ak-repo/stream-hub/gen/authpb"
+	"github.com/ak-repo/stream-hub/gen/chatpb"
 	"github.com/ak-repo/stream-hub/gen/filespb"
 	"github.com/ak-repo/stream-hub/internal/gateway/clients"
 	"github.com/ak-repo/stream-hub/internal/gateway/routes"
@@ -56,6 +57,15 @@ func main() {
 		&clientContainer.File,
 	)
 
+	// Initialize chat Client
+	initClient(
+		clientContainer,
+		cfg.Services.Chat.Host,
+		cfg.Services.Chat.Port,
+		func(conn *grpc.ClientConn) interface{} { return chatpb.NewChatServiceClient(conn) },
+		&clientContainer.Chat,
+	)
+
 	// Clean up gRPC connections on exit
 	defer clientContainer.CloseAll()
 
@@ -89,6 +99,8 @@ func initClient(
 		*t = cli.(authpb.AuthServiceClient)
 	case *filespb.FileServiceClient:
 		*t = cli.(filespb.FileServiceClient)
+	case *chatpb.ChatServiceClient:
+		*t = cli.(chatpb.ChatServiceClient)
 	default:
 		logger.Log.Fatal("unsupported client type")
 	}
