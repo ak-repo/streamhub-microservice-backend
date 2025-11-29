@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/ak-repo/stream-hub/gen/filespb"
@@ -20,24 +21,28 @@ func NewFileHandler(cli filespb.FileServiceClient) *FileHandler {
 
 func (h *FileHandler) GenerateUploadURL(ctx *fiber.Ctx) error {
 	var req struct {
-		OwnerID  string `json:"owner_id"`
-		Filename string `json:"filename"`
-		Size     int64  `json:"size"`
-		MimeType string `json:"mime_type"`
-		IsPublic bool   `json:"is_public"`
+		OwnerID   string `json:"ownerId"`
+		Filename  string `json:"filename"`
+		Size      int64  `json:"size"`
+		MimeType  string `json:"mimeType"`
+		IsPublic  bool   `json:"isPublic"`
+		ChannelID string `json:"channelId"`
 	}
 	if err := ctx.BodyParser(&req); err != nil {
-		code, body := errors.GRPCToFiber(err)
-		return ctx.Status(code).JSON(body)
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid body")
 	}
-	stctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	log.Println("on handlerL:", req.ChannelID)
+	stCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	resp, err := h.client.GenerateUploadURL(stctx, &filespb.GenerateUploadURLRequest{
-		OwnerId:  req.OwnerID,
-		Filename: req.Filename,
-		Size:     req.Size,
-		MimeType: req.MimeType,
-		IsPublic: req.IsPublic,
+
+	resp, err := h.client.GenerateUploadURL(stCtx, &filespb.GenerateUploadURLRequest{
+		OwnerId:   req.OwnerID,
+		ChannelId: req.ChannelID,
+		Filename:  req.Filename,
+		Size:      req.Size,
+		MimeType:  req.MimeType,
+		IsPublic:  req.IsPublic,
 	})
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
@@ -48,46 +53,76 @@ func (h *FileHandler) GenerateUploadURL(ctx *fiber.Ctx) error {
 
 func (h *FileHandler) ConfirmUpload(ctx *fiber.Ctx) error {
 	var req struct {
-		FileID string `json:"file_id"`
+		FileID string `json:"fileId"`
 	}
 	if err := ctx.BodyParser(&req); err != nil {
-		code, body := errors.GRPCToFiber(err)
-		return ctx.Status(code).JSON(body)
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid body")
+
 	}
-	stctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	stCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	resp, err := h.client.ConfirmUpload(stctx, &filespb.ConfirmUploadRequest{FileId: req.FileID})
+
+	resp, err := h.client.ConfirmUpload(stCtx, &filespb.ConfirmUploadRequest{FileId: req.FileID})
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return ctx.Status(code).JSON(body)
 	}
 	return response.Success(ctx, "file uploaded successfully", resp)
 }
-
 func (h *FileHandler) GenerateDownloadURL(ctx *fiber.Ctx) error {
-	var req struct {
-		FileID        string `json:"file_id"`
-		ExpireSeconds int64  `json:"expire_seconds"`
+	req := struct {
+		FileID        string `query:"fileId"`
+		ExpireSeconds int64  `query:"expireSeconds"`
+		RequesterID   string `query:"requesterId"`
+	}{}
+
+	if err := ctx.QueryParser(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid query params")
 	}
-	if err := ctx.BodyParser(&req); err != nil {
-		code, body := errors.GRPCToFiber(err)
-		return ctx.Status(code).JSON(body)
+
+	if req.FileID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "fileId is required")
 	}
-	clictx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	if req.RequesterID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "requesterId is required")
+	}
+	if req.ExpireSeconds <= 0 {
+		req.ExpireSeconds = 60
+	}
+
+	cliCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	resp, err := h.client.GenerateDownloadURL(clictx, &filespb.GenerateDownloadURLRequest{FileId: req.FileID, ExpireSeconds: req.ExpireSeconds})
+
+	resp, err := h.client.GenerateDownloadURL(cliCtx, &filespb.GenerateDownloadURLRequest{
+		FileId:        req.FileID,
+		ExpireSeconds: req.ExpireSeconds,
+		RequesterId:   req.RequesterID,
+	})
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return ctx.Status(code).JSON(body)
 	}
+
 	return response.Success(ctx, "generated download link", resp)
 }
 
+
 func (h *FileHandler) ListFiles(ctx *fiber.Ctx) error {
-	owner := ctx.Params("owner_id")
-	clictx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	requesterID := ctx.Query("requesterId")
+	channelID := ctx.Query("channelId")
+	if requesterID == "" || channelID == "" {
+
+		return fiber.NewError(fiber.StatusBadRequest, "Missing query parameters")
+	}
+
+	cliCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	resp, err := h.client.ListFiles(clictx, &filespb.FileListRequest{OwnerId: owner})
+
+	resp, err := h.client.ListFiles(cliCtx, &filespb.FileListRequest{
+		RequesterId: requesterID,
+		ChannelId:   channelID,
+	})
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return ctx.Status(code).JSON(body)
@@ -96,11 +131,21 @@ func (h *FileHandler) ListFiles(ctx *fiber.Ctx) error {
 }
 
 func (h *FileHandler) DeleteFile(ctx *fiber.Ctx) error {
-	id := ctx.Params("file_id")
-	clictx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	var req struct {
+		FileID      string `json:"fileId"`
+		RequesterID string `json:"requesterId"`
+	}
+
+	if err := ctx.BodyParser(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid body")
+	}
+
+	cliCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	resp, err := h.client.DeleteFile(clictx, &filespb.DeleteFileRequest{FileId: id,
-		OwnerId: "122adf10-3398-46c8-bc8c-86ca83f4a177",
+
+	resp, err := h.client.DeleteFile(cliCtx, &filespb.DeleteFileRequest{
+		FileId:      req.FileID,
+		RequesterId: req.RequesterID,
 	})
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
@@ -108,3 +153,17 @@ func (h *FileHandler) DeleteFile(ctx *fiber.Ctx) error {
 	}
 	return response.Success(ctx, "deleted", resp)
 }
+
+//GRPC
+
+// type FileListRequest struct {
+//     state         protoimpl.MessageState `protogen:"open.v1"`
+//     RequesterId   string                 `protobuf:"bytes,1,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"` // Files uploaded by the user
+//     ChannelId     string                 `protobuf:"bytes,2,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`       // Optional: files in a channel
+//     unknownFields protoimpl.UnknownFields
+//     sizeCache     protoimpl.SizeCache
+// }
+// ------------------------------ LIST FILES FOR USER OR CHANNEL ------------------------------
+
+// func (*filespb.FileListRequest) Descriptor() ([]byte, []int)
+// func (x *filespb.FileListRequest) GetChannelId() string

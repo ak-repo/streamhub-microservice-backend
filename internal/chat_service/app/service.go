@@ -150,3 +150,9 @@ func (s *chatService) ListMembers(ctx context.Context, channelID string) ([]*dom
 func (s *chatService) CheckMembership(ctx context.Context, channelID, userID string) (bool, error) {
 	return s.repo.IsUserMember(ctx, channelID, userID)
 }
+
+func (s *chatService) DeleteChannel(ctx context.Context, channelID, userID string) error {
+
+	return s.repo.DeleteChannel(ctx, channelID, userID)
+
+}

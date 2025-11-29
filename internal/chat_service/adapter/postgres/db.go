@@ -62,7 +62,7 @@ func (r *chatRepo) ListHistory(ctx context.Context, channelID string, limit, off
 			&msg.SenderID,
 			&msg.Content,
 			&msg.CreatedAt,
-			&msg.Username,      // FIXED
+			&msg.Username, // FIXED
 		); err != nil {
 			return nil, err
 		}
@@ -72,7 +72,6 @@ func (r *chatRepo) ListHistory(ctx context.Context, channelID string, limit, off
 
 	return messages, rows.Err()
 }
-
 
 // ------------------------------ For channels __--------------
 
@@ -235,3 +234,7 @@ func (r *chatRepo) ListChannels(ctx context.Context, userID string) (map[string]
 	return result, nil
 }
 
+func (r *chatRepo) DeleteChannel(ctx context.Context, channelID, userID string) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM channels WHERE id = $1 AND created_by=$2`, channelID, userID)
+	return err
+}

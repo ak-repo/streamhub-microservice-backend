@@ -11,6 +11,7 @@ type FileService interface {
 	GenerateUploadURL(
 		ctx context.Context,
 		ownerID string,
+		channelID string,
 		filename string,
 		size int64,
 		mime string,
@@ -21,11 +22,17 @@ type FileService interface {
 	ConfirmUpload(ctx context.Context, fileID string) (*domain.File, error)
 
 	// Step 3: Generate a download URL (presigned)
-	GenerateDownloadURL(ctx context.Context, fileID, rerequesterID string, exp int64) (downloadURL string, err error)
+	GenerateDownloadURL(
+		ctx context.Context,
+		fileID string,
+		requesterID string,
+		expirySeconds int64,
+	) (downloadURL string, err error)
 
-	// List user files
-	ListFiles(ctx context.Context, ownerID string) ([]*domain.File, error)
+	// List  files for channel
+	ListFiles(ctx context.Context, requesterID, channelID string) ([]*domain.File, error)
 
 	// Delete file (metadata + S3 object)
-	DeleteFile(ctx context.Context, fileID, requesterID string) error
+	// Allowed for: file owner OR channel admin
+	DeleteFile(ctx context.Context, fileID string, requesterID string) error
 }

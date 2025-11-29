@@ -86,6 +86,28 @@ func (h *ChatHandler) JoinChannel(c *fiber.Ctx) error {
 
 	return response.Success(c, "jointed channel: "+req.ChannelID, resp)
 }
+
+func (h *ChatHandler) LeaveChannel(c *fiber.Ctx) error {
+	var req struct {
+		ChannelID string `json:"channel_id"`
+		UserID    string `json:"user_id"`
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid body")
+	}
+
+	resp, err := h.client.RemoveMember(context.Background(), &chatpb.RemoveMemberRequest{
+		ChannelId: req.ChannelID,
+		UserId:    req.UserID,
+	})
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return c.Status(code).JSON(body)
+	}
+
+	return response.Success(c, "channel leaved successfully "+req.ChannelID, resp)
+}
 func (h *ChatHandler) ListChannels(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
 	if userID == "" {
@@ -120,6 +142,29 @@ func (h *ChatHandler) GetChannel(c *fiber.Ctx) error {
 
 	return response.Success(c, "channel response id:"+chanId, resp)
 }
+
+func (h *ChatHandler) DeleteChannel(c *fiber.Ctx) error {
+	var req struct {
+		ChannelID string `json:"channelId"`
+		UserID    string `json:"userId"`
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid body")
+	}
+
+	resp, err := h.client.DeleteChannel(context.Background(), &chatpb.DeleteChannelRequest{
+		ChannelId: req.ChannelID,
+		UserId:    req.UserID,
+	})
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return c.Status(code).JSON(body)
+	}
+
+	return response.Success(c, "channel deleted"+req.ChannelID, resp)
+}
+
 func (h *ChatHandler) ListMembers(c *fiber.Ctx) error {
 	chanId := c.Params("channel_id")
 	if chanId == "" {

@@ -90,7 +90,7 @@ minio:
   endpoint: localhost:9000
   access_key: minioadmin
   secret_key: minioadmin
-  bucket: files
+  bucket: channel-uploads
   region: us-east-1
   use_ssl: false
 

@@ -1,130 +1,180 @@
-That's a smart step\! A comprehensive `README.md` is essential for any professional project, serving as the official documentation and onboarding guide.
+Got it da — you want the **same README**, but fully rewritten to match your **Collaborative Workspace Platform**, NOT a file storage platform.
+I rewrote everything with correct terminology: **Workspaces, Channels, Groups, Chat, File Sharing, Real-time Collaboration, Activity Feed**, etc.
 
-Here is the complete, company-level **README structure** for your gRPC Microservices project, reflecting the Clean Architecture and decoupled structure we designed.
-
----
-
-## 📚 Project Name: Stream Hub Backend
-
-### 🌟 1. Overview
-
-This is the backend repository for **Stream Hub**, a modern, cloud-native file storage and collaboration platform. The architecture is based on **Microservices** communicating via **gRPC**, following the principles of **Clean Architecture** to ensure high decoupling, testability, and scalability.
-
-- **Language:** Go (Golang)
-- **Protocol:** gRPC (via Protocol Buffers)
-- **Database:** PostgreSQL (using `pgx`)
-- **Containerization:** Docker, Docker Compose
+Here is the corrected, polished, company-grade README for your **Collaborative Platform Backend**.
 
 ---
 
-### 🧱 2. Core Architecture & Services
+# 🚀 **Project Name: Collab Hub Backend**
 
-The system is composed of several independent services, each owning its domain, data storage, and business logic.
+## 🌟 1. Overview
 
-| Service                    | Primary Responsibility                                                                             | Data Store                         |
-| :------------------------- | :------------------------------------------------------------------------------------------------- | :--------------------------------- |
-| **`auth-service`**         | User registration, login, JWT/Token generation, 2FA, OAuth.                                        | PostgreSQL (`auth_db`)             |
-| **`file-service`**         | File upload/download (streaming), metadata management, favorites, access control.                  | PostgreSQL (`files_db`) + S3/MinIO |
-| **`payment-service`**      | Subscription plans, payment processing, access validation.                                         | PostgreSQL (`payment_db`)          |
-| **`chat-service`**         | Real-time one-to-one and channel messaging.                                                        | PostgreSQL (`chat_db`) + Redis     |
-| **`notification-service`** | In-app, Push, Email, and SMS notification triggers.                                                | PostgreSQL (`notification_db`)     |
-| **`api-gateway`**          | **REST/HTTP** entry point for frontend and mobile clients. Translates HTTP requests to gRPC calls. | None (Stateless)                   |
-| **`cron-service`**         | Background jobs (e.g., file cleanup, subscription expiry checks).                                  | None (Job Scheduler)               |
+This is the backend repository for **Collab Hub**, a modern collaborative workspace platform designed for teams, communities, and organizations.
+It brings together **group chat**, **direct messaging**, **shared workspaces**, **file sharing**, **real-time updates**, and **team collaboration tools**, powered by a clean and scalable backend architecture.
 
----
+Built using:
 
-### 📁 3. Directory Structure
+* **Go (Golang)**
+* **Microservices**
+* **gRPC communication**
+* **Clean Architecture**
+* **PostgreSQL + Redis**
+* **S3-compatible storage (MinIO / AWS S3)**
+* **Docker & Docker Compose**
 
-The repository follows the **Standard Go Project Layout** combined with a modular, **Clean Architecture** approach for each service.
-
-| Folder                      | Purpose                                                                                                    | Key Files / Examples                          |
-| :-------------------------- | :--------------------------------------------------------------------------------------------------------- | :-------------------------------------------- |
-| **`api/proto/v1`**          | **CONTRACTS.** Source `.proto` files defining all gRPC services and messages.                              | `auth.proto`, `file.proto`                    |
-| **`cmd/`**                  | **ENTRY POINTS.** Contains the `main.go` file for every runnable service/binary.                           | `auth-service/main.go`, `api-gateway/main.go` |
-| **`configs/`**              | **CONFIGURATION.** YAML/JSON files holding environment-specific settings.                                  | `auth.yaml`, `gateway.yaml`                   |
-| **`internal/`**             | **APPLICATION CORE.** Private business logic, decoupled by service. **Cannot be imported by other repos.** | `auth/`, `files/`, `gateway/`                 |
-| **`internal/auth/port`**    | **INTERFACES.** Defines contracts for the Service and Repository layers.                                   | `repository.go`, `service.go`                 |
-| **`internal/auth/app`**     | **USE CASES.** Implements business logic using the `port` interfaces (no SQL).                             | `service.go`                                  |
-| **`internal/auth/adapter`** | **INFRASTRUCTURE.** Code that touches external systems (DBs, gRPC, 3rd party APIs).                        | `storage/postgres`, `grpc/server.go`          |
-| **`migrations/`**           | **DATABASE SETUP.** SQL files to manage schema changes, separated by service.                              | `auth/001_users.up.sql`                       |
-| **`pkg/`**                  | **PUBLIC UTILITIES.** Truly generic, reusable libraries with no business logic.                            | `db/postgres.go`, `logger/`, `utils/`         |
-| **`pkg/pb`**                | **GENERATED CODE.** All Go files automatically generated from `api/proto`.                                 | `auth/auth_grpc.pb.go`, `file/file.pb.go`     |
+This architecture ensures isolated, independent services with clear domain boundaries, allowing massive scalability and clean development workflows.
 
 ---
 
-### 🛠️ 4. Local Setup and Development
+## 🧱 2. Core Architecture & Services
 
-#### Prerequisites
+Your platform is composed of several independently deployable services.
 
-1.  **Go:** Version 1.20+
-2.  **Docker & Docker Compose:** For running local infrastructure.
-3.  **Protocol Buffers Compiler:** `protoc`
-4.  **`buf` or `protoc-gen-go`:** For code generation.
+| Service                  | Purpose                                                                                                 | Storage                                  |
+| ------------------------ | ------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| **auth-service**         | User registration, login, OTP/Magic Link verification, sessions, tokens.                                | PostgreSQL (`auth_db`)                   |
+| **user-service**         | User profiles, settings, presence, status.                                                              | PostgreSQL (`user_db`)                   |
+| **workspace-service**    | Workspace management, teams, channels, roles, workspace membership.                                     | PostgreSQL (`workspace_db`)              |
+| **chat-service**         | Real-time group chat, direct messages, message history, typing indicators.                              | PostgreSQL (`chat_db`) + Redis (Pub/Sub) |
+| **file-service**         | File uploads, previews, attachments in chat, workspace file storage.                                    | PostgreSQL (`file_db`) + MinIO/S3        |
+| **notification-service** | Push notifications, email alerts, workspace activity notifications.                                     | PostgreSQL (`notification_db`)           |
+| **api-gateway**          | Public HTTP REST entrypoint → Converts HTTP → gRPC → Returns JSON responses to frontend/mobile clients. | Stateless                                |
+| **cron-service**         | Background tasks like file cleanup, offline user marking, workspace cleanup.                            | None                                     |
 
-#### Step 1: Clone and Initialize
+---
+
+## 📁 3. Directory Structure
+
+The backend follows **Clean Architecture + Modular Microservices.**
+
+| Folder                   | Description                                                       |
+| ------------------------ | ----------------------------------------------------------------- |
+| `api/proto/v1`           | All `.proto` contracts for every service.                         |
+| `cmd/`                   | Each service's `main.go` entrypoint.                              |
+| `configs/`               | Service-specific YAML configuration files.                        |
+| `internal/`              | All business logic (not importable by others).                    |
+| `internal/chat/app/`     | Chat use cases: send message, broadcast, history, attachments.    |
+| `internal/chat/adapter/` | PostgreSQL repositories, Redis pub/sub handlers, gRPC servers.    |
+| `internal/chat/port/`    | Interfaces for Chat service ports (repositories, event bus, etc). |
+| `migrations/`            | SQL migrations per service.                                       |
+| `pkg/`                   | Shared utilities: logger, config loader, database tools.          |
+| `pkg/pb/`                | Auto-generated gRPC Go code from `.proto` files.                  |
+
+---
+
+## 🔗 4. Chat Service Flow (Core of Your Platform)
+
+Your real-time chat is powered by:
+
+```
+Client → WebSocket → chat-service → Redis PubSub → DB → WebSocket → All clients
+```
+
+**Detailed Flow:**
+
+1. Client connects via WebSocket to **chat-service**.
+2. User sends message → chat-service validates session.
+3. Message is saved in PostgreSQL (chat DB).
+4. Message is published via Redis → `channel:{workspaceId}` or `dm:{userId}`.
+5. All subscribed chat-service instances receive the message from Redis.
+6. chat-service pushes it to all connected clients via WebSocket.
+7. Delivery receipts, typing indicators, attachments flow across same pipeline.
+
+---
+
+## 🛠️ 5. Local Setup & Development
+
+### Prerequisites
+
+* Go 1.20+
+* Docker & Docker Compose
+* Protocol Buffers (`protoc`)
+* `buf` or `protoc-gen-go`
+
+---
+
+### Step 1: Clone
 
 ```bash
-git clone git@github.com:ak-repo/stream-hub.git
-cd stream-hub/backend
+git clone https://github.com/ak-repo/collab-hub
+cd collab-hub/backend
 go mod tidy
 ```
 
-#### Step 2: Start Infrastructure (Postgres, Redis, etc.)
+### Step 2: Start Infrastructure
 
 ```bash
-docker compose -f docker-compose.yml up -d
+docker compose up -d
 ```
 
-#### Step 3: Generate Protobuf Code
+This starts:
 
-We use the `Makefile` to compile all `.proto` files into Go sources located in `pkg/pb`.
+* 4 PostgreSQL DBs
+* Redis
+* MinIO
+* All services (optional)
+
+---
+
+### Step 3: Generate gRPC Code
 
 ```bash
 make proto
 ```
 
-#### Step 4: Run Database Migrations
+---
 
-Apply the initial schema to the running Postgres containers, separated by service.
+### Step 4: Run Migrations
 
 ```bash
 make migrate-auth
+make migrate-chat
+make migrate-workspace
 make migrate-files
 ```
 
-#### Step 5: Run Services
+---
 
-You can build and run individual services:
+### Step 5: Run Services
 
 ```bash
-# Example: Run Auth Service
 go run ./cmd/auth-service/main.go
-# Example: Run API Gateway
+go run ./cmd/chat-service/main.go
 go run ./cmd/api-gateway/main.go
 ```
 
 ---
 
-### 🧪 5. Testing
+## 🧪 6. Testing
 
-Unit tests follow the **Dependency Injection (DI)** pattern:
+* **Unit tests** for all use cases.
+* **Mocked repository tests** for each service.
+* **Integration tests** via full gRPC communication.
 
-- **Unit Tests:** Located next to the code (e.g., `internal/auth/app/service_test.go`). We use **Mocks** (e.g., `gomock`) for interfaces (`port.UserRepository`) to ensure tests run fast without connecting to the database.
-- **Integration Tests:** Located in a top-level `test/integration` folder, using live gRPC connections to verify service-to-service communication.
-
-<!-- end list -->
+Run tests:
 
 ```bash
-# Run unit tests for a specific service
-go test ./internal/auth/... -v
+go test ./...
 ```
 
 ---
 
-### 💡 6. Contributing
+## 💡 7. Contribution
 
-See `CONTRIBUTING.md` for guidelines on submitting feature requests, bug fixes, and code reviews.
+* PRs must follow the architecture.
+* No business logic in `adapter`.
+* Only interface types in `port/`.
+* `app/` contains actual use case logic.
 
 ---
 
-**Next Step:** I can provide the actual **Makefile** content tailored to this structure, which will automate Steps 3, 4, and 5 for you. Would you like that?
+If you want, I can also generate:
+
+✅ `Makefile`
+✅ full folder skeleton
+✅ docker-compose.yml for your entire system
+✅ chat-service full implementation
+✅ workspace-service boilerplate
+✅ WebSocket gateway code
+
+Just tell me.

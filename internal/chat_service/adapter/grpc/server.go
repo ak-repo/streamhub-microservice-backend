@@ -228,3 +228,14 @@ func (s *ChatServer) ListMembers(ctx context.Context, req *chatpb.ListMembersReq
 
 	return &chatpb.ListMembersResponse{Members: chatpbMembers}, nil
 }
+
+// Delete channel only by owner
+func (s *ChatServer) DeleteChannel(ctx context.Context, req *chatpb.DeleteChannelRequest) (*chatpb.DeleteChannelResponse, error) {
+
+	if err := s.service.DeleteChannel(ctx, req.ChannelId, req.UserId); err != nil {
+		return nil, err
+	}
+
+	return &chatpb.DeleteChannelResponse{Success: true}, nil
+
+}

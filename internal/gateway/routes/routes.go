@@ -53,8 +53,8 @@ func fileRoutes(api fiber.Router, client filespb.FileServiceClient) {
 	r.Post("/upload-url", file.GenerateUploadURL)
 	r.Post("/confirm", file.ConfirmUpload)
 	r.Get("/download-url", file.GenerateDownloadURL)
-	r.Get("/:owner_id", file.ListFiles)
-	r.Delete("/:file_id", file.DeleteFile)
+	r.Get("/", file.ListFiles)
+	r.Delete("/delete", file.DeleteFile)
 
 }
 
@@ -68,6 +68,9 @@ func ChatRoutes(api fiber.Router, client chatpb.ChatServiceClient) {
 	r.Get("/:user_id", handler.ListChannels)
 	r.Post("/create", handler.CreateChannel)
 	r.Post("/join", handler.JoinChannel)
+	r.Post("/leave", handler.LeaveChannel)
+	r.Delete("/delete", handler.DeleteChannel)
+
 	r.Get("/channel/:channel_id", handler.GetChannel)
 	r.Get("/members/:channel_id", handler.ListMembers)
 	r.Get("/:channel_id/history", handler.ListMessages)

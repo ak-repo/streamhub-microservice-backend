@@ -14,11 +14,21 @@ service ChatService {
   rpc CreateChannel(CreateChannelRequest) returns (CreateChannelResponse);
   rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse);
   rpc GetChannel(GetChannelRequest) returns (GetChannelResponse);
+  rpc DeleteChannel(DeleteChannelRequest)returns (DeleteChannelResponse);
   rpc AddMember(AddMemberRequest) returns (AddMemberResponse);
   rpc RemoveMember(RemoveMemberRequest) returns (RemoveMemberResponse);
   rpc ListMembers(ListMembersRequest) returns (ListMembersResponse);
 }
 
+
+message DeleteChannelRequest{
+  string user_id = 1;
+  string channel_id = 2;
+}
+message DeleteChannelResponse{
+bool success =1;
+
+}
 
 // Streaming messages
 message StreamRequest {

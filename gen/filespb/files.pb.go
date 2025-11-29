@@ -28,12 +28,13 @@ type File struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	OwnerId       string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
-	Filename      string                 `protobuf:"bytes,3,opt,name=filename,proto3" json:"filename,omitempty"`
-	Size          int64                  `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
-	MimeType      string                 `protobuf:"bytes,5,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,omitempty"`
-	StoragePath   string                 `protobuf:"bytes,6,opt,name=storage_path,json=storagePath,proto3" json:"storage_path,omitempty"`
-	IsPublic      bool                   `protobuf:"varint,7,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`
-	CreatedAt     string                 `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	ChannelId     string                 `protobuf:"bytes,3,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	Filename      string                 `protobuf:"bytes,4,opt,name=filename,proto3" json:"filename,omitempty"`
+	Size          int64                  `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
+	MimeType      string                 `protobuf:"bytes,6,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,omitempty"`
+	StoragePath   string                 `protobuf:"bytes,7,opt,name=storage_path,json=storagePath,proto3" json:"storage_path,omitempty"`
+	IsPublic      bool                   `protobuf:"varint,8,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -78,6 +79,13 @@ func (x *File) GetId() string {
 func (x *File) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
+	}
+	return ""
+}
+
+func (x *File) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
 	}
 	return ""
 }
@@ -130,10 +138,11 @@ func (x *File) GetCreatedAt() string {
 type GenerateUploadURLRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OwnerId       string                 `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
-	Filename      string                 `protobuf:"bytes,2,opt,name=filename,proto3" json:"filename,omitempty"`
-	Size          int64                  `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
-	MimeType      string                 `protobuf:"bytes,4,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,omitempty"`
-	IsPublic      bool                   `protobuf:"varint,5,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`
+	ChannelId     string                 `protobuf:"bytes,2,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	Filename      string                 `protobuf:"bytes,3,opt,name=filename,proto3" json:"filename,omitempty"`
+	Size          int64                  `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
+	MimeType      string                 `protobuf:"bytes,5,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,omitempty"`
+	IsPublic      bool                   `protobuf:"varint,6,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -175,6 +184,13 @@ func (x *GenerateUploadURLRequest) GetOwnerId() string {
 	return ""
 }
 
+func (x *GenerateUploadURLRequest) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
 func (x *GenerateUploadURLRequest) GetFilename() string {
 	if x != nil {
 		return x.Filename
@@ -207,8 +223,8 @@ func (x *GenerateUploadURLRequest) GetIsPublic() bool {
 type GenerateUploadURLResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UploadUrl     string                 `protobuf:"bytes,1,opt,name=upload_url,json=uploadUrl,proto3" json:"upload_url,omitempty"`
-	StoragePath   string                 `protobuf:"bytes,2,opt,name=storage_path,json=storagePath,proto3" json:"storage_path,omitempty"` // S3 key
-	FileId        string                 `protobuf:"bytes,3,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`                // Metadata ID (created before upload)
+	StoragePath   string                 `protobuf:"bytes,2,opt,name=storage_path,json=storagePath,proto3" json:"storage_path,omitempty"`
+	FileId        string                 `protobuf:"bytes,3,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -361,7 +377,7 @@ func (x *ConfirmUploadResponse) GetFile() *File {
 type GenerateDownloadURLRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	FileId        string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
-	OwnerId       string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	RequesterId   string                 `protobuf:"bytes,2,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
 	ExpireSeconds int64                  `protobuf:"varint,3,opt,name=expire_seconds,json=expireSeconds,proto3" json:"expire_seconds,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -404,9 +420,9 @@ func (x *GenerateDownloadURLRequest) GetFileId() string {
 	return ""
 }
 
-func (x *GenerateDownloadURLRequest) GetOwnerId() string {
+func (x *GenerateDownloadURLRequest) GetRequesterId() string {
 	if x != nil {
-		return x.OwnerId
+		return x.RequesterId
 	}
 	return ""
 }
@@ -471,11 +487,12 @@ func (x *GenerateDownloadURLResponse) GetExpireSeconds() int64 {
 }
 
 // ------------------------------
-// LIST FILES FOR USER
+// LIST FILES FOR USER OR CHANNEL
 // ------------------------------
 type FileListRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OwnerId       string                 `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	RequesterId   string                 `protobuf:"bytes,1,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
+	ChannelId     string                 `protobuf:"bytes,2,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -510,9 +527,16 @@ func (*FileListRequest) Descriptor() ([]byte, []int) {
 	return file_api_proto_files_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *FileListRequest) GetOwnerId() string {
+func (x *FileListRequest) GetRequesterId() string {
 	if x != nil {
-		return x.OwnerId
+		return x.RequesterId
+	}
+	return ""
+}
+
+func (x *FileListRequest) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
 	}
 	return ""
 }
@@ -567,7 +591,7 @@ func (x *FileListResponse) GetFiles() []*File {
 type DeleteFileRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	FileId        string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
-	OwnerId       string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	RequesterId   string                 `protobuf:"bytes,2,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -609,9 +633,9 @@ func (x *DeleteFileRequest) GetFileId() string {
 	return ""
 }
 
-func (x *DeleteFileRequest) GetOwnerId() string {
+func (x *DeleteFileRequest) GetRequesterId() string {
 	if x != nil {
-		return x.OwnerId
+		return x.RequesterId
 	}
 	return ""
 }
@@ -664,23 +688,27 @@ var File_api_proto_files_proto protoreflect.FileDescriptor
 
 const file_api_proto_files_proto_rawDesc = "" +
 	"\n" +
-	"\x15api/proto/files.proto\x12\x05files\"\xdd\x01\n" +
+	"\x15api/proto/files.proto\x12\x05files\"\xfc\x01\n" +
 	"\x04File\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
-	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x1a\n" +
+	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x03 \x01(\tR\tchannelId\x12\x1a\n" +
+	"\bfilename\x18\x04 \x01(\tR\bfilename\x12\x12\n" +
+	"\x04size\x18\x05 \x01(\x03R\x04size\x12\x1b\n" +
+	"\tmime_type\x18\x06 \x01(\tR\bmimeType\x12!\n" +
+	"\fstorage_path\x18\a \x01(\tR\vstoragePath\x12\x1b\n" +
+	"\tis_public\x18\b \x01(\bR\bisPublic\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\t \x01(\tR\tcreatedAt\"\xbe\x01\n" +
+	"\x18GenerateUploadURLRequest\x12\x19\n" +
+	"\bowner_id\x18\x01 \x01(\tR\aownerId\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x02 \x01(\tR\tchannelId\x12\x1a\n" +
 	"\bfilename\x18\x03 \x01(\tR\bfilename\x12\x12\n" +
 	"\x04size\x18\x04 \x01(\x03R\x04size\x12\x1b\n" +
-	"\tmime_type\x18\x05 \x01(\tR\bmimeType\x12!\n" +
-	"\fstorage_path\x18\x06 \x01(\tR\vstoragePath\x12\x1b\n" +
-	"\tis_public\x18\a \x01(\bR\bisPublic\x12\x1d\n" +
-	"\n" +
-	"created_at\x18\b \x01(\tR\tcreatedAt\"\x9f\x01\n" +
-	"\x18GenerateUploadURLRequest\x12\x19\n" +
-	"\bowner_id\x18\x01 \x01(\tR\aownerId\x12\x1a\n" +
-	"\bfilename\x18\x02 \x01(\tR\bfilename\x12\x12\n" +
-	"\x04size\x18\x03 \x01(\x03R\x04size\x12\x1b\n" +
-	"\tmime_type\x18\x04 \x01(\tR\bmimeType\x12\x1b\n" +
-	"\tis_public\x18\x05 \x01(\bR\bisPublic\"v\n" +
+	"\tmime_type\x18\x05 \x01(\tR\bmimeType\x12\x1b\n" +
+	"\tis_public\x18\x06 \x01(\bR\bisPublic\"v\n" +
 	"\x19GenerateUploadURLResponse\x12\x1d\n" +
 	"\n" +
 	"upload_url\x18\x01 \x01(\tR\tuploadUrl\x12!\n" +
@@ -689,21 +717,23 @@ const file_api_proto_files_proto_rawDesc = "" +
 	"\x14ConfirmUploadRequest\x12\x17\n" +
 	"\afile_id\x18\x01 \x01(\tR\x06fileId\"8\n" +
 	"\x15ConfirmUploadResponse\x12\x1f\n" +
-	"\x04file\x18\x01 \x01(\v2\v.files.FileR\x04file\"w\n" +
+	"\x04file\x18\x01 \x01(\v2\v.files.FileR\x04file\"\x7f\n" +
 	"\x1aGenerateDownloadURLRequest\x12\x17\n" +
-	"\afile_id\x18\x01 \x01(\tR\x06fileId\x12\x19\n" +
-	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12%\n" +
+	"\afile_id\x18\x01 \x01(\tR\x06fileId\x12!\n" +
+	"\frequester_id\x18\x02 \x01(\tR\vrequesterId\x12%\n" +
 	"\x0eexpire_seconds\x18\x03 \x01(\x03R\rexpireSeconds\"g\n" +
 	"\x1bGenerateDownloadURLResponse\x12!\n" +
 	"\fdownload_url\x18\x01 \x01(\tR\vdownloadUrl\x12%\n" +
-	"\x0eexpire_seconds\x18\x02 \x01(\x03R\rexpireSeconds\",\n" +
-	"\x0fFileListRequest\x12\x19\n" +
-	"\bowner_id\x18\x01 \x01(\tR\aownerId\"5\n" +
+	"\x0eexpire_seconds\x18\x02 \x01(\x03R\rexpireSeconds\"S\n" +
+	"\x0fFileListRequest\x12!\n" +
+	"\frequester_id\x18\x01 \x01(\tR\vrequesterId\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x02 \x01(\tR\tchannelId\"5\n" +
 	"\x10FileListResponse\x12!\n" +
-	"\x05files\x18\x01 \x03(\v2\v.files.FileR\x05files\"G\n" +
+	"\x05files\x18\x01 \x03(\v2\v.files.FileR\x05files\"O\n" +
 	"\x11DeleteFileRequest\x12\x17\n" +
-	"\afile_id\x18\x01 \x01(\tR\x06fileId\x12\x19\n" +
-	"\bowner_id\x18\x02 \x01(\tR\aownerId\".\n" +
+	"\afile_id\x18\x01 \x01(\tR\x06fileId\x12!\n" +
+	"\frequester_id\x18\x02 \x01(\tR\vrequesterId\".\n" +
 	"\x12DeleteFileResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage2\x90\x03\n" +
 	"\vFileService\x12V\n" +
