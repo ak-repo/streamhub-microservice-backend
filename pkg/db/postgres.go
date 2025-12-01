@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/ak-repo/stream-hub/config"
@@ -38,8 +37,6 @@ func NewPostgresDB(ctx context.Context, cfg *config.Config) (*PostgresDB, error)
 		cfg.Database.Name,
 		cfg.Database.SSLMode,
 	)
-
-	log.Println("DB dsn:", dsn)
 
 	poolConfig, err := pgxpool.ParseConfig(dsn)
 	if err != nil {

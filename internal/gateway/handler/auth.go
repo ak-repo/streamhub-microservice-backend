@@ -52,6 +52,8 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		Path:     "/",
 		Expires:  rExp,
 		HTTPOnly: true,
+		Secure:   false,
+		SameSite: "None",
 	})
 
 	c.Cookie(&fiber.Cookie{
@@ -60,6 +62,8 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		Path:     "/",
 		Expires:  aExp,
 		HTTPOnly: true,
+		Secure:   false,
+		SameSite: "None",
 	})
 
 	return response.Success(c, "login successful", fiber.Map{

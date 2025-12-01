@@ -46,7 +46,6 @@ func main() {
 	defer pgDB.Close()
 
 	// ---- Create gRPC Client Container ----
-	// ---- Create gRPC Client Container ----
 	clientContainer := clients.NewClients(cfg)
 	defer clientContainer.CloseAll()
 
@@ -55,14 +54,13 @@ func main() {
 	rdb := redis.NewClient(&redis.Options{Addr: rdbAddr})
 
 	// 4. Initialize Clean Architecture layers
-	repo := postgres.NewChatRepo(pgDB.Pool)
+	repo := postgres.NewChannelRepo(pgDB.Pool)
 	ps := chatredis.NewRedisPubSub(rdb)
-	svc := app.NewChatService(repo, ps,clientContainer)
+	svc := app.NewChatService(repo, ps, clientContainer)
 	grpcHandler := chatgrpc.NewChannelServer(svc)
 
 	// 5. Start gRPC server
 	port := ":" + cfg.Services.Chat.Port
-	log.Println("port:", port)
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen on port %s: %v", port, err)
@@ -74,7 +72,7 @@ func main() {
 
 	// 6. Graceful shutdown
 	go func() {
-		log.Printf("Chat Service (gRPC) running on %s", port)
+		log.Printf("Channel Service (gRPC) running on %s", port)
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("failed to serve gRPC: %v", err)
 		}

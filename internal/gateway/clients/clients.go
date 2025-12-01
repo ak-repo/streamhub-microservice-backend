@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ak-repo/stream-hub/config"
+	"github.com/ak-repo/stream-hub/gen/adminpb"
 	"github.com/ak-repo/stream-hub/gen/authpb"
 	"github.com/ak-repo/stream-hub/gen/channelpb"
 	"github.com/ak-repo/stream-hub/gen/filespb"
@@ -14,10 +15,12 @@ import (
 )
 
 type Clients struct {
-	Auth    authpb.AuthServiceClient ``
+	Admin   adminpb.AdminServiceClient
+	Auth    authpb.AuthServiceClient
 	File    filespb.FileServiceClient
 	Channel channelpb.ChannelServiceClient
-	conns   []*grpc.ClientConn
+
+	conns []*grpc.ClientConn
 }
 
 // Generic gRPC client initializer
@@ -41,6 +44,13 @@ func NewClients(cfg *config.Config) *Clients {
 	c := &Clients{
 		conns: make([]*grpc.ClientConn, 0),
 	}
+
+	// Admin Service
+	adminClient, adminConn := initClient(cfg.Services.Admin.Host, cfg.Services.Admin.Port, func(conn *grpc.ClientConn) adminpb.AdminServiceClient {
+		return adminpb.NewAdminServiceClient(conn)
+	})
+	c.Admin = adminClient
+	c.conns = append(c.conns, adminConn)
 
 	// Auth Service
 	authClient, authConn := initClient(cfg.Services.Auth.Host, cfg.Services.Auth.Port,

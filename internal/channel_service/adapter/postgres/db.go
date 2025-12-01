@@ -10,19 +10,19 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type chatRepo struct {
+type channelRepo struct {
 	pool *pgxpool.Pool
 }
 
-func NewChatRepo(pool *pgxpool.Pool) port.ChannelRepository {
-	return &chatRepo{pool: pool}
+func NewChannelRepo(pool *pgxpool.Pool) port.ChannelRepository {
+	return &channelRepo{pool: pool}
 }
 
 //---------------------------For messages-----------------------
 
 // SaveMessage persists a message to the database.
 // This ensures message history is preserved even if Redis crashes.
-func (r *chatRepo) SaveMessage(ctx context.Context, msg *domain.Message) error {
+func (r *channelRepo) SaveMessage(ctx context.Context, msg *domain.Message) error {
 	var attachmentID *string
 	if msg.Attachment != nil {
 		_, err := r.pool.Exec(ctx,
@@ -44,7 +44,7 @@ func (r *chatRepo) SaveMessage(ctx context.Context, msg *domain.Message) error {
 
 // ListHistory retrieves message history for a channel.
 // ListHistory retrieves message history for a channel.
-func (r *chatRepo) ListHistory(ctx context.Context, channelID string, limit, offset int) ([]*domain.Message, error) {
+func (r *channelRepo) ListHistory(ctx context.Context, channelID string, limit, offset int) ([]*domain.Message, error) {
 	rows, err := r.pool.Query(ctx,
 		`SELECT m.id, m.channel_id, m.sender_id, m.content, m.created_at, u.username,
 		        f.id, f.file_name, f.file_url, f.mime_type, f.size
@@ -90,7 +90,7 @@ func (r *chatRepo) ListHistory(ctx context.Context, channelID string, limit, off
 // ------------------------------ For channels __--------------
 
 // CreateChannel creates a new chat group/channel.
-func (r *chatRepo) CreateChannel(ctx context.Context, ch *domain.Channel) error {
+func (r *channelRepo) CreateChannel(ctx context.Context, ch *domain.Channel) error {
 	_, err := r.pool.Exec(ctx, `INSERT INTO channels (id, name, created_by, created_at)
          VALUES ($1, $2, $3, $4)`,
 		ch.ID, ch.Name, ch.CreatedBy, ch.CreatedAt)
@@ -98,7 +98,7 @@ func (r *chatRepo) CreateChannel(ctx context.Context, ch *domain.Channel) error 
 }
 
 // GetChannel retrieves channel details by ID.
-func (r *chatRepo) GetChannel(ctx context.Context, channelID string) (*domain.Channel, error) {
+func (r *channelRepo) GetChannel(ctx context.Context, channelID string) (*domain.Channel, error) {
 	ch := &domain.Channel{}
 	err := r.pool.QueryRow(ctx, `SELECT id, name, created_by, created_at 
          FROM channels 
@@ -113,7 +113,7 @@ func (r *chatRepo) GetChannel(ctx context.Context, channelID string) (*domain.Ch
 
 // AddMember adds a user to a channel.
 // This enables permission control - only members can see/send messages.
-func (r *chatRepo) AddMember(ctx context.Context, m *domain.ChannelMember) error {
+func (r *channelRepo) AddMember(ctx context.Context, m *domain.ChannelMember) error {
 	_, err := r.pool.Exec(ctx,
 		`INSERT INTO channel_members (id, channel_id, user_id, joined_at)
          VALUES ($1, $2, $3, $4)
@@ -123,7 +123,7 @@ func (r *chatRepo) AddMember(ctx context.Context, m *domain.ChannelMember) error
 }
 
 // RemoveMember removes a user from a channel.
-func (r *chatRepo) RemoveMember(ctx context.Context, channelID, userID string) error {
+func (r *channelRepo) RemoveMember(ctx context.Context, channelID, userID string) error {
 	_, err := r.pool.Exec(ctx,
 		`DELETE FROM channel_members 
          WHERE channel_id = $1 AND user_id = $2`,
@@ -132,7 +132,7 @@ func (r *chatRepo) RemoveMember(ctx context.Context, channelID, userID string) e
 }
 
 // ListChannelMembers returns all members of a channel.
-func (r *chatRepo) ListChannelMembers(ctx context.Context, channelID string) ([]*domain.ChannelMember, error) {
+func (r *channelRepo) ListChannelMembers(ctx context.Context, channelID string) ([]*domain.ChannelMember, error) {
 	rows, err := r.pool.Query(ctx,
 		`SELECT 
             cm.id,
@@ -163,7 +163,7 @@ func (r *chatRepo) ListChannelMembers(ctx context.Context, channelID string) ([]
 
 // IsUserMember checks if a user is a member of a channel.
 // Used for authorization before allowing message posting.
-func (r *chatRepo) IsUserMember(ctx context.Context, channelID, userID string) (bool, error) {
+func (r *channelRepo) IsUserMember(ctx context.Context, channelID, userID string) (bool, error) {
 	var exists bool
 	err := r.pool.QueryRow(ctx,
 		`SELECT EXISTS(
@@ -176,7 +176,7 @@ func (r *chatRepo) IsUserMember(ctx context.Context, channelID, userID string) (
 
 // List all channels to a specific user
 // List all channels to a specific user
-func (r *chatRepo) ListChannels(ctx context.Context, userID string) (map[string]*domain.ChannelWithMembers, error) {
+func (r *channelRepo) ListChannels(ctx context.Context, userID string) (map[string]*domain.ChannelWithMembers, error) {
 
 	// STEP 1: get channel IDs (FIXED)
 	rows, err := r.pool.Query(ctx,
@@ -248,7 +248,7 @@ func (r *chatRepo) ListChannels(ctx context.Context, userID string) (map[string]
 	return result, nil
 }
 
-func (r *chatRepo) DeleteChannel(ctx context.Context, channelID, userID string) error {
+func (r *channelRepo) DeleteChannel(ctx context.Context, channelID, userID string) error {
 	_, err := r.pool.Exec(ctx, `DELETE FROM channels WHERE id = $1 AND created_by=$2`, channelID, userID)
 	return err
 }

@@ -68,11 +68,15 @@ message GetTotalUsersResponse {
 message GetActiveUsersRequest {}
 message GetActiveUsersResponse {
   int32 active_users = 1;
+  repeated User users = 2;
+
 }
 
 message GetBannedUsersRequest {}
 message GetBannedUsersResponse {
   int32 banned_users = 1;
+  repeated User users = 2;
+
 }
 
 // ============================

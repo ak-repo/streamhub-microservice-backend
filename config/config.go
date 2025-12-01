@@ -65,6 +65,7 @@ type MinioConfig struct {
 
 // SERVICES
 type ServicesConfig struct {
+	Admin        ServiceConfig `mapstructure:"admin"`
 	Auth         ServiceConfig `mapstructure:"auth"`
 	Users        ServiceConfig `mapstructure:"users"`
 	File         ServiceConfig `mapstructure:"file"`

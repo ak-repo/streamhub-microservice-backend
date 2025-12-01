@@ -57,6 +57,9 @@ services:
   front:
     host: localhost
     port: 5173
+  admin:
+    port: 50056
+    host: admin-service
 
 # Logging Configuration
 logging:

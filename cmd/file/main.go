@@ -29,7 +29,6 @@ func main() {
 		log.Fatalf("config load failed: %v", err)
 	}
 
-	log.Println("minIo endpoint:", cfg.MinIO.Endpoint)
 	helper.OverrideLocal(cfg)
 
 	logger.Init(cfg.Logging.Level, cfg.Logging.Format)

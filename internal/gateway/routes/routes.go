@@ -33,7 +33,6 @@ func userRoutes(api fiber.Router, cfg *config.Config, clients *clients.Clients) 
 	// AUTH HANDLER
 	// --------------------------
 	auth := handler.NewAuthHandler(clients.Auth, jwtMan)
-
 	authR := api.Group("/auth")
 	authR.Post("/login", auth.Login)
 	authR.Post("/register", auth.Register)
