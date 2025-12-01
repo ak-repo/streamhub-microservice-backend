@@ -2,11 +2,9 @@ package routes
 
 import (
 	"github.com/ak-repo/stream-hub/config"
-	"github.com/ak-repo/stream-hub/gen/authpb"
-	"github.com/ak-repo/stream-hub/gen/chatpb"
-	"github.com/ak-repo/stream-hub/gen/filespb"
 	"github.com/ak-repo/stream-hub/internal/gateway/clients"
 	"github.com/ak-repo/stream-hub/internal/gateway/handler"
+	"github.com/ak-repo/stream-hub/internal/gateway/middleware"
 	"github.com/ak-repo/stream-hub/pkg/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -23,56 +21,56 @@ func New(app *fiber.App, cfg *config.Config, clients *clients.Clients) {
 	}))
 
 	api := app.Group("/api/v1")
+	adminRoutes(api, clients, cfg)
+	userRoutes(api, cfg, clients)
 
+}
+
+func userRoutes(api fiber.Router, cfg *config.Config, clients *clients.Clients) {
 	jwtMan := jwt.NewJWTManager(cfg.JWT.Secret, cfg.JWT.Expiry, cfg.JWT.Expiry*7)
 
-	// routes
-	authRoutes(api, clients.Auth, jwtMan)
-	fileRoutes(api, clients.File)
-	ChatRoutes(api, clients.Chat)
-}
+	// --------------------------
+	// AUTH HANDLER
+	// --------------------------
+	auth := handler.NewAuthHandler(clients.Auth, jwtMan)
 
-func authRoutes(api fiber.Router, client authpb.AuthServiceClient, jwtMan *jwt.JWTManager) {
+	authR := api.Group("/auth")
+	authR.Post("/login", auth.Login)
+	authR.Post("/register", auth.Register)
+	authR.Post("/verify-gen", auth.SendMagicLink)
+	authR.Get("/verify-link", auth.VerifyMagicLink)
 
-	auth := handler.NewAuthHandler(client, jwtMan)
+	// --------------------------
+	// FILE HANDLER
+	// --------------------------
+	file := handler.NewFileHandler(clients.File)
 
-	r := api.Group("/auth")
-	r.Post("/login", auth.Login)
-	r.Post("/register", auth.Register)
-	r.Post("/verify-gen", auth.SendMagicLink)
-	r.Get("/verify-link", auth.VerifyMagicLink)
+	fileR := api.Group("/files")
+	fileR.Use(middleware.AuthMiddleware(jwtMan))
+	fileR.Post("/upload-url", file.GenerateUploadURL)
+	fileR.Post("/confirm", file.ConfirmUpload)
+	fileR.Get("/download-url", file.GenerateDownloadURL)
+	fileR.Get("/", file.ListFiles)
+	fileR.Delete("/delete", file.DeleteFile)
 
-}
+	// --------------------------
+	// CHANNEL HANDLER
+	// --------------------------
+	channel := handler.NewChannelHandler(clients.Channel)
 
-func fileRoutes(api fiber.Router, client filespb.FileServiceClient) {
+	// Websocket route
+	api.Get("/ws", websocket.New(channel.WsHandler))
 
-	file := handler.NewFileHandler(client)
+	ch := api.Group("/channels")
+	ch.Use(middleware.AuthMiddleware(jwtMan))
 
-	r := api.Group("/files")
+	ch.Get("/", channel.ListChannels)
+	ch.Post("/create", channel.CreateChannel)
+	ch.Post("/join", channel.JoinChannel)
+	ch.Post("/leave", channel.LeaveChannel)
+	ch.Delete("/delete", channel.DeleteChannel)
 
-	r.Post("/upload-url", file.GenerateUploadURL)
-	r.Post("/confirm", file.ConfirmUpload)
-	r.Get("/download-url", file.GenerateDownloadURL)
-	r.Get("/", file.ListFiles)
-	r.Delete("/delete", file.DeleteFile)
-
-}
-
-func ChatRoutes(api fiber.Router, client chatpb.ChatServiceClient) {
-
-	handler := handler.NewChatHandler(client)
-	api.Get("/ws", websocket.New(handler.WsHandler))
-
-	r := api.Group("/channels")
-	// REST → gRPC
-	r.Get("/:user_id", handler.ListChannels)
-	r.Post("/create", handler.CreateChannel)
-	r.Post("/join", handler.JoinChannel)
-	r.Post("/leave", handler.LeaveChannel)
-	r.Delete("/delete", handler.DeleteChannel)
-
-	r.Get("/channel/:channel_id", handler.GetChannel)
-	r.Get("/members/:channel_id", handler.ListMembers)
-	r.Get("/:channel_id/history", handler.ListMessages)
-
+	ch.Get("/channel/:channelId", channel.GetChannel)
+	ch.Get("/members/:channelId", channel.ListMembers)
+	ch.Get("/:channelId/history", channel.ListMessages)
 }

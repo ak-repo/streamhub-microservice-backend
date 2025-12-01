@@ -139,6 +139,10 @@ func (s *fileService) ListFiles(ctx context.Context, requesterID, channelID stri
 
 // DeleteFile
 func (s *fileService) DeleteFile(ctx context.Context, fileID, requesterID string) error {
+
+	if fileID == "" {
+		return errors.New(errors.CodeInvalidInput, "file_id cannot be empty", nil)
+	}
 	f, err := s.repo.GetByID(ctx, fileID)
 	if err != nil {
 		return errors.New(errors.CodeNotFound,

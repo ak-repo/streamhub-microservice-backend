@@ -3,101 +3,130 @@ syntax = "proto3";
 package files;
 option go_package = "./gen/filespb";
 
-// ------------------------------
-// File Metadata Model
-// ------------------------------
+
+// -----------------------------------------------------------------------
+// MODELS
+// -----------------------------------------------------------------------
 message File {
   string id = 1;
-  string owner_id = 2 [json_name = "ownerId"];
-  string channel_id = 3 [json_name = "channelId"];     
+  string owner_id = 2;
+  string channel_id = 3;
   string filename = 4;
   int64 size = 5;
-  string mime_type = 6 [json_name = "mimeType"];
-  string storage_path = 7 [json_name = "storagePath"];
-  bool is_public = 8 [json_name = "isPublic"];         
-  string created_at = 9 [json_name = "createdAt"];
+  string mime_type = 6;
+  string storage_path = 7;
+  bool is_public = 8;
+  string created_at = 9;
 }
 
-// ------------------------------
-// REQUEST TO GET PRESIGNED URL FOR UPLOAD
-// ------------------------------
+// Audit log example (admin activity tracking)
+message FileAuditLog {
+  string action = 1;              // UPLOAD, DELETE, DOWNLOAD, ADMIN_FORCE_DELETE
+  string file_id = 2;
+  string actor_id = 3;            // user/admin
+  string timestamp = 4;
+  string detail = 5;
+}
+
+
+// -----------------------------------------------------------------------
+// USER REQUESTS
+// -----------------------------------------------------------------------
 message GenerateUploadURLRequest {
-  string owner_id = 1 [json_name = "ownerId"];
-  string channel_id = 2 [json_name = "channelId"];
+  string owner_id = 1;
+  string channel_id = 2;
   string filename = 3;
   int64 size = 4;
-  string mime_type = 5 [json_name = "mimeType"];
-  bool is_public = 6 [json_name = "isPublic"];
+  string mime_type = 5;
+  bool is_public = 6;
 }
 
-// RESPONSE CONTAINING URL + KEY
 message GenerateUploadURLResponse {
-  string upload_url = 1 [json_name = "uploadUrl"];
-  string storage_path = 2 [json_name = "storagePath"];
-  string file_id = 3 [json_name = "fileId"];
+  string upload_url = 1;
+  string storage_path = 2;
+  string file_id = 3;
 }
 
-// ------------------------------
-// CONFIRM UPLOAD AFTER CLIENT FINISHED PUT TO S3
-// ------------------------------
 message ConfirmUploadRequest {
-  string file_id = 1 [json_name = "fileId"];
+  string file_id = 1;
 }
 
 message ConfirmUploadResponse {
   File file = 1;
 }
 
-// ------------------------------
-// GENERATE PRESIGNED URL FOR DOWNLOAD
-// ------------------------------
 message GenerateDownloadURLRequest {
-  string file_id = 1 [json_name = "fileId"];
-  string requester_id = 2 [json_name = "requesterId"];
-  int64 expire_seconds = 3 [json_name = "expireSeconds"];
+  string file_id = 1;
+  string requester_id = 2;
+  int64 expire_seconds = 3;
 }
 
 message GenerateDownloadURLResponse {
-  string download_url = 1 [json_name = "downloadUrl"];
-  int64 expire_seconds = 2 [json_name = "expireSeconds"];
+  string download_url = 1;
+  int64 expire_seconds = 2;
 }
 
-// ------------------------------
-// LIST FILES FOR USER OR CHANNEL
-// ------------------------------
 message FileListRequest {
-  string requester_id = 1 [json_name = "requesterId"];
-  string channel_id = 2 [json_name = "channelId"];
+  string requester_id = 1;
+  string channel_id = 2;
 }
 
 message FileListResponse {
   repeated File files = 1;
 }
 
-// ------------------------------
-// DELETE FILE + METADATA
-// ------------------------------
 message DeleteFileRequest {
-  string file_id = 1 [json_name = "fileId"];
-  string requester_id = 2 [json_name = "requesterId"];
+  string file_id = 1;
+  string requester_id = 2;
 }
 
 message DeleteFileResponse {
-  string message = 1;
+  bool success = 1;
 }
 
-// ------------------------------
-// FILE SERVICE RPC
-// ------------------------------
+
+// -----------------------------------------------------------------------
+// STORAGE LIMITS
+// -----------------------------------------------------------------------
+message SetStorageLimitRequest {
+  string target_id = 1;  // channel_id OR user_id
+  int64 max_storage_bytes = 2;
+  string admin_id = 3;
+}
+
+message SetStorageLimitResponse {
+  bool success = 1;
+}
+
+message GetStorageUsageRequest {
+  string target_id = 1; // user or channel
+}
+
+message GetStorageUsageResponse {
+  int64 used_bytes = 1;
+  int64 max_allowed_bytes = 2; // if limit exists
+}
+
+
+
+// -----------------------------------------------------------------------
+// SERVICE DEFINITION
+// -----------------------------------------------------------------------
 service FileService {
-  // Uploading
+  // ===== Uploading =====
   rpc GenerateUploadURL (GenerateUploadURLRequest) returns (GenerateUploadURLResponse);
   rpc ConfirmUpload (ConfirmUploadRequest) returns (ConfirmUploadResponse);
 
-  // Downloading
+  // ===== Downloading =====
   rpc GenerateDownloadURL (GenerateDownloadURLRequest) returns (GenerateDownloadURLResponse);
 
-  // Management 
+  // ===== User File Management =====
   rpc ListFiles (FileListRequest) returns (FileListResponse);
   rpc DeleteFile (DeleteFileRequest) returns (DeleteFileResponse);
+
+  // ===== Storage Limits =====
+  rpc SetStorageLimit (SetStorageLimitRequest) returns (SetStorageLimitResponse);
+  rpc GetStorageUsage (GetStorageUsageRequest) returns (GetStorageUsageResponse);
+
+
 }

@@ -109,11 +109,12 @@ func (s *FileServer) ListFiles(ctx context.Context, req *pb.FileListRequest) (*p
 }
 
 func (s *FileServer) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest) (*pb.DeleteFileResponse, error) {
+
 	if err := s.service.DeleteFile(ctx, req.FileId, req.RequesterId); err != nil {
 		return nil, err
 	}
 
 	return &pb.DeleteFileResponse{
-		Message: "deleted",
+		Success: true,
 	}, nil
 }

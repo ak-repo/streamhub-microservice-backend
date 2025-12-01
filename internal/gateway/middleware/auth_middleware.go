@@ -8,38 +8,41 @@ import (
 )
 
 func AuthMiddleware(jwtManager *jwt.JWTManager) fiber.Handler {
-    return func(c *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
 
-        // Get Authorization header
-        authHeader := c.Get("Authorization")
-        if authHeader == "" {
-            return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-                "error": "Missing Authorization header",
-            })
-        }
+		var tokenStr string
 
-        // Expected: Bearer <token>
-        parts := strings.Split(authHeader, " ")
-        if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-            return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-                "error": "Invalid Authorization header format",
-            })
-        }
+		authHeader := c.Get("Authorization")
+		if authHeader != "" {
+			parts := strings.Split(authHeader, " ")
+			if len(parts) == 2 && strings.ToLower(parts[0]) == "bearer" {
+				tokenStr = parts[1]
+			} else {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Invalid Authorization header format. Expected: Bearer <token>",
+				})
+			}
+		}
 
-        tokenStr := parts[1]
+		if tokenStr == "" {
+			tokenStr = c.Cookies("access")
+			if tokenStr == "" {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Missing token (no Bearer token and no access cookie)",
+				})
+			}
+		}
 
-        // Validate token with your jwt manager
-        claims, err := jwtManager.ValidateToken(tokenStr)
-        if err != nil {
-            return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-                "error": err.Error(),
-            })
-        }
+		claims, err := jwtManager.ValidateToken(tokenStr)
+		if err != nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid token: " + err.Error(),
+			})
+		}
 
-        // Store claims for next handlers
-        c.Locals("claims", claims)
+		c.Locals("userID", claims.UserID)
+		c.Locals("role", claims.Role)
 
-        // Continue
-        return c.Next()
-    }
+		return c.Next()
+	}
 }

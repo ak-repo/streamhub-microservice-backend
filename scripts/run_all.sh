@@ -3,8 +3,8 @@
 # Start each service in background
 go run cmd/auth/main.go &
 go run cmd/file/main.go &
-go run cmd/chat/main.go &
-go run cmd/gateway/main.go &
+go run cmd/channel/main.go &
+# go run cmd/gateway/main.go &
 
 
 # Wait to keep script running

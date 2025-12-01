@@ -19,10 +19,10 @@ func NewAuthHandler(cli authpb.AuthServiceClient, jwt *jwt.JWTManager) *AuthHand
 }
 
 // -------------------- Login Handler --------------------
-func (h *AuthHandler) Login(ctx *fiber.Ctx) error {
+func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	req := &authpb.LoginRequest{}
-	if err := ctx.BodyParser(req); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid input"})
+	if err := c.BodyParser(req); err != nil {
+		return response.InvalidReqBody(c)
 	}
 
 	gc, cancel := helper.WithGRPCTimeout()
@@ -31,20 +31,22 @@ func (h *AuthHandler) Login(ctx *fiber.Ctx) error {
 	resp, err := h.client.Login(gc, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
-		return ctx.Status(code).JSON(body)
+		return response.Error(c, code, body)
 	}
 
-	access, aExp, err := h.jwtManager.GenerateAccessToken(resp.User.Id, resp.User.Email)
+	access, aExp, err := h.jwtManager.GenerateAccessToken(resp.User.Id, resp.User.Email, resp.User.Role)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token creation failed"})
+
+		return response.Error(c, fiber.StatusInternalServerError, fiber.Map{"error": "failed to generate access token"})
 	}
 
-	refresh, rExp, err := h.jwtManager.GenerateRefreshToken(resp.User.Id)
+	refresh, rExp, err := h.jwtManager.GenerateRefreshToken(resp.User.Id, resp.User.Role)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token creation failed"})
+		return response.Error(c, fiber.StatusInternalServerError, fiber.Map{"error": "failed to generate refresh token"})
 	}
 
-	ctx.Cookie(&fiber.Cookie{
+	// Set cookies
+	c.Cookie(&fiber.Cookie{
 		Name:     "refresh",
 		Value:    refresh,
 		Path:     "/",
@@ -52,7 +54,7 @@ func (h *AuthHandler) Login(ctx *fiber.Ctx) error {
 		HTTPOnly: true,
 	})
 
-	ctx.Cookie(&fiber.Cookie{
+	c.Cookie(&fiber.Cookie{
 		Name:     "access",
 		Value:    access,
 		Path:     "/",
@@ -60,18 +62,17 @@ func (h *AuthHandler) Login(ctx *fiber.Ctx) error {
 		HTTPOnly: true,
 	})
 
-	// Use success response helper
-	return response.Success(ctx, "login successful", fiber.Map{
+	return response.Success(c, "login successful", fiber.Map{
 		"token": access,
 		"user":  resp.User,
 	})
 }
 
 // -------------------- Register Handler --------------------
-func (h *AuthHandler) Register(ctx *fiber.Ctx) error {
+func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	req := &authpb.RegisterRequest{}
-	if err := ctx.BodyParser(req); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid input"})
+	if err := c.BodyParser(req); err != nil {
+		return response.InvalidReqBody(c)
 	}
 
 	gc, cancel := helper.WithGRPCTimeout()
@@ -80,17 +81,17 @@ func (h *AuthHandler) Register(ctx *fiber.Ctx) error {
 	resp, err := h.client.Register(gc, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
-		return ctx.Status(code).JSON(body)
+		return response.Error(c, code, body)
 	}
 
-	return response.Success(ctx, "registration successful", resp)
+	return response.Success(c, "registration successful", resp)
 }
 
 // -------------------- Send Magic Link Handler --------------------
-func (h *AuthHandler) SendMagicLink(ctx *fiber.Ctx) error {
+func (h *AuthHandler) SendMagicLink(c *fiber.Ctx) error {
 	req := &authpb.SendMagicLinkRequest{}
-	if err := ctx.BodyParser(req); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid input"})
+	if err := c.BodyParser(req); err != nil {
+		return response.InvalidReqBody(c)
 	}
 
 	gc, cancel := helper.WithGRPCTimeout()
@@ -99,21 +100,21 @@ func (h *AuthHandler) SendMagicLink(ctx *fiber.Ctx) error {
 	resp, err := h.client.SendMagicLink(gc, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
-		return ctx.Status(code).JSON(body)
+		return response.Error(c, code, body)
 	}
 
-	return response.Success(ctx, "magic link sent successfully", resp)
+	return response.Success(c, "magic link sent successfully", resp)
 }
 
 // -------------------- Verify Magic Link Handler --------------------
-func (h *AuthHandler) VerifyMagicLink(ctx *fiber.Ctx) error {
+func (h *AuthHandler) VerifyMagicLink(c *fiber.Ctx) error {
 	req := &authpb.VerifyMagicLinkRequest{
-		Email: ctx.Query("email"),
-		Token: ctx.Query("token"),
+		Email: c.Query("email"),
+		Token: c.Query("token"),
 	}
 
 	if req.Email == "" || req.Token == "" {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing email or token"})
+		return response.InvalidReqBody(c)
 	}
 
 	gc, cancel := helper.WithGRPCTimeout()
@@ -122,8 +123,8 @@ func (h *AuthHandler) VerifyMagicLink(ctx *fiber.Ctx) error {
 	resp, err := h.client.VerifyMagicLink(gc, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
-		return ctx.Status(code).JSON(body)
+		return response.Error(c, code, body)
 	}
 
-	return response.Success(ctx, "magic link verified successfully", resp)
+	return response.Success(c, "magic link verified successfully", resp)
 }

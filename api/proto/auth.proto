@@ -12,7 +12,17 @@ message AuthUser {
   string username = 3;
   string role = 4;          // user / admin
   bool email_verified = 5;
-  string created_at = 6;
+  string avatar_url = 6;
+  bool is_banned = 7;
+  string created_at = 8;
+}
+
+// ----------------------------
+// Common Shared Messages
+// ----------------------------
+message Pagination {
+  int32 page = 1;
+  int32 limit = 2;
 }
 
 // ============================
@@ -25,7 +35,7 @@ message RegisterRequest {
 }
 
 message RegisterResponse {
-  bool success  = 1;
+  bool success = 1;
 }
 
 message LoginRequest {
@@ -34,7 +44,7 @@ message LoginRequest {
 }
 
 message LoginResponse {
-  AuthUser user = 2;
+  AuthUser user = 1;
 }
 
 // ============================
@@ -45,8 +55,8 @@ message SendMagicLinkRequest {
 }
 
 message SendMagicLinkResponse {
-  string magic_link = 2;
-  string expires_at = 3;
+  string magic_link = 1;
+  string expires_at = 2;
 }
 
 message VerifyMagicLinkRequest {
@@ -55,15 +65,14 @@ message VerifyMagicLinkRequest {
 }
 
 message VerifyMagicLinkResponse {
-  bool success  = 1;
-
+  bool success = 1;
 }
 
 // ============================
-// OAuth Login (Google / GitHub)
+// OAuth Login
 // ============================
 message OAuthLoginRequest {
-  string provider = 1; // google, github, etc.
+  string provider = 1; 
   string oauth_token = 2;
 }
 
@@ -106,8 +115,33 @@ message FindUserResponse {
   AuthUser user = 1;
 }
 
+// ============================
+// Profile Management
+// ============================
+message UpdateProfileRequest {
+  string id = 1;
+  string username = 2;
+  string avatar_url = 3;
+}
 
+message UpdateProfileResponse {
+  AuthUser user = 1;
+}
 
+// ============================
+// Search (Public/User Facing)
+// ============================
+message SearchUsersRequest {
+  string query = 1;
+  Pagination pagination = 2;
+}
+
+message SearchUsersResponse {
+  repeated AuthUser users = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
 
 // ============================
 // Auth Service Definition
@@ -132,5 +166,9 @@ service AuthService {
   rpc FindByEmail(FindByEmailRequest) returns (FindUserResponse);
   rpc FindById(FindByIdRequest) returns (FindUserResponse);
 
+  // Profile
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
 
+  // Search
+  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
 }

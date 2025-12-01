@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ak-repo/stream-hub/internal/chat_service/domain"
-	"github.com/ak-repo/stream-hub/internal/chat_service/port"
+	"github.com/ak-repo/stream-hub/gen/authpb"
+	"github.com/ak-repo/stream-hub/internal/channel_service/domain"
+	"github.com/ak-repo/stream-hub/internal/channel_service/port"
+	"github.com/ak-repo/stream-hub/internal/gateway/clients"
 	"github.com/ak-repo/stream-hub/pkg/errors"
 	"github.com/ak-repo/stream-hub/pkg/logger"
 	"github.com/google/uuid"
@@ -14,52 +16,57 @@ import (
 )
 
 type chatService struct {
-	repo   port.ChatRepository
-	pubsub port.PubSub
+	repo    port.ChannelRepository
+	pubsub  port.PubSub
+	clients *clients.Clients
 }
 
-func NewChatService(repo port.ChatRepository, pubsub port.PubSub) port.ChatService {
-	return &chatService{repo: repo, pubsub: pubsub}
+func NewChatService(repo port.ChannelRepository, pubsub port.PubSub, clients *clients.Clients) port.ChannelService {
+	return &chatService{repo: repo, pubsub: pubsub, clients: clients}
 }
 
 // PostMessage handles the message posting flow:
 // 1. Persist to database (durable storage)
 // 2. Broadcast via Redis (real-time delivery)
-func (s *chatService) PostMessage(ctx context.Context, senderID, channelID, content string) (*domain.Message, error) {
-	// Optional: Verify sender is a channel member
+// PostMessage handles text or attachment messages
+func (s *chatService) PostMessage(
+	ctx context.Context,
+	senderID, channelID, content string,
+	attachment *domain.FileAttachment,
+) (*domain.Message, error) {
 	isMember, err := s.repo.IsUserMember(ctx, channelID, senderID)
 	if err != nil {
 		return nil, errors.New(errors.CodeInternal, "failed to check membership", err)
 	}
 	if !isMember {
-		return nil, errors.New(errors.CodeUnauthorized, fmt.Sprintf("user %s is not a member of channel %s", senderID, channelID), nil)
+		return nil, errors.New(errors.CodeUnauthorized, "user is not a member", nil)
 	}
 
 	msg := &domain.Message{
-		ID:        uuid.New().String(),
-		ChannelID: channelID,
-		SenderID:  senderID,
-		Content:   content,
-		CreatedAt: time.Now().UTC(),
+		ID:         uuid.New().String(),
+		ChannelID:  channelID,
+		SenderID:   senderID,
+		Content:    content,
+		CreatedAt:  time.Now().UTC(),
+		Attachment: attachment,
 	}
 
-	// Save to database first (critical path)
 	if err := s.repo.SaveMessage(ctx, msg); err != nil {
 		return nil, errors.New(errors.CodeInternal, "failed to save message", err)
 	}
 
-	// Broadcast to subscribers (non-critical - message is already saved)
 	if err := s.pubsub.Publish(ctx, channelID, msg); err != nil {
-		// Log but don't fail the request - message is already persisted
 		logger.Log.Error("failed to publish message to Redis", zap.Error(err))
 	}
+
 	return msg, nil
 }
 
-func (s *chatService) GetHistory(ctx context.Context, channelID string) ([]*domain.Message, error) {
-	messages, err := s.repo.ListHistory(ctx, channelID, 50, 0)
+// GetHistory returns paginated message history
+func (s *chatService) GetHistory(ctx context.Context, channelID string, limit, offset int) ([]*domain.Message, error) {
+	messages, err := s.repo.ListHistory(ctx, channelID, limit, offset)
 	if err != nil {
-		return nil, errors.New(errors.CodeNotFound, "message on this channels not found", err)
+		return nil, errors.New(errors.CodeNotFound, "messages not found", err)
 	}
 	return messages, nil
 }
@@ -98,6 +105,11 @@ func (s *chatService) CreateChannel(ctx context.Context, name, creatorID string)
 
 // Get All channels of a user
 func (s *chatService) ListChannels(ctx context.Context, userID string) (map[string]*domain.ChannelWithMembers, error) {
+	user, err := s.clients.Auth.FindById(ctx, &authpb.FindByIdRequest{Id: userID})
+
+	if err != nil || user.User.Id != userID {
+		return nil, errors.New(errors.CodeUnauthorized, "user not found", err)
+	}
 
 	channels, err := s.repo.ListChannels(ctx, userID)
 	if err != nil {

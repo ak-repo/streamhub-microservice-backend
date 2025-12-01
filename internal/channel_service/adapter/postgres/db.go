@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ak-repo/stream-hub/internal/chat_service/domain"
-	"github.com/ak-repo/stream-hub/internal/chat_service/port"
+	"github.com/ak-repo/stream-hub/internal/channel_service/domain"
+	"github.com/ak-repo/stream-hub/internal/channel_service/port"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -14,7 +14,7 @@ type chatRepo struct {
 	pool *pgxpool.Pool
 }
 
-func NewChatRepo(pool *pgxpool.Pool) port.ChatRepository {
+func NewChatRepo(pool *pgxpool.Pool) port.ChannelRepository {
 	return &chatRepo{pool: pool}
 }
 
@@ -23,10 +23,22 @@ func NewChatRepo(pool *pgxpool.Pool) port.ChatRepository {
 // SaveMessage persists a message to the database.
 // This ensures message history is preserved even if Redis crashes.
 func (r *chatRepo) SaveMessage(ctx context.Context, msg *domain.Message) error {
+	var attachmentID *string
+	if msg.Attachment != nil {
+		_, err := r.pool.Exec(ctx,
+			`INSERT INTO file_attachments (id, file_name, file_url, mime_type, size, uploaded_by, uploaded_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+			msg.Attachment.ID, msg.Attachment.FileName, msg.Attachment.URL,
+			msg.Attachment.MimeType, msg.Attachment.Size, msg.SenderID, msg.CreatedAt)
+		if err != nil {
+			return err
+		}
+		attachmentID = &msg.Attachment.ID
+	}
 	_, err := r.pool.Exec(ctx,
-		`INSERT INTO messages (id, channel_id, sender_id, content, created_at) 
-         VALUES ($1, $2, $3, $4, $5)`,
-		msg.ID, msg.ChannelID, msg.SenderID, msg.Content, msg.CreatedAt)
+		`INSERT INTO messages (id, channel_id, sender_id, content, created_at, attachment_id)
+         VALUES ($1,$2,$3,$4,$5,$6)`,
+		msg.ID, msg.ChannelID, msg.SenderID, msg.Content, msg.CreatedAt, attachmentID)
 	return err
 }
 
@@ -34,18 +46,14 @@ func (r *chatRepo) SaveMessage(ctx context.Context, msg *domain.Message) error {
 // ListHistory retrieves message history for a channel.
 func (r *chatRepo) ListHistory(ctx context.Context, channelID string, limit, offset int) ([]*domain.Message, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT 
-			m.id, 
-			m.channel_id, 
-			m.sender_id, 
-			m.content, 
-			m.created_at,
-			u.username
-		FROM messages m 
-		JOIN users u ON m.sender_id = u.id
-		WHERE m.channel_id = $1
-		ORDER BY m.created_at ASC   -- important for UI
-		LIMIT $2 OFFSET $3`,
+		`SELECT m.id, m.channel_id, m.sender_id, m.content, m.created_at, u.username,
+		        f.id, f.file_name, f.file_url, f.mime_type, f.size
+         FROM messages m
+         JOIN users u ON m.sender_id = u.id
+         LEFT JOIN file_attachments f ON m.attachment_id = f.id
+         WHERE m.channel_id = $1
+         ORDER BY m.created_at ASC
+         LIMIT $2 OFFSET $3`,
 		channelID, limit, offset)
 	if err != nil {
 		return nil, err
@@ -53,18 +61,24 @@ func (r *chatRepo) ListHistory(ctx context.Context, channelID string, limit, off
 	defer rows.Close()
 
 	var messages []*domain.Message
-
 	for rows.Next() {
 		msg := &domain.Message{}
-		if err := rows.Scan(
-			&msg.ID,
-			&msg.ChannelID,
-			&msg.SenderID,
-			&msg.Content,
-			&msg.CreatedAt,
-			&msg.Username, // FIXED
-		); err != nil {
+		var attachmentID, fileName, fileURL, mimeType *string
+		var size *int64
+
+		if err := rows.Scan(&msg.ID, &msg.ChannelID, &msg.SenderID, &msg.Content, &msg.CreatedAt,
+			&msg.Username, &attachmentID, &fileName, &fileURL, &mimeType, &size); err != nil {
 			return nil, err
+		}
+
+		if attachmentID != nil {
+			msg.Attachment = &domain.FileAttachment{
+				ID:       *attachmentID,
+				FileName: *fileName,
+				URL:      *fileURL,
+				MimeType: *mimeType,
+				Size:     *size,
+			}
 		}
 
 		messages = append(messages, msg)

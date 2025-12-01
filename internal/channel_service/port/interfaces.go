@@ -3,11 +3,11 @@ package port
 import (
 	"context"
 
-	"github.com/ak-repo/stream-hub/internal/chat_service/domain"
+	"github.com/ak-repo/stream-hub/internal/channel_service/domain"
 )
 
 // ChatRepository defines database operations for chat functionality.
-type ChatRepository interface {
+type ChannelRepository interface {
 	// Message operations
 	SaveMessage(ctx context.Context, msg *domain.Message) error
 	ListHistory(ctx context.Context, channelID string, limit, offset int) ([]*domain.Message, error)
@@ -32,10 +32,10 @@ type PubSub interface {
 }
 
 // ChatService defines the business logic interface for chat operations.
-type ChatService interface {
+type ChannelService interface {
 	// Messaging
-	PostMessage(ctx context.Context, senderID, channelID, content string) (*domain.Message, error)
-	GetHistory(ctx context.Context, channelID string) ([]*domain.Message, error)
+	PostMessage(ctx context.Context, senderID, channelID, content string, attachement *domain.FileAttachment) (*domain.Message, error)
+	GetHistory(ctx context.Context, channelID string, limit, offset int) ([]*domain.Message, error)
 	SubscribeToChannel(ctx context.Context, channelID string) (<-chan *domain.Message, error)
 
 	// Channel management

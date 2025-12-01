@@ -46,14 +46,38 @@ func (s *AuthServer) Login(ctx context.Context, req *authpb.LoginRequest) (*auth
 
 // FindByEmail finds a user by email
 func (s *AuthServer) FindByEmail(ctx context.Context, req *authpb.FindByEmailRequest) (*authpb.FindUserResponse, error) {
+	user, err := s.service.FindUser(ctx, req.Email, "email")
+	if err != nil {
+		return nil, err
+	}
 
-	return &authpb.FindUserResponse{User: &authpb.AuthUser{}}, nil
+	return &authpb.FindUserResponse{User: &authpb.AuthUser{
+		Id:            user.ID,
+		Email:         user.Email,
+		Username:      user.Username,
+		Role:          user.Role,
+		EmailVerified: user.EmailVerified,
+		IsBanned:      user.IsBanned,
+		CreatedAt:     user.CreatedAt.String(),
+	}}, nil
 }
 
 // FindById finds a user by ID
 func (s *AuthServer) FindById(ctx context.Context, req *authpb.FindByIdRequest) (*authpb.FindUserResponse, error) {
+	user, err := s.service.FindUser(ctx, req.Id, "id")
+	if err != nil {
+		return nil, err
+	}
 
-	return &authpb.FindUserResponse{User: &authpb.AuthUser{}}, nil
+	return &authpb.FindUserResponse{User: &authpb.AuthUser{
+		Id:            user.ID,
+		Email:         user.Email,
+		Username:      user.Username,
+		Role:          user.Role,
+		EmailVerified: user.EmailVerified,
+		IsBanned:      user.IsBanned,
+		CreatedAt:     user.CreatedAt.String(),
+	}}, nil
 }
 
 // Send Magic Link

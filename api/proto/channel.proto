@@ -1,0 +1,241 @@
+syntax = "proto3";
+
+package channel;
+option go_package = "./gen/channelpb";
+
+// ---------------------------------------------------------
+// ENUMS
+// ---------------------------------------------------------
+enum UserRole {
+  ROLE_USER = 0;
+  ROLE_MODERATOR = 1;
+  ROLE_ADMIN = 2;
+}
+
+// ---------------------------------------------------------
+// Core Models
+// ---------------------------------------------------------
+message ChannelInfo {
+  string channel_id = 1;
+  string name = 2;
+  string created_by = 3;
+  int64 created_at_ms = 4;
+  repeated MemberInfo members = 5;
+}
+
+message MemberInfo {
+  string user_id = 1;
+  string username = 2;
+  int64 joined_at_ms = 3;
+  UserRole role = 4;
+}
+
+// ---------------------------------------------------------
+// Message Models
+// ---------------------------------------------------------
+message FileAttachment {
+  string file_id = 1;
+  string url = 2;
+  string mime_type = 3;
+  int64 size = 4;
+}
+
+message MessageCreated {
+  string message_id = 1;
+  string sender_id = 2;
+  string content = 3;
+  FileAttachment attachment = 4;
+  int64 timestamp_ms = 5;
+}
+
+message MessageEdited {
+  string message_id = 1;
+  string new_content = 2;
+  int64 edited_at_ms = 3;
+}
+
+message MessageDeleted {
+  string message_id = 1;
+  int64 deleted_at_ms = 2;
+}
+
+// ---------------------------------------------------------
+// Streaming Payload + Events
+// ---------------------------------------------------------
+message StreamRequest {
+  oneof payload {
+    JoinPayload join = 1;
+    MessagePayload message = 2;
+  }
+}
+
+message JoinPayload {
+  string user_id = 1;
+  string channel_id = 2;
+}
+
+message MessagePayload {
+  string user_id = 1;
+  string channel_id = 2;
+
+  oneof body {
+    string content = 3;
+    FileAttachment file = 4;
+  }
+}
+
+message StreamResponse {
+  string channel_id = 1;
+  int64 timestamp_ms = 2;
+
+  oneof event {
+    MessageCreated created = 3;
+    MessageEdited edited = 4;
+    MessageDeleted deleted = 5;
+  }
+}
+
+// ---------------------------------------------------------
+// Channel CRUD
+// ---------------------------------------------------------
+message CreateChannelRequest {
+  string name = 1;
+  string creator_id = 2;
+}
+
+message CreateChannelResponse {
+  string channel_id = 1;
+  string name = 2;
+  string created_by = 3;
+  int64 created_at_ms = 4;
+}
+
+message DeleteChannelRequest {
+  string channel_id = 1;
+  string requester_id = 2;
+}
+
+message DeleteChannelResponse {
+  bool success = 1;
+}
+
+message GetChannelRequest {
+  string channel_id = 1;
+}
+
+message GetChannelResponse {
+  ChannelInfo channel = 1;
+}
+
+message ListChannelsRequest {
+  string user_id = 1;
+}
+
+message ListChannelsResponse {
+  repeated ChannelInfo channels = 1;
+}
+
+// ---------------------------------------------------------
+// Members
+// ---------------------------------------------------------
+message AddMemberRequest {
+  string channel_id = 1;
+  string user_id = 2;
+  string added_by = 3;
+}
+
+message AddMemberResponse {
+  MemberInfo member = 1;
+}
+
+message RemoveMemberRequest {
+  string channel_id = 1;
+  string user_id = 2;
+  string removed_by = 3;
+}
+
+message RemoveMemberResponse {
+  bool success = 1;
+}
+
+message ListMembersRequest {
+  string channel_id = 1;
+}
+
+message ListMembersResponse {
+  repeated MemberInfo members = 1;
+}
+
+// ---------------------------------------------------------
+// Chat History + Pagination
+// ---------------------------------------------------------
+message ListMessagesRequest {
+  string channel_id = 1;
+  int32 offset = 2;
+  int32 limit = 3;
+}
+
+message MessageInfo {
+  string message_id = 1;
+  string sender_id = 2;
+  string content = 3;
+  int64 timestamp_ms = 4;
+  string username = 5;
+  FileAttachment attachment = 6;
+}
+
+message ListMessagesResponse {
+  repeated MessageInfo messages = 1;
+}
+
+// ---------------------------------------------------------
+// Moderation
+// ---------------------------------------------------------
+message EditMessageRequest {
+  string message_id = 1;
+  string channel_id = 2;
+  string editor_id = 3;
+  string new_content = 4;
+}
+
+message EditMessageResponse {
+  bool success = 1;
+}
+
+message DeleteMessageRequest {
+  string message_id = 1;
+  string channel_id = 2;
+  string requester_id = 3;
+}
+
+message DeleteMessageResponse {
+  bool success = 1;
+}
+
+
+
+// ---------------------------------------------------------
+// SERVICE DEFINITION
+// ---------------------------------------------------------
+service ChannelService {
+
+  // Streaming
+  rpc Connect(stream StreamRequest) returns (stream StreamResponse);
+
+  // Channel CRUD
+  rpc CreateChannel(CreateChannelRequest) returns (CreateChannelResponse);
+  rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse);
+  rpc GetChannel(GetChannelRequest) returns (GetChannelResponse);
+  rpc DeleteChannel(DeleteChannelRequest) returns (DeleteChannelResponse);
+
+  // Member Management
+  rpc AddMember(AddMemberRequest) returns (AddMemberResponse);
+  rpc RemoveMember(RemoveMemberRequest) returns (RemoveMemberResponse);
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse);
+
+  // Messages
+  rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
+  rpc EditMessage(EditMessageRequest) returns (EditMessageResponse);
+  rpc DeleteMessage(DeleteMessageRequest) returns (DeleteMessageResponse);
+
+}

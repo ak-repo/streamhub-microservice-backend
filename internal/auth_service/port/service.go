@@ -12,4 +12,5 @@ type AuthService interface {
 	Login(ctx context.Context, email, password string) (*domain.User, error)
 	SendMagicLink(email string) (string, string, error)
 	VerifyMagicLink(ctx context.Context, token, email string) error
+	FindUser(ctx context.Context, identifier, method string) (*domain.User, error)
 }

@@ -3,89 +3,178 @@ syntax = "proto3";
 package admin;
 option go_package = "./gen/adminpb";
 
-// -----------------------------
-// Models
-// -----------------------------
-message UserSummary {
+message User {
   string id = 1;
   string email = 2;
   string username = 3;
-  string role = 4;
-  bool is_banned = 5;
-  string created_at = 6;
+  string role = 4;         
+  bool email_verified = 5;
+  string avatar_url = 6;
+  bool is_banned = 7;
+  string created_at = 8;
 }
 
-message LogEntry {
+message File {
   string id = 1;
-  string admin_id = 2;
-  string action = 3;
-  string target_user_id = 4;
-  string created_at = 5;
+  string owner_id = 2;
+  string channel_id = 3;
+  string filename = 4;
+  int64 size = 5;
+  string mime_type = 6;
+  string storage_path = 7;
+  bool is_public = 8;
+  string created_at = 9;
 }
 
-// -----------------------------
-// Requests & Responses
-// -----------------------------
-message GetAllUsersRequest {}
-message GetAllUsersResponse {
-  repeated UserSummary users = 1;
-}
-
-message GetLogsRequest {
-  int32 limit = 1;
-  int32 offset = 2;
-}
-
-message GetLogsResponse {
-  repeated LogEntry logs = 1;
-}
-
-// ----- Ban & Unban Users -----
+// ============================
+// Admin User Management
+// ============================
 message BanUserRequest {
   string user_id = 1;
+  string reason = 2; // Required for audit logging
 }
 
 message BanUserResponse {
-  string message = 1;
+  bool success = 1;
 }
 
 message UnbanUserRequest {
   string user_id = 1;
+  string reason = 2; // Optional: why are we unbanning?
 }
 
 message UnbanUserResponse {
-  string message = 1;
+  bool success = 1;
 }
 
-// ----- System config -----
-message UpdateConfigRequest {
-  string key = 1;
-  string value = 2;
+message UpdateRoleRequest {
+  string user_id = 1;
+  string role = 2; // "user", "admin", "moderator"
 }
 
-message UpdateConfigResponse {
-  string message = 1;
+message UpdateRoleResponse {
+  bool success = 1;
 }
 
-message GetConfigRequest {
-  string key = 1;
+// ============================
+// Analytics & Stats
+// ============================
+message GetTotalUsersRequest {}
+message GetTotalUsersResponse {
+  int32 total_users = 1;
+  repeated User users = 2;
 }
 
-message GetConfigResponse {
-  string key = 1;
-  string value = 2;
+message GetActiveUsersRequest {}
+message GetActiveUsersResponse {
+  int32 active_users = 1;
 }
 
-// -----------------------------
-// Service Definition
-// -----------------------------
+message GetBannedUsersRequest {}
+message GetBannedUsersResponse {
+  int32 banned_users = 1;
+}
+
+// ============================
+// Audit Logs (Activity History)
+// ============================
+message GetAuditLogsRequest {
+  int32 page = 1;
+  int32 limit = 2;
+}
+
+message AuditLogEntry {
+  string id = 1;
+  string admin_id = 2;     // Who performed the action
+  string action = 3;       // "BAN_USER", "UPDATE_ROLE"
+  string target_id = 4;    // Who was affected
+  string details = 5;      // Reason or extra info
+  string created_at = 6;   // ISO timestamp
+}
+
+message GetAuditLogsResponse {
+  repeated AuditLogEntry logs = 1;
+  int32 total_count = 2;
+  int32 page = 3;
+}
+
+
+
+
+// -----------------------------------------------------------------------
+// ADMIN FILES OPERATIONS
+// -----------------------------------------------------------------------
+message AdminListAllFilesRequest {
+  string admin_id = 1;
+}
+
+message AdminListAllFilesResponse {
+  repeated File files = 1;
+}
+
+message AdminDeleteFileRequest {
+  string file_id = 1;
+  string admin_id = 2;
+}
+
+message AdminDeleteFileResponse {
+  bool success = 1;
+}
+
+message AdminForceDeleteOrphansRequest {
+  string admin_id = 1;
+}
+
+message AdminForceDeleteOrphansResponse {
+  int32 deleted_count = 1;
+}
+
+message AdminBlockUserUploadRequest {
+  string user_id = 1;
+  bool block = 2;        // true = block, false = unblock
+  string admin_id = 3;
+}
+
+message AdminBlockUserUploadResponse {
+  bool success = 1;
+}
+
+message AdminStorageStatsRequest {
+  string admin_id = 1;
+}
+
+message AdminStorageStatsResponse {
+  int64 total_files = 1;
+  int64 total_storage_bytes = 2;
+  int64 public_files = 3;
+  int64 private_files = 4;
+}
+
+
+
+// ============================
+// Admin Service Definition
+// ============================
 service AdminService {
-  rpc GetAllUsers (GetAllUsersRequest) returns (GetAllUsersResponse);
-  rpc GetLogs (GetLogsRequest) returns (GetLogsResponse);
+  
+  // User Governance
+  rpc BanUser(BanUserRequest) returns (BanUserResponse);
+  rpc UnbanUser(UnbanUserRequest) returns (UnbanUserResponse);
+  rpc UpdateRole(UpdateRoleRequest) returns (UpdateRoleResponse);
 
-  rpc BanUser (BanUserRequest) returns (BanUserResponse);
-  rpc UnbanUser (UnbanUserRequest) returns (UnbanUserResponse);
+  // Dashboard Analytics
+  rpc GetTotalUsers(GetTotalUsersRequest) returns (GetTotalUsersResponse);
+  rpc GetActiveUsers(GetActiveUsersRequest) returns (GetActiveUsersResponse);
+  rpc GetBannedUsers(GetBannedUsersRequest) returns (GetBannedUsersResponse);
 
-  rpc UpdateConfig (UpdateConfigRequest) returns (UpdateConfigResponse);
-  rpc GetConfig (GetConfigRequest) returns (GetConfigResponse);
+  // Activity Monitoring
+  rpc GetAuditLogs(GetAuditLogsRequest) returns (GetAuditLogsResponse);
+
+
+    // ===== Admin Files management =====
+  rpc AdminListAllFiles (AdminListAllFilesRequest) returns (AdminListAllFilesResponse);
+  rpc AdminDeleteFile (AdminDeleteFileRequest) returns (AdminDeleteFileResponse);
+  rpc AdminForceDeleteOrphans (AdminForceDeleteOrphansRequest) returns (AdminForceDeleteOrphansResponse);
+  rpc AdminBlockUserUpload (AdminBlockUserUploadRequest) returns (AdminBlockUserUploadResponse);
+  rpc AdminStorageStats (AdminStorageStatsRequest) returns (AdminStorageStatsResponse);
 }

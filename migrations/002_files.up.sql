@@ -13,4 +13,4 @@ CREATE TABLE IF NOT EXISTS files (
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_files_owner ON files(owner_id);
-CREATE INDEX IF NOT EXISTS idx_files_channel ON files(channel_id)
+CREATE INDEX IF NOT EXISTS idx_files_channel ON files(channel_id)/*  */

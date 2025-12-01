@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ak-repo/stream-hub/internal/chat_service/domain"
-	"github.com/ak-repo/stream-hub/internal/chat_service/port"
+	"github.com/ak-repo/stream-hub/internal/channel_service/domain"
+	"github.com/ak-repo/stream-hub/internal/channel_service/port"
 	"github.com/redis/go-redis/v9"
 )
 

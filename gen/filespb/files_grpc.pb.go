@@ -24,24 +24,29 @@ const (
 	FileService_GenerateDownloadURL_FullMethodName = "/files.FileService/GenerateDownloadURL"
 	FileService_ListFiles_FullMethodName           = "/files.FileService/ListFiles"
 	FileService_DeleteFile_FullMethodName          = "/files.FileService/DeleteFile"
+	FileService_SetStorageLimit_FullMethodName     = "/files.FileService/SetStorageLimit"
+	FileService_GetStorageUsage_FullMethodName     = "/files.FileService/GetStorageUsage"
 )
 
 // FileServiceClient is the client API for FileService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// ------------------------------
-// FILE SERVICE RPC
-// ------------------------------
+// -----------------------------------------------------------------------
+// SERVICE DEFINITION
+// -----------------------------------------------------------------------
 type FileServiceClient interface {
-	// Uploading
+	// ===== Uploading =====
 	GenerateUploadURL(ctx context.Context, in *GenerateUploadURLRequest, opts ...grpc.CallOption) (*GenerateUploadURLResponse, error)
 	ConfirmUpload(ctx context.Context, in *ConfirmUploadRequest, opts ...grpc.CallOption) (*ConfirmUploadResponse, error)
-	// Downloading
+	// ===== Downloading =====
 	GenerateDownloadURL(ctx context.Context, in *GenerateDownloadURLRequest, opts ...grpc.CallOption) (*GenerateDownloadURLResponse, error)
-	// Management
+	// ===== User File Management =====
 	ListFiles(ctx context.Context, in *FileListRequest, opts ...grpc.CallOption) (*FileListResponse, error)
 	DeleteFile(ctx context.Context, in *DeleteFileRequest, opts ...grpc.CallOption) (*DeleteFileResponse, error)
+	// ===== Storage Limits =====
+	SetStorageLimit(ctx context.Context, in *SetStorageLimitRequest, opts ...grpc.CallOption) (*SetStorageLimitResponse, error)
+	GetStorageUsage(ctx context.Context, in *GetStorageUsageRequest, opts ...grpc.CallOption) (*GetStorageUsageResponse, error)
 }
 
 type fileServiceClient struct {
@@ -102,22 +107,45 @@ func (c *fileServiceClient) DeleteFile(ctx context.Context, in *DeleteFileReques
 	return out, nil
 }
 
+func (c *fileServiceClient) SetStorageLimit(ctx context.Context, in *SetStorageLimitRequest, opts ...grpc.CallOption) (*SetStorageLimitResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetStorageLimitResponse)
+	err := c.cc.Invoke(ctx, FileService_SetStorageLimit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileServiceClient) GetStorageUsage(ctx context.Context, in *GetStorageUsageRequest, opts ...grpc.CallOption) (*GetStorageUsageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetStorageUsageResponse)
+	err := c.cc.Invoke(ctx, FileService_GetStorageUsage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServiceServer is the server API for FileService service.
 // All implementations must embed UnimplementedFileServiceServer
 // for forward compatibility.
 //
-// ------------------------------
-// FILE SERVICE RPC
-// ------------------------------
+// -----------------------------------------------------------------------
+// SERVICE DEFINITION
+// -----------------------------------------------------------------------
 type FileServiceServer interface {
-	// Uploading
+	// ===== Uploading =====
 	GenerateUploadURL(context.Context, *GenerateUploadURLRequest) (*GenerateUploadURLResponse, error)
 	ConfirmUpload(context.Context, *ConfirmUploadRequest) (*ConfirmUploadResponse, error)
-	// Downloading
+	// ===== Downloading =====
 	GenerateDownloadURL(context.Context, *GenerateDownloadURLRequest) (*GenerateDownloadURLResponse, error)
-	// Management
+	// ===== User File Management =====
 	ListFiles(context.Context, *FileListRequest) (*FileListResponse, error)
 	DeleteFile(context.Context, *DeleteFileRequest) (*DeleteFileResponse, error)
+	// ===== Storage Limits =====
+	SetStorageLimit(context.Context, *SetStorageLimitRequest) (*SetStorageLimitResponse, error)
+	GetStorageUsage(context.Context, *GetStorageUsageRequest) (*GetStorageUsageResponse, error)
 	mustEmbedUnimplementedFileServiceServer()
 }
 
@@ -142,6 +170,12 @@ func (UnimplementedFileServiceServer) ListFiles(context.Context, *FileListReques
 }
 func (UnimplementedFileServiceServer) DeleteFile(context.Context, *DeleteFileRequest) (*DeleteFileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteFile not implemented")
+}
+func (UnimplementedFileServiceServer) SetStorageLimit(context.Context, *SetStorageLimitRequest) (*SetStorageLimitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetStorageLimit not implemented")
+}
+func (UnimplementedFileServiceServer) GetStorageUsage(context.Context, *GetStorageUsageRequest) (*GetStorageUsageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStorageUsage not implemented")
 }
 func (UnimplementedFileServiceServer) mustEmbedUnimplementedFileServiceServer() {}
 func (UnimplementedFileServiceServer) testEmbeddedByValue()                     {}
@@ -254,6 +288,42 @@ func _FileService_DeleteFile_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FileService_SetStorageLimit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetStorageLimitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).SetStorageLimit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_SetStorageLimit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).SetStorageLimit(ctx, req.(*SetStorageLimitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FileService_GetStorageUsage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStorageUsageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).GetStorageUsage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_GetStorageUsage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).GetStorageUsage(ctx, req.(*GetStorageUsageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FileService_ServiceDesc is the grpc.ServiceDesc for FileService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -280,6 +350,14 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteFile",
 			Handler:    _FileService_DeleteFile_Handler,
+		},
+		{
+			MethodName: "SetStorageLimit",
+			Handler:    _FileService_SetStorageLimit_Handler,
+		},
+		{
+			MethodName: "GetStorageUsage",
+			Handler:    _FileService_GetStorageUsage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -44,6 +44,7 @@ func (s *authService) Register(ctx context.Context, email, username, password st
 		Email:        email,
 		Username:     username,
 		PasswordHash: hashed,
+		Role:         "user",
 		CreatedAt:    time.Now(),
 	}
 
@@ -72,7 +73,7 @@ func (s *authService) Login(ctx context.Context, email, password string) (*domai
 
 // --------------------------Magic Link --------------------------------
 func (s *authService) SendMagicLink(email string) (string, string, error) {
-	token, exp, err := s.jwt.GenerateAccessToken("0", email)
+	token, exp, err := s.jwt.GenerateAccessToken("0", email, "magic-link")
 	if err != nil {
 		return "", "", errors.New(errors.CodeInternal, "token generation failed", err)
 	}
@@ -128,4 +129,23 @@ func (s *authService) VerifyMagicLink(ctx context.Context, token, email string) 
 	}
 
 	return nil
+}
+
+func (s *authService) FindUser(ctx context.Context, identifier, method string) (*domain.User, error) {
+
+	switch method {
+	case "id":
+		user, err := s.repo.FindByID(ctx, identifier)
+		if err != nil {
+			return nil, errors.New(errors.CodeNotFound, "user not found by this ID: "+identifier, err)
+		}
+		return user, nil
+	case "email":
+		user, err := s.repo.FindByEmail(ctx, identifier)
+		if err != nil {
+			return nil, errors.New(errors.CodeNotFound, "user not found by this email: "+identifier, err)
+		}
+		return user, nil
+	}
+	return nil, errors.New(errors.CodeNotFound, "user not found method not allowed", nil)
 }

@@ -28,6 +28,8 @@ const (
 	AuthService_VerifyPasswordReset_FullMethodName  = "/auth.AuthService/VerifyPasswordReset"
 	AuthService_FindByEmail_FullMethodName          = "/auth.AuthService/FindByEmail"
 	AuthService_FindById_FullMethodName             = "/auth.AuthService/FindById"
+	AuthService_UpdateProfile_FullMethodName        = "/auth.AuthService/UpdateProfile"
+	AuthService_SearchUsers_FullMethodName          = "/auth.AuthService/SearchUsers"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -52,6 +54,10 @@ type AuthServiceClient interface {
 	// User Lookup
 	FindByEmail(ctx context.Context, in *FindByEmailRequest, opts ...grpc.CallOption) (*FindUserResponse, error)
 	FindById(ctx context.Context, in *FindByIdRequest, opts ...grpc.CallOption) (*FindUserResponse, error)
+	// Profile
+	UpdateProfile(ctx context.Context, in *UpdateProfileRequest, opts ...grpc.CallOption) (*UpdateProfileResponse, error)
+	// Search
+	SearchUsers(ctx context.Context, in *SearchUsersRequest, opts ...grpc.CallOption) (*SearchUsersResponse, error)
 }
 
 type authServiceClient struct {
@@ -152,6 +158,26 @@ func (c *authServiceClient) FindById(ctx context.Context, in *FindByIdRequest, o
 	return out, nil
 }
 
+func (c *authServiceClient) UpdateProfile(ctx context.Context, in *UpdateProfileRequest, opts ...grpc.CallOption) (*UpdateProfileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateProfileResponse)
+	err := c.cc.Invoke(ctx, AuthService_UpdateProfile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) SearchUsers(ctx context.Context, in *SearchUsersRequest, opts ...grpc.CallOption) (*SearchUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SearchUsersResponse)
+	err := c.cc.Invoke(ctx, AuthService_SearchUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
@@ -174,6 +200,10 @@ type AuthServiceServer interface {
 	// User Lookup
 	FindByEmail(context.Context, *FindByEmailRequest) (*FindUserResponse, error)
 	FindById(context.Context, *FindByIdRequest) (*FindUserResponse, error)
+	// Profile
+	UpdateProfile(context.Context, *UpdateProfileRequest) (*UpdateProfileResponse, error)
+	// Search
+	SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -210,6 +240,12 @@ func (UnimplementedAuthServiceServer) FindByEmail(context.Context, *FindByEmailR
 }
 func (UnimplementedAuthServiceServer) FindById(context.Context, *FindByIdRequest) (*FindUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindById not implemented")
+}
+func (UnimplementedAuthServiceServer) UpdateProfile(context.Context, *UpdateProfileRequest) (*UpdateProfileResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateProfile not implemented")
+}
+func (UnimplementedAuthServiceServer) SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchUsers not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -394,6 +430,42 @@ func _AuthService_FindById_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_UpdateProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).UpdateProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_UpdateProfile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).UpdateProfile(ctx, req.(*UpdateProfileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_SearchUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).SearchUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_SearchUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).SearchUsers(ctx, req.(*SearchUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -436,6 +508,14 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FindById",
 			Handler:    _AuthService_FindById_Handler,
+		},
+		{
+			MethodName: "UpdateProfile",
+			Handler:    _AuthService_UpdateProfile_Handler,
+		},
+		{
+			MethodName: "SearchUsers",
+			Handler:    _AuthService_SearchUsers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
