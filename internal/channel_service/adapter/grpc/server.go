@@ -273,6 +273,9 @@ func (s *ChannelServer) ListChannels(ctx context.Context, req *channelpb.ListCha
 		chanInfo := &channelpb.ChannelInfo{
 			ChannelId:   ch.Channel.ID,
 			Name:        ch.Channel.Name,
+			Description: ch.Channel.Description,
+			IsFrozen:    ch.Channel.IsFrozen,
+			Visibility:  ch.Channel.Visibility,
 			CreatedBy:   ch.Channel.CreatedBy,
 			CreatedAtMs: ch.Channel.CreatedAt.UnixMilli(),
 			Members:     members,
@@ -336,77 +339,3 @@ func (s *ChannelServer) DeleteChannel(ctx context.Context, req *channelpb.Delete
 
 }
 
-// // --- ADMIN OPERATIONS ---
-// func (s *ChannelServer) AdminStats(ctx context.Context, req *channelpb.AdminStatsRequest) (*channelpb.AdminStatsResponse, error) {
-// 	stats, err := s.service.GetAdminStats(ctx)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &channelpb.AdminStatsResponse{
-// 		TotalUsers:       stats.TotalUsers,
-// 		TotalChannels:    stats.TotalChannels,
-// 		TotalMessages:    stats.TotalMessages,
-// 		TotalStorageBytes: stats.TotalStorageBytes,
-// 	}, nil
-// }
-
-// func (s *ChannelServer) AdminListAllChannels(ctx context.Context, req *channelpb.AdminListAllChannelsRequest) (*channelpb.AdminListAllChannelsResponse, error) {
-// 	channels, err := s.service.ListAllChannels(ctx)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	resp := make([]*channelpb.ChannelInfo, 0, len(channels))
-// 	for _, ch := range channels {
-// 		members := make([]*channelpb.MemberInfo, 0, len(ch.Members))
-// 		for _, m := range ch.Members {
-// 			members = append(members, &channelpb.MemberInfo{
-// 				UserId:     m.UserID,
-// 				Username:   m.Username,
-// 				JoinedAtMs: m.JoinedAt.UnixMilli(),
-// 				Role:       channelpb.UserRole(m.Role),
-// 			})
-// 		}
-// 		resp = append(resp, &channelpb.ChannelInfo{
-// 			ChannelId:   ch.Channel.ID,
-// 			Name:        ch.Channel.Name,
-// 			CreatedBy:   ch.Channel.CreatedBy,
-// 			CreatedAtMs: ch.Channel.CreatedAt.UnixMilli(),
-// 			Members:     members,
-// 		})
-// 	}
-
-// 	return &channelpb.AdminListAllChannelsResponse{Channels: resp}, nil
-// }
-
-// func (s *ChannelServer) AdminListAllUsers(ctx context.Context, req *channelpb.AdminListAllUsersRequest) (*channelpb.AdminListAllUsersResponse, error) {
-// 	users, err := s.service.ListAllUsers(ctx)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	resp := make([]*channelpb.MemberInfo, 0, len(users))
-// 	for _, u := range users {
-// 		resp = append(resp, &channelpb.MemberInfo{
-// 			UserId:     u.UserID,
-// 			Username:   u.Username,
-// 			JoinedAtMs: u.JoinedAt.UnixMilli(),
-// 			Role:       channelpb.UserRole(u.Role),
-// 		})
-// 	}
-// 	return &channelpb.AdminListAllUsersResponse{Users: resp}, nil
-// }
-
-// func (s *ChannelServer) AdminBanUser(ctx context.Context, req *channelpb.AdminBanUserRequest) (*channelpb.AdminBanUserResponse, error) {
-// 	if err := s.service.BanUser(ctx, req.GetUserId(), req.GetBannedBy()); err != nil {
-// 		return &channelpb.AdminBanUserResponse{Success: false}, err
-// 	}
-// 	return &channelpb.AdminBanUserResponse{Success: true}, nil
-// }
-
-// func (s *ChannelServer) AdminUnbanUser(ctx context.Context, req *channelpb.AdminUnbanUserRequest) (*channelpb.AdminUnbanUserResponse, error) {
-// 	if err := s.service.UnbanUser(ctx, req.GetUserId(), req.GetUnbannedBy()); err != nil {
-// 		return &channelpb.AdminUnbanUserResponse{Success: false}, err
-// 	}
-// 	return &channelpb.AdminUnbanUserResponse{Success: true}, nil
-// }

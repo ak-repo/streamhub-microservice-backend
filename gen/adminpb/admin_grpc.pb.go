@@ -19,42 +19,46 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminService_BanUser_FullMethodName                 = "/admin.AdminService/BanUser"
-	AdminService_UnbanUser_FullMethodName               = "/admin.AdminService/UnbanUser"
-	AdminService_UpdateRole_FullMethodName              = "/admin.AdminService/UpdateRole"
-	AdminService_GetTotalUsers_FullMethodName           = "/admin.AdminService/GetTotalUsers"
-	AdminService_GetActiveUsers_FullMethodName          = "/admin.AdminService/GetActiveUsers"
-	AdminService_GetBannedUsers_FullMethodName          = "/admin.AdminService/GetBannedUsers"
-	AdminService_GetAuditLogs_FullMethodName            = "/admin.AdminService/GetAuditLogs"
-	AdminService_AdminListAllFiles_FullMethodName       = "/admin.AdminService/AdminListAllFiles"
-	AdminService_AdminDeleteFile_FullMethodName         = "/admin.AdminService/AdminDeleteFile"
-	AdminService_AdminForceDeleteOrphans_FullMethodName = "/admin.AdminService/AdminForceDeleteOrphans"
-	AdminService_AdminBlockUserUpload_FullMethodName    = "/admin.AdminService/AdminBlockUserUpload"
-	AdminService_AdminStorageStats_FullMethodName       = "/admin.AdminService/AdminStorageStats"
+	AdminService_BanUser_FullMethodName              = "/admin.AdminService/BanUser"
+	AdminService_UnbanUser_FullMethodName            = "/admin.AdminService/UnbanUser"
+	AdminService_UpdateRole_FullMethodName           = "/admin.AdminService/UpdateRole"
+	AdminService_ListUsers_FullMethodName            = "/admin.AdminService/ListUsers"
+	AdminService_ListChannels_FullMethodName         = "/admin.AdminService/ListChannels"
+	AdminService_GetChannel_FullMethodName           = "/admin.AdminService/GetChannel"
+	AdminService_FreezeChannel_FullMethodName        = "/admin.AdminService/FreezeChannel"
+	AdminService_UnfreezeChannel_FullMethodName      = "/admin.AdminService/UnfreezeChannel"
+	AdminService_DeleteChannel_FullMethodName        = "/admin.AdminService/DeleteChannel"
+	AdminService_GetAuditLogs_FullMethodName         = "/admin.AdminService/GetAuditLogs"
+	AdminService_AdminListAllFiles_FullMethodName    = "/admin.AdminService/AdminListAllFiles"
+	AdminService_AdminDeleteFile_FullMethodName      = "/admin.AdminService/AdminDeleteFile"
+	AdminService_AdminBlockUserUpload_FullMethodName = "/admin.AdminService/AdminBlockUserUpload"
+	AdminService_AdminStorageStats_FullMethodName    = "/admin.AdminService/AdminStorageStats"
 )
 
 // AdminServiceClient is the client API for AdminService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// ============================
-// Admin Service Definition
-// ============================
+// ---------------------------------------------------------------
+// ADMIN SERVICE
+// ---------------------------------------------------------------
 type AdminServiceClient interface {
 	// User Governance
 	BanUser(ctx context.Context, in *BanUserRequest, opts ...grpc.CallOption) (*BanUserResponse, error)
 	UnbanUser(ctx context.Context, in *UnbanUserRequest, opts ...grpc.CallOption) (*UnbanUserResponse, error)
 	UpdateRole(ctx context.Context, in *UpdateRoleRequest, opts ...grpc.CallOption) (*UpdateRoleResponse, error)
-	// Dashboard Analytics
-	GetTotalUsers(ctx context.Context, in *GetTotalUsersRequest, opts ...grpc.CallOption) (*GetTotalUsersResponse, error)
-	GetActiveUsers(ctx context.Context, in *GetActiveUsersRequest, opts ...grpc.CallOption) (*GetActiveUsersResponse, error)
-	GetBannedUsers(ctx context.Context, in *GetBannedUsersRequest, opts ...grpc.CallOption) (*GetBannedUsersResponse, error)
+	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
+	// Channel Management
+	ListChannels(ctx context.Context, in *ListChannelsRequest, opts ...grpc.CallOption) (*ListChannelsResponse, error)
+	GetChannel(ctx context.Context, in *GetChannelRequest, opts ...grpc.CallOption) (*GetChannelResponse, error)
+	FreezeChannel(ctx context.Context, in *FreezeChannelRequest, opts ...grpc.CallOption) (*FreezeChannelResponse, error)
+	UnfreezeChannel(ctx context.Context, in *UnfreezeChannelRequest, opts ...grpc.CallOption) (*UnfreezeChannelResponse, error)
+	DeleteChannel(ctx context.Context, in *DeleteChannelRequest, opts ...grpc.CallOption) (*DeleteChannelResponse, error)
 	// Activity Monitoring
 	GetAuditLogs(ctx context.Context, in *GetAuditLogsRequest, opts ...grpc.CallOption) (*GetAuditLogsResponse, error)
-	// ===== Admin Files management =====
+	// Files Management
 	AdminListAllFiles(ctx context.Context, in *AdminListAllFilesRequest, opts ...grpc.CallOption) (*AdminListAllFilesResponse, error)
 	AdminDeleteFile(ctx context.Context, in *AdminDeleteFileRequest, opts ...grpc.CallOption) (*AdminDeleteFileResponse, error)
-	AdminForceDeleteOrphans(ctx context.Context, in *AdminForceDeleteOrphansRequest, opts ...grpc.CallOption) (*AdminForceDeleteOrphansResponse, error)
 	AdminBlockUserUpload(ctx context.Context, in *AdminBlockUserUploadRequest, opts ...grpc.CallOption) (*AdminBlockUserUploadResponse, error)
 	AdminStorageStats(ctx context.Context, in *AdminStorageStatsRequest, opts ...grpc.CallOption) (*AdminStorageStatsResponse, error)
 }
@@ -97,30 +101,60 @@ func (c *adminServiceClient) UpdateRole(ctx context.Context, in *UpdateRoleReque
 	return out, nil
 }
 
-func (c *adminServiceClient) GetTotalUsers(ctx context.Context, in *GetTotalUsersRequest, opts ...grpc.CallOption) (*GetTotalUsersResponse, error) {
+func (c *adminServiceClient) ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetTotalUsersResponse)
-	err := c.cc.Invoke(ctx, AdminService_GetTotalUsers_FullMethodName, in, out, cOpts...)
+	out := new(ListUsersResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListUsers_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *adminServiceClient) GetActiveUsers(ctx context.Context, in *GetActiveUsersRequest, opts ...grpc.CallOption) (*GetActiveUsersResponse, error) {
+func (c *adminServiceClient) ListChannels(ctx context.Context, in *ListChannelsRequest, opts ...grpc.CallOption) (*ListChannelsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetActiveUsersResponse)
-	err := c.cc.Invoke(ctx, AdminService_GetActiveUsers_FullMethodName, in, out, cOpts...)
+	out := new(ListChannelsResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListChannels_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *adminServiceClient) GetBannedUsers(ctx context.Context, in *GetBannedUsersRequest, opts ...grpc.CallOption) (*GetBannedUsersResponse, error) {
+func (c *adminServiceClient) GetChannel(ctx context.Context, in *GetChannelRequest, opts ...grpc.CallOption) (*GetChannelResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetBannedUsersResponse)
-	err := c.cc.Invoke(ctx, AdminService_GetBannedUsers_FullMethodName, in, out, cOpts...)
+	out := new(GetChannelResponse)
+	err := c.cc.Invoke(ctx, AdminService_GetChannel_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) FreezeChannel(ctx context.Context, in *FreezeChannelRequest, opts ...grpc.CallOption) (*FreezeChannelResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FreezeChannelResponse)
+	err := c.cc.Invoke(ctx, AdminService_FreezeChannel_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) UnfreezeChannel(ctx context.Context, in *UnfreezeChannelRequest, opts ...grpc.CallOption) (*UnfreezeChannelResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UnfreezeChannelResponse)
+	err := c.cc.Invoke(ctx, AdminService_UnfreezeChannel_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) DeleteChannel(ctx context.Context, in *DeleteChannelRequest, opts ...grpc.CallOption) (*DeleteChannelResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteChannelResponse)
+	err := c.cc.Invoke(ctx, AdminService_DeleteChannel_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -157,16 +191,6 @@ func (c *adminServiceClient) AdminDeleteFile(ctx context.Context, in *AdminDelet
 	return out, nil
 }
 
-func (c *adminServiceClient) AdminForceDeleteOrphans(ctx context.Context, in *AdminForceDeleteOrphansRequest, opts ...grpc.CallOption) (*AdminForceDeleteOrphansResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(AdminForceDeleteOrphansResponse)
-	err := c.cc.Invoke(ctx, AdminService_AdminForceDeleteOrphans_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *adminServiceClient) AdminBlockUserUpload(ctx context.Context, in *AdminBlockUserUploadRequest, opts ...grpc.CallOption) (*AdminBlockUserUploadResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AdminBlockUserUploadResponse)
@@ -191,24 +215,26 @@ func (c *adminServiceClient) AdminStorageStats(ctx context.Context, in *AdminSto
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility.
 //
-// ============================
-// Admin Service Definition
-// ============================
+// ---------------------------------------------------------------
+// ADMIN SERVICE
+// ---------------------------------------------------------------
 type AdminServiceServer interface {
 	// User Governance
 	BanUser(context.Context, *BanUserRequest) (*BanUserResponse, error)
 	UnbanUser(context.Context, *UnbanUserRequest) (*UnbanUserResponse, error)
 	UpdateRole(context.Context, *UpdateRoleRequest) (*UpdateRoleResponse, error)
-	// Dashboard Analytics
-	GetTotalUsers(context.Context, *GetTotalUsersRequest) (*GetTotalUsersResponse, error)
-	GetActiveUsers(context.Context, *GetActiveUsersRequest) (*GetActiveUsersResponse, error)
-	GetBannedUsers(context.Context, *GetBannedUsersRequest) (*GetBannedUsersResponse, error)
+	ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error)
+	// Channel Management
+	ListChannels(context.Context, *ListChannelsRequest) (*ListChannelsResponse, error)
+	GetChannel(context.Context, *GetChannelRequest) (*GetChannelResponse, error)
+	FreezeChannel(context.Context, *FreezeChannelRequest) (*FreezeChannelResponse, error)
+	UnfreezeChannel(context.Context, *UnfreezeChannelRequest) (*UnfreezeChannelResponse, error)
+	DeleteChannel(context.Context, *DeleteChannelRequest) (*DeleteChannelResponse, error)
 	// Activity Monitoring
 	GetAuditLogs(context.Context, *GetAuditLogsRequest) (*GetAuditLogsResponse, error)
-	// ===== Admin Files management =====
+	// Files Management
 	AdminListAllFiles(context.Context, *AdminListAllFilesRequest) (*AdminListAllFilesResponse, error)
 	AdminDeleteFile(context.Context, *AdminDeleteFileRequest) (*AdminDeleteFileResponse, error)
-	AdminForceDeleteOrphans(context.Context, *AdminForceDeleteOrphansRequest) (*AdminForceDeleteOrphansResponse, error)
 	AdminBlockUserUpload(context.Context, *AdminBlockUserUploadRequest) (*AdminBlockUserUploadResponse, error)
 	AdminStorageStats(context.Context, *AdminStorageStatsRequest) (*AdminStorageStatsResponse, error)
 	mustEmbedUnimplementedAdminServiceServer()
@@ -230,14 +256,23 @@ func (UnimplementedAdminServiceServer) UnbanUser(context.Context, *UnbanUserRequ
 func (UnimplementedAdminServiceServer) UpdateRole(context.Context, *UpdateRoleRequest) (*UpdateRoleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateRole not implemented")
 }
-func (UnimplementedAdminServiceServer) GetTotalUsers(context.Context, *GetTotalUsersRequest) (*GetTotalUsersResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTotalUsers not implemented")
+func (UnimplementedAdminServiceServer) ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListUsers not implemented")
 }
-func (UnimplementedAdminServiceServer) GetActiveUsers(context.Context, *GetActiveUsersRequest) (*GetActiveUsersResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetActiveUsers not implemented")
+func (UnimplementedAdminServiceServer) ListChannels(context.Context, *ListChannelsRequest) (*ListChannelsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListChannels not implemented")
 }
-func (UnimplementedAdminServiceServer) GetBannedUsers(context.Context, *GetBannedUsersRequest) (*GetBannedUsersResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetBannedUsers not implemented")
+func (UnimplementedAdminServiceServer) GetChannel(context.Context, *GetChannelRequest) (*GetChannelResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetChannel not implemented")
+}
+func (UnimplementedAdminServiceServer) FreezeChannel(context.Context, *FreezeChannelRequest) (*FreezeChannelResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FreezeChannel not implemented")
+}
+func (UnimplementedAdminServiceServer) UnfreezeChannel(context.Context, *UnfreezeChannelRequest) (*UnfreezeChannelResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnfreezeChannel not implemented")
+}
+func (UnimplementedAdminServiceServer) DeleteChannel(context.Context, *DeleteChannelRequest) (*DeleteChannelResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteChannel not implemented")
 }
 func (UnimplementedAdminServiceServer) GetAuditLogs(context.Context, *GetAuditLogsRequest) (*GetAuditLogsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAuditLogs not implemented")
@@ -247,9 +282,6 @@ func (UnimplementedAdminServiceServer) AdminListAllFiles(context.Context, *Admin
 }
 func (UnimplementedAdminServiceServer) AdminDeleteFile(context.Context, *AdminDeleteFileRequest) (*AdminDeleteFileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AdminDeleteFile not implemented")
-}
-func (UnimplementedAdminServiceServer) AdminForceDeleteOrphans(context.Context, *AdminForceDeleteOrphansRequest) (*AdminForceDeleteOrphansResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AdminForceDeleteOrphans not implemented")
 }
 func (UnimplementedAdminServiceServer) AdminBlockUserUpload(context.Context, *AdminBlockUserUploadRequest) (*AdminBlockUserUploadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AdminBlockUserUpload not implemented")
@@ -332,56 +364,110 @@ func _AdminService_UpdateRole_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdminService_GetTotalUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTotalUsersRequest)
+func _AdminService_ListUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListUsersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdminServiceServer).GetTotalUsers(ctx, in)
+		return srv.(AdminServiceServer).ListUsers(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AdminService_GetTotalUsers_FullMethodName,
+		FullMethod: AdminService_ListUsers_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServiceServer).GetTotalUsers(ctx, req.(*GetTotalUsersRequest))
+		return srv.(AdminServiceServer).ListUsers(ctx, req.(*ListUsersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdminService_GetActiveUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetActiveUsersRequest)
+func _AdminService_ListChannels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListChannelsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdminServiceServer).GetActiveUsers(ctx, in)
+		return srv.(AdminServiceServer).ListChannels(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AdminService_GetActiveUsers_FullMethodName,
+		FullMethod: AdminService_ListChannels_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServiceServer).GetActiveUsers(ctx, req.(*GetActiveUsersRequest))
+		return srv.(AdminServiceServer).ListChannels(ctx, req.(*ListChannelsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdminService_GetBannedUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetBannedUsersRequest)
+func _AdminService_GetChannel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetChannelRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdminServiceServer).GetBannedUsers(ctx, in)
+		return srv.(AdminServiceServer).GetChannel(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AdminService_GetBannedUsers_FullMethodName,
+		FullMethod: AdminService_GetChannel_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServiceServer).GetBannedUsers(ctx, req.(*GetBannedUsersRequest))
+		return srv.(AdminServiceServer).GetChannel(ctx, req.(*GetChannelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_FreezeChannel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FreezeChannelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).FreezeChannel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_FreezeChannel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).FreezeChannel(ctx, req.(*FreezeChannelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_UnfreezeChannel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnfreezeChannelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).UnfreezeChannel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_UnfreezeChannel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).UnfreezeChannel(ctx, req.(*UnfreezeChannelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_DeleteChannel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteChannelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).DeleteChannel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_DeleteChannel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).DeleteChannel(ctx, req.(*DeleteChannelRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -436,24 +522,6 @@ func _AdminService_AdminDeleteFile_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServiceServer).AdminDeleteFile(ctx, req.(*AdminDeleteFileRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AdminService_AdminForceDeleteOrphans_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AdminForceDeleteOrphansRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AdminServiceServer).AdminForceDeleteOrphans(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AdminService_AdminForceDeleteOrphans_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServiceServer).AdminForceDeleteOrphans(ctx, req.(*AdminForceDeleteOrphansRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -514,16 +582,28 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AdminService_UpdateRole_Handler,
 		},
 		{
-			MethodName: "GetTotalUsers",
-			Handler:    _AdminService_GetTotalUsers_Handler,
+			MethodName: "ListUsers",
+			Handler:    _AdminService_ListUsers_Handler,
 		},
 		{
-			MethodName: "GetActiveUsers",
-			Handler:    _AdminService_GetActiveUsers_Handler,
+			MethodName: "ListChannels",
+			Handler:    _AdminService_ListChannels_Handler,
 		},
 		{
-			MethodName: "GetBannedUsers",
-			Handler:    _AdminService_GetBannedUsers_Handler,
+			MethodName: "GetChannel",
+			Handler:    _AdminService_GetChannel_Handler,
+		},
+		{
+			MethodName: "FreezeChannel",
+			Handler:    _AdminService_FreezeChannel_Handler,
+		},
+		{
+			MethodName: "UnfreezeChannel",
+			Handler:    _AdminService_UnfreezeChannel_Handler,
+		},
+		{
+			MethodName: "DeleteChannel",
+			Handler:    _AdminService_DeleteChannel_Handler,
 		},
 		{
 			MethodName: "GetAuditLogs",
@@ -536,10 +616,6 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AdminDeleteFile",
 			Handler:    _AdminService_AdminDeleteFile_Handler,
-		},
-		{
-			MethodName: "AdminForceDeleteOrphans",
-			Handler:    _AdminService_AdminForceDeleteOrphans_Handler,
 		},
 		{
 			MethodName: "AdminBlockUserUpload",

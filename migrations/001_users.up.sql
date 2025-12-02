@@ -1,19 +1,16 @@
-
-
-
-CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-    username VARCHAR(100) NOT NULL,
+CREATE TABLE users (
+    id UUID PRIMARY KEY,
+    username TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-
-    role VARCHAR(20) DEFAULT 'user',
-
+    role TEXT NOT NULL DEFAULT 'user',                  -- super-admin / admin / user
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    email_verified BOOLEAN DEFAULT FALSE,
-    is_banned BOOLEAN DEFAULT FALSE
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    is_banned BOOLEAN NOT NULL DEFAULT FALSE,
+    upload_blocked BOOLEAN NOT NULL DEFAULT FALSE       -- NEW (admin control)
 );
 
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_banned ON users(is_banned);
+CREATE INDEX idx_users_upload_blocked ON users(upload_blocked);

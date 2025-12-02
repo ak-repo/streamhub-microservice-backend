@@ -56,7 +56,7 @@ func main() {
 	// 4. Initialize Clean Architecture layers
 	repo := postgres.NewChannelRepo(pgDB.Pool)
 	ps := chatredis.NewRedisPubSub(rdb)
-	svc := app.NewChatService(repo, ps, clientContainer)
+	svc := app.NewChannelService(repo, ps, clientContainer)
 	grpcHandler := chatgrpc.NewChannelServer(svc)
 
 	// 5. Start gRPC server
@@ -70,7 +70,7 @@ func main() {
 		grpc.ChainUnaryInterceptor(interceptors.AppErrorInterceptor(), interceptors.UnaryLoggingInterceptor()))
 	channelpb.RegisterChannelServiceServer(grpcServer, grpcHandler)
 
-	// 6. Graceful shutdown
+	//  Graceful shutdown
 	go func() {
 		log.Printf("Channel Service (gRPC) running on %s", port)
 		if err := grpcServer.Serve(lis); err != nil {

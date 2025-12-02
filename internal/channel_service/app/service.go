@@ -15,21 +15,21 @@ import (
 	"go.uber.org/zap"
 )
 
-type chatService struct {
+type channelService struct {
 	repo    port.ChannelRepository
 	pubsub  port.PubSub
 	clients *clients.Clients
 }
 
-func NewChatService(repo port.ChannelRepository, pubsub port.PubSub, clients *clients.Clients) port.ChannelService {
-	return &chatService{repo: repo, pubsub: pubsub, clients: clients}
+func NewChannelService(repo port.ChannelRepository, pubsub port.PubSub, clients *clients.Clients) port.ChannelService {
+	return &channelService{repo: repo, pubsub: pubsub, clients: clients}
 }
 
 // PostMessage handles the message posting flow:
 // 1. Persist to database (durable storage)
 // 2. Broadcast via Redis (real-time delivery)
 // PostMessage handles text or attachment messages
-func (s *chatService) PostMessage(
+func (s *channelService) PostMessage(
 	ctx context.Context,
 	senderID, channelID, content string,
 	attachment *domain.FileAttachment,
@@ -63,7 +63,7 @@ func (s *chatService) PostMessage(
 }
 
 // GetHistory returns paginated message history
-func (s *chatService) GetHistory(ctx context.Context, channelID string, limit, offset int) ([]*domain.Message, error) {
+func (s *channelService) GetHistory(ctx context.Context, channelID string, limit, offset int) ([]*domain.Message, error) {
 	messages, err := s.repo.ListHistory(ctx, channelID, limit, offset)
 	if err != nil {
 		return nil, errors.New(errors.CodeNotFound, "messages not found", err)
@@ -71,7 +71,7 @@ func (s *chatService) GetHistory(ctx context.Context, channelID string, limit, o
 	return messages, nil
 }
 
-func (s *chatService) SubscribeToChannel(ctx context.Context, channelID string) (<-chan *domain.Message, error) {
+func (s *channelService) SubscribeToChannel(ctx context.Context, channelID string) (<-chan *domain.Message, error) {
 	msgChan, err := s.pubsub.Subscribe(ctx, channelID)
 	if err != nil {
 		return nil, errors.New(errors.CodeInternal, fmt.Sprintf("Failed to subscribe to channel %s", channelID), err)
@@ -81,7 +81,7 @@ func (s *chatService) SubscribeToChannel(ctx context.Context, channelID string) 
 
 // CreateChannel creates a new group chat channel and automatically
 // adds the creator as the first member.
-func (s *chatService) CreateChannel(ctx context.Context, name, creatorID string) (*domain.Channel, error) {
+func (s *channelService) CreateChannel(ctx context.Context, name, creatorID string) (*domain.Channel, error) {
 	ch := &domain.Channel{
 		ID:        uuid.New().String(),
 		Name:      name,
@@ -104,7 +104,7 @@ func (s *chatService) CreateChannel(ctx context.Context, name, creatorID string)
 }
 
 // Get All channels of a user
-func (s *chatService) ListChannels(ctx context.Context, userID string) (map[string]*domain.ChannelWithMembers, error) {
+func (s *channelService) ListChannels(ctx context.Context, userID string) (map[string]*domain.ChannelWithMembers, error) {
 	user, err := s.clients.Auth.FindById(ctx, &authpb.FindByIdRequest{Id: userID})
 
 	if err != nil || user.User.Id != userID {
@@ -119,7 +119,7 @@ func (s *chatService) ListChannels(ctx context.Context, userID string) (map[stri
 
 }
 
-func (s *chatService) AddMember(ctx context.Context, channelID, userID string) (*domain.ChannelMember, error) {
+func (s *channelService) AddMember(ctx context.Context, channelID, userID string) (*domain.ChannelMember, error) {
 	// Verify channel exists
 	_, err := s.repo.GetChannel(ctx, channelID)
 	if err != nil {
@@ -140,7 +140,7 @@ func (s *chatService) AddMember(ctx context.Context, channelID, userID string) (
 	return m, nil
 }
 
-func (s *chatService) GetChannel(ctx context.Context, channelID string) (*domain.Channel, error) {
+func (s *channelService) GetChannel(ctx context.Context, channelID string) (*domain.Channel, error) {
 	channel, err := s.repo.GetChannel(ctx, channelID)
 	if err != nil {
 		return nil, errors.New(errors.CodeNotFound, "channel not found", err)
@@ -148,22 +148,22 @@ func (s *chatService) GetChannel(ctx context.Context, channelID string) (*domain
 	return channel, nil
 }
 
-func (s *chatService) RemoveMember(ctx context.Context, channelID, userID string) error {
+func (s *channelService) RemoveMember(ctx context.Context, channelID, userID string) error {
 	if err := s.repo.RemoveMember(ctx, channelID, userID); err != nil {
 		return errors.New(errors.CodeInternal, "member removing failed", err)
 	}
 	return nil
 }
 
-func (s *chatService) ListMembers(ctx context.Context, channelID string) ([]*domain.ChannelMember, error) {
+func (s *channelService) ListMembers(ctx context.Context, channelID string) ([]*domain.ChannelMember, error) {
 	return s.repo.ListChannelMembers(ctx, channelID)
 }
 
-func (s *chatService) CheckMembership(ctx context.Context, channelID, userID string) (bool, error) {
+func (s *channelService) CheckMembership(ctx context.Context, channelID, userID string) (bool, error) {
 	return s.repo.IsUserMember(ctx, channelID, userID)
 }
 
-func (s *chatService) DeleteChannel(ctx context.Context, channelID, userID string) error {
+func (s *channelService) DeleteChannel(ctx context.Context, channelID, userID string) error {
 
 	return s.repo.DeleteChannel(ctx, channelID, userID)
 

@@ -11,6 +11,7 @@ import (
 	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/jwt"
 	"github.com/ak-repo/stream-hub/pkg/utils"
+	"github.com/google/uuid"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
@@ -41,6 +42,7 @@ func (s *authService) Register(ctx context.Context, email, username, password st
 	hashed, _ := utils.HashPassword(password)
 
 	user := &domain.User{
+		ID:           uuid.New().String(),
 		Email:        email,
 		Username:     username,
 		PasswordHash: hashed,

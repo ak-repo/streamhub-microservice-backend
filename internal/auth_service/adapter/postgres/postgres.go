@@ -19,9 +19,9 @@ func NewUserRepository(pool *pgxpool.Pool) port.UserRepository {
 // Create User
 func (r *userRepo) Create(ctx context.Context, u *domain.User) error {
 	return r.pool.QueryRow(ctx,
-		`INSERT INTO users (username, email, password_hash, role, email_verified, is_banned)
-		 VALUES ($1,$2,$3,$4,$5,$6)
-		 RETURNING id, created_at, updated_at`,
+		`INSERT INTO users (id,username, email, password_hash, role, email_verified, is_banned)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7)
+		 RETURNING id, created_at, updated_at`,u.ID,
 		u.Username, u.Email, u.PasswordHash, u.Role, u.EmailVerified, u.IsBanned,
 	).Scan(&u.ID, &u.CreatedAt, &u.UpdatedAt)
 }

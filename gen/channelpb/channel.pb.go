@@ -80,9 +80,12 @@ type ChannelInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ChannelId     string                 `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	CreatedBy     string                 `protobuf:"bytes,3,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
-	CreatedAtMs   int64                  `protobuf:"varint,4,opt,name=created_at_ms,json=createdAtMs,proto3" json:"created_at_ms,omitempty"`
-	Members       []*MemberInfo          `protobuf:"bytes,5,rep,name=members,proto3" json:"members,omitempty"`
+	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Visibility    string                 `protobuf:"bytes,4,opt,name=visibility,proto3" json:"visibility,omitempty"` // public/private
+	CreatedBy     string                 `protobuf:"bytes,5,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
+	CreatedAtMs   int64                  `protobuf:"varint,6,opt,name=created_at_ms,json=createdAtMs,proto3" json:"created_at_ms,omitempty"`
+	IsFrozen      bool                   `protobuf:"varint,7,opt,name=is_frozen,json=isFrozen,proto3" json:"is_frozen,omitempty"`
+	Members       []*MemberInfo          `protobuf:"bytes,8,rep,name=members,proto3" json:"members,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -131,6 +134,20 @@ func (x *ChannelInfo) GetName() string {
 	return ""
 }
 
+func (x *ChannelInfo) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *ChannelInfo) GetVisibility() string {
+	if x != nil {
+		return x.Visibility
+	}
+	return ""
+}
+
 func (x *ChannelInfo) GetCreatedBy() string {
 	if x != nil {
 		return x.CreatedBy
@@ -143,6 +160,13 @@ func (x *ChannelInfo) GetCreatedAtMs() int64 {
 		return x.CreatedAtMs
 	}
 	return 0
+}
+
+func (x *ChannelInfo) GetIsFrozen() bool {
+	if x != nil {
+		return x.IsFrozen
+	}
+	return false
 }
 
 func (x *ChannelInfo) GetMembers() []*MemberInfo {
@@ -1936,15 +1960,20 @@ var File_api_proto_channel_proto protoreflect.FileDescriptor
 
 const file_api_proto_channel_proto_rawDesc = "" +
 	"\n" +
-	"\x17api/proto/channel.proto\x12\achannel\"\xb2\x01\n" +
+	"\x17api/proto/channel.proto\x12\achannel\"\x91\x02\n" +
 	"\vChannelInfo\x12\x1d\n" +
 	"\n" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x1e\n" +
 	"\n" +
-	"created_by\x18\x03 \x01(\tR\tcreatedBy\x12\"\n" +
-	"\rcreated_at_ms\x18\x04 \x01(\x03R\vcreatedAtMs\x12-\n" +
-	"\amembers\x18\x05 \x03(\v2\x13.channel.MemberInfoR\amembers\"\x8a\x01\n" +
+	"visibility\x18\x04 \x01(\tR\n" +
+	"visibility\x12\x1d\n" +
+	"\n" +
+	"created_by\x18\x05 \x01(\tR\tcreatedBy\x12\"\n" +
+	"\rcreated_at_ms\x18\x06 \x01(\x03R\vcreatedAtMs\x12\x1b\n" +
+	"\tis_frozen\x18\a \x01(\bR\bisFrozen\x12-\n" +
+	"\amembers\x18\b \x03(\v2\x13.channel.MemberInfoR\amembers\"\x8a\x01\n" +
 	"\n" +
 	"MemberInfo\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1a\n" +

@@ -18,9 +18,13 @@ enum UserRole {
 message ChannelInfo {
   string channel_id = 1;
   string name = 2;
-  string created_by = 3;
-  int64 created_at_ms = 4;
-  repeated MemberInfo members = 5;
+    string description = 3;
+  string visibility = 4; // public/private
+  string created_by = 5;
+  int64 created_at_ms = 6;
+  bool is_frozen = 7;
+
+  repeated MemberInfo members = 8;
 }
 
 message MemberInfo {

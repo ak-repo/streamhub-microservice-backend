@@ -3,17 +3,23 @@ syntax = "proto3";
 package admin;
 option go_package = "./gen/adminpb";
 
+// ---------------------------------------------------------------
+// USER MODEL
+// ---------------------------------------------------------------
 message User {
   string id = 1;
   string email = 2;
   string username = 3;
-  string role = 4;         
+  string role = 4;             
   bool email_verified = 5;
   string avatar_url = 6;
   bool is_banned = 7;
   string created_at = 8;
 }
 
+// ---------------------------------------------------------------
+// FILE MODEL
+// ---------------------------------------------------------------
 message File {
   string id = 1;
   string owner_id = 2;
@@ -26,12 +32,72 @@ message File {
   string created_at = 9;
 }
 
-// ============================
-// Admin User Management
-// ============================
+// ---------------------------------------------------------------
+// CHANNEL MODEL
+// ---------------------------------------------------------------
+
+message Channel {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string created_by = 4;
+  string owner_name = 5;
+  bool is_frozen = 6;
+  string created_at = 7;
+  repeated MemberInfo members = 8;
+}
+
+
+message MemberInfo {
+  string user_id = 1;
+  string username = 2;
+  string id = 3;
+  string joined_at = 4;
+}
+
+message ListChannelsRequest {}
+message ListChannelsResponse {
+  repeated Channel channels = 1;
+}
+
+message GetChannelRequest {
+  string channel_id = 1;
+}
+message GetChannelResponse {
+  Channel channel = 1;
+}
+
+message FreezeChannelRequest {
+  string channel_id = 1;
+  string reason = 2;
+}
+
+message FreezeChannelResponse {
+  bool success = 1;
+}
+
+message UnfreezeChannelRequest {
+  string channel_id = 1;
+}
+
+message UnfreezeChannelResponse {
+  bool success = 1;
+}
+
+
+message DeleteChannelRequest {
+  string channel_id = 1;
+}
+message DeleteChannelResponse {
+  bool success = 1;
+}
+
+// ---------------------------------------------------------------
+// USER GOVERNANCE
+// ---------------------------------------------------------------
 message BanUserRequest {
   string user_id = 1;
-  string reason = 2; // Required for audit logging
+  string reason = 2;
 }
 
 message BanUserResponse {
@@ -40,7 +106,7 @@ message BanUserResponse {
 
 message UnbanUserRequest {
   string user_id = 1;
-  string reason = 2; // Optional: why are we unbanning?
+  string reason = 2;
 }
 
 message UnbanUserResponse {
@@ -49,39 +115,24 @@ message UnbanUserResponse {
 
 message UpdateRoleRequest {
   string user_id = 1;
-  string role = 2; // "user", "admin", "moderator"
+  string role = 2; 
 }
 
 message UpdateRoleResponse {
   bool success = 1;
 }
 
-// ============================
-// Analytics & Stats
-// ============================
-message GetTotalUsersRequest {}
-message GetTotalUsersResponse {
-  int32 total_users = 1;
-  repeated User users = 2;
+message ListUsersRequest {
+  string filter_by = 1;
 }
 
-message GetActiveUsersRequest {}
-message GetActiveUsersResponse {
-  int32 active_users = 1;
-  repeated User users = 2;
-
+message ListUsersResponse {
+  repeated User users = 1;
 }
 
-message GetBannedUsersRequest {}
-message GetBannedUsersResponse {
-  int32 banned_users = 1;
-  repeated User users = 2;
-
-}
-
-// ============================
-// Audit Logs (Activity History)
-// ============================
+// ---------------------------------------------------------------
+// AUDIT LOGS
+// ---------------------------------------------------------------
 message GetAuditLogsRequest {
   int32 page = 1;
   int32 limit = 2;
@@ -89,11 +140,11 @@ message GetAuditLogsRequest {
 
 message AuditLogEntry {
   string id = 1;
-  string admin_id = 2;     // Who performed the action
-  string action = 3;       // "BAN_USER", "UPDATE_ROLE"
-  string target_id = 4;    // Who was affected
-  string details = 5;      // Reason or extra info
-  string created_at = 6;   // ISO timestamp
+  string admin_id = 2;
+  string action = 3;
+  string target_id = 4;
+  string details = 5;
+  string created_at = 6;
 }
 
 message GetAuditLogsResponse {
@@ -102,12 +153,9 @@ message GetAuditLogsResponse {
   int32 page = 3;
 }
 
-
-
-
-// -----------------------------------------------------------------------
-// ADMIN FILES OPERATIONS
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------
+// FILE ADMINISTRATION
+// ---------------------------------------------------------------
 message AdminListAllFilesRequest {
   string admin_id = 1;
 }
@@ -125,17 +173,9 @@ message AdminDeleteFileResponse {
   bool success = 1;
 }
 
-message AdminForceDeleteOrphansRequest {
-  string admin_id = 1;
-}
-
-message AdminForceDeleteOrphansResponse {
-  int32 deleted_count = 1;
-}
-
 message AdminBlockUserUploadRequest {
   string user_id = 1;
-  bool block = 2;        // true = block, false = unblock
+  bool block = 2;
   string admin_id = 3;
 }
 
@@ -154,31 +194,30 @@ message AdminStorageStatsResponse {
   int64 private_files = 4;
 }
 
-
-
-// ============================
-// Admin Service Definition
-// ============================
+// ---------------------------------------------------------------
+// ADMIN SERVICE
+// ---------------------------------------------------------------
 service AdminService {
-  
+
   // User Governance
   rpc BanUser(BanUserRequest) returns (BanUserResponse);
   rpc UnbanUser(UnbanUserRequest) returns (UnbanUserResponse);
   rpc UpdateRole(UpdateRoleRequest) returns (UpdateRoleResponse);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
 
-  // Dashboard Analytics
-  rpc GetTotalUsers(GetTotalUsersRequest) returns (GetTotalUsersResponse);
-  rpc GetActiveUsers(GetActiveUsersRequest) returns (GetActiveUsersResponse);
-  rpc GetBannedUsers(GetBannedUsersRequest) returns (GetBannedUsersResponse);
+  // Channel Management
+  rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse);
+  rpc GetChannel(GetChannelRequest) returns (GetChannelResponse);
+  rpc FreezeChannel(FreezeChannelRequest) returns (FreezeChannelResponse);
+  rpc UnfreezeChannel(UnfreezeChannelRequest) returns (UnfreezeChannelResponse);
+  rpc DeleteChannel(DeleteChannelRequest) returns (DeleteChannelResponse);
 
   // Activity Monitoring
   rpc GetAuditLogs(GetAuditLogsRequest) returns (GetAuditLogsResponse);
 
-
-    // ===== Admin Files management =====
-  rpc AdminListAllFiles (AdminListAllFilesRequest) returns (AdminListAllFilesResponse);
-  rpc AdminDeleteFile (AdminDeleteFileRequest) returns (AdminDeleteFileResponse);
-  rpc AdminForceDeleteOrphans (AdminForceDeleteOrphansRequest) returns (AdminForceDeleteOrphansResponse);
-  rpc AdminBlockUserUpload (AdminBlockUserUploadRequest) returns (AdminBlockUserUploadResponse);
-  rpc AdminStorageStats (AdminStorageStatsRequest) returns (AdminStorageStatsResponse);
+  // Files Management
+  rpc AdminListAllFiles(AdminListAllFilesRequest) returns (AdminListAllFilesResponse);
+  rpc AdminDeleteFile(AdminDeleteFileRequest) returns (AdminDeleteFileResponse);
+  rpc AdminBlockUserUpload(AdminBlockUserUploadRequest) returns (AdminBlockUserUploadResponse);
+  rpc AdminStorageStats(AdminStorageStatsRequest) returns (AdminStorageStatsResponse);
 }

@@ -4,6 +4,7 @@
 go run cmd/auth/main.go &
 go run cmd/file/main.go &
 go run cmd/channel/main.go &
+go run cmd/admin/main.go &
 # go run cmd/gateway/main.go &
 
 
