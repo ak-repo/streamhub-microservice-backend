@@ -97,8 +97,10 @@ type ServerConfig struct {
 
 // SENDGRID
 type SendGrid struct {
-	Key        string `mapstructure:"api_key"`
-	TemplateId string `mapstructure:"template_id"`
+	Key           string `mapstructure:"api_key"`
+	MagicTemplate string `mapstructure:"magic_id"`
+	OTPTemplate string `mapstructure:"otp_id"`
+
 }
 
 // REDIS (NEW)

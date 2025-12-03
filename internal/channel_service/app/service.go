@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ak-repo/stream-hub/gen/adminpb"
 	"github.com/ak-repo/stream-hub/gen/authpb"
 	"github.com/ak-repo/stream-hub/internal/channel_service/domain"
 	"github.com/ak-repo/stream-hub/internal/channel_service/port"
@@ -163,8 +164,32 @@ func (s *channelService) CheckMembership(ctx context.Context, channelID, userID 
 	return s.repo.IsUserMember(ctx, channelID, userID)
 }
 
-func (s *channelService) DeleteChannel(ctx context.Context, channelID, userID string) error {
+func (s *channelService) DeleteChannel(ctx context.Context, channelID, requesterID string) error {
 
-	return s.repo.DeleteChannel(ctx, channelID, userID)
+	if channelID == "" {
+		return errors.New(errors.CodeInvalidInput, "channelID  cannot be empty", nil)
+	}
+	c, err := s.repo.GetChannel(ctx, channelID)
+	if err != nil {
+		return errors.New(errors.CodeNotFound,
+			fmt.Sprintf("channel %s not found", channelID), err)
+	}
+
+	resp, adminErr := s.clients.Admin.IsAdmin(ctx, &adminpb.IsAdminRequest{AdminId: requesterID})
+
+	isOwner := requesterID == c.CreatedBy
+	isAdmin := adminErr == nil && resp.Success
+
+	if !(isOwner || isAdmin) {
+		return errors.New(errors.CodeForbidden,
+			"only owner or  admin can delete this file", err)
+	}
+
+	if err := s.repo.DeleteChannel(ctx, channelID); err != nil {
+		return errors.New(errors.CodeInternal,
+			"failed to delete channel", err)
+	}
+
+	return nil
 
 }

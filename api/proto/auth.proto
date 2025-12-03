@@ -15,6 +15,7 @@ message AuthUser {
   string avatar_url = 6;
   bool is_banned = 7;
   string created_at = 8;
+  bool  upload_blocked = 9;
 }
 
 // ----------------------------
@@ -88,16 +89,29 @@ message PasswordResetRequest {
 }
 
 message PasswordResetResponse {
-  string message = 1;
+  bool success = 1;
 }
 
 message PasswordResetVerifyRequest {
   string token = 1;
   string new_password = 2;
+  string email = 3;
 }
 
 message PasswordResetVerifyResponse {
-  string message = 1;
+  bool success = 1;
+}
+
+message ChangePasswordRequest{
+
+  string password = 1;
+  string new_password = 2;
+  string id = 3;
+
+}
+
+message ChangePasswordResponse{
+  bool success = 1;
 }
 
 // ============================
@@ -121,7 +135,7 @@ message FindUserResponse {
 message UpdateProfileRequest {
   string id = 1;
   string username = 2;
-  string avatar_url = 3;
+  string email = 3;
 }
 
 message UpdateProfileResponse {
@@ -158,8 +172,9 @@ service AuthService {
   // OAuth
   rpc OAuthLogin(OAuthLoginRequest) returns (OAuthLoginResponse);
 
-  // Password Reset
-  rpc RequestPasswordReset(PasswordResetRequest) returns (PasswordResetResponse);
+rpc ChangePassword(ChangePasswordRequest)returns(ChangePasswordResponse);
+  // Password Reset for forget password
+  rpc PasswordReset(PasswordResetRequest) returns (PasswordResetResponse);
   rpc VerifyPasswordReset(PasswordResetVerifyRequest) returns (PasswordResetVerifyResponse);
 
   // User Lookup

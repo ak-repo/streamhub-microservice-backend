@@ -100,10 +100,10 @@ func (r *channelRepo) CreateChannel(ctx context.Context, ch *domain.Channel) err
 // GetChannel retrieves channel details by ID.
 func (r *channelRepo) GetChannel(ctx context.Context, channelID string) (*domain.Channel, error) {
 	ch := &domain.Channel{}
-	err := r.pool.QueryRow(ctx, `SELECT id, name, created_by, created_at 
+	err := r.pool.QueryRow(ctx, `SELECT id, name, created_by, created_at,is_frozen 
          FROM channels 
          WHERE id = $1`,
-		channelID).Scan(&ch.ID, &ch.Name, &ch.CreatedBy, &ch.CreatedAt)
+		channelID).Scan(&ch.ID, &ch.Name, &ch.CreatedBy, &ch.CreatedAt, &ch.IsFrozen)
 	if err == pgx.ErrNoRows {
 		return nil, fmt.Errorf("channel not found: %s", channelID)
 
@@ -204,7 +204,7 @@ func (r *channelRepo) ListChannels(ctx context.Context, userID string) (map[stri
 
 	// STEP 2: get channels
 	chanRows, err := r.pool.Query(ctx,
-		`SELECT id, name, created_by, created_at
+		`SELECT id, name, created_by, created_at,is_frozen
          FROM channels
          WHERE id = ANY($1)`, channelIDs)
 	if err != nil {
@@ -214,7 +214,7 @@ func (r *channelRepo) ListChannels(ctx context.Context, userID string) (map[stri
 
 	for chanRows.Next() {
 		ch := &domain.Channel{}
-		if err := chanRows.Scan(&ch.ID, &ch.Name, &ch.CreatedBy, &ch.CreatedAt); err != nil {
+		if err := chanRows.Scan(&ch.ID, &ch.Name, &ch.CreatedBy, &ch.CreatedAt, &ch.IsFrozen); err != nil {
 			return nil, err
 		}
 
@@ -248,7 +248,7 @@ func (r *channelRepo) ListChannels(ctx context.Context, userID string) (map[stri
 	return result, nil
 }
 
-func (r *channelRepo) DeleteChannel(ctx context.Context, channelID, userID string) error {
-	_, err := r.pool.Exec(ctx, `DELETE FROM channels WHERE id = $1 AND created_by=$2`, channelID, userID)
+func (r *channelRepo) DeleteChannel(ctx context.Context, channelID string) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM channels WHERE id = $1`, channelID)
 	return err
 }

@@ -132,3 +132,113 @@ func (h *AuthHandler) VerifyMagicLink(c *fiber.Ctx) error {
 
 	return response.Success(c, "magic link verified successfully", resp)
 }
+
+func (h *AuthHandler) PasswordReset(c *fiber.Ctx) error {
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return response.InvalidReqBody(c)
+	}
+
+	ctx, cancel := helper.WithGRPCTimeout()
+	defer cancel()
+
+	resp, err := h.client.PasswordReset(ctx, &authpb.PasswordResetRequest{Email: req.Email})
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return response.Error(c, code, body)
+	}
+
+	return response.Success(c, "OTP sented into email: "+req.Email, resp)
+
+}
+
+func (h *AuthHandler) VerifyPasswordReset(c *fiber.Ctx) error {
+	var req struct {
+		Email    string `json:"email"`
+		Token    string `json:"token"`
+		Password string `json:"password"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return response.InvalidReqBody(c)
+	}
+
+	ctx, cancel := helper.WithGRPCTimeout()
+	defer cancel()
+
+	resp, err := h.client.VerifyPasswordReset(ctx, &authpb.PasswordResetVerifyRequest{Email: req.Email, Token: req.Token, NewPassword: req.Password})
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return response.Error(c, code, body)
+	}
+
+	return response.Success(c, "Password updated "+req.Email, resp)
+
+}
+
+func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
+	var req struct {
+		Email    string `json:"email"`
+		Username string `json:"username"`
+	}
+
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return response.InvalidReqBody(c)
+	}
+
+	ctx, cancel := helper.WithGRPCTimeout()
+	defer cancel()
+
+	resp, err := h.client.UpdateProfile(ctx, &authpb.UpdateProfileRequest{
+		Username: req.Username,
+		Email:    req.Email,
+		Id:       uid,
+	})
+
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return response.Error(c, code, body)
+	}
+
+	return response.Success(c, "profile updated", resp)
+}
+
+func (h *AuthHandler) ChangePassword(c *fiber.Ctx) error {
+
+	var req struct {
+		Password    string `json:"password"`
+		NewPassword string `json:"new_password"`
+	}
+
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return response.InvalidReqBody(c)
+	}
+
+	ctx, cancel := helper.WithGRPCTimeout()
+	defer cancel()
+
+	resp, err := h.client.ChangePassword(ctx, &authpb.ChangePasswordRequest{
+		Id:          uid,
+		Password:    req.Password,
+		NewPassword: req.NewPassword,
+	})
+
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return response.Error(c, code, body)
+	}
+
+	return response.Success(c, "password changed", resp)
+
+}

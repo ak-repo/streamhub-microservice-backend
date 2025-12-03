@@ -13,6 +13,7 @@ type Channel struct {
 	Description string
 	Visibility  string // public / private
 	IsFrozen    bool
+	OwnerName   string `json:"owner_name"`
 }
 
 // ChannelMember represents a user's membership in a channel.

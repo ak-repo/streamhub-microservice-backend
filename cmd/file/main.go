@@ -13,11 +13,12 @@ import (
 	redisstore "github.com/ak-repo/stream-hub/internal/files_service/adapter/redis"
 	"github.com/ak-repo/stream-hub/internal/files_service/adapter/storage"
 	"github.com/ak-repo/stream-hub/internal/files_service/app"
+	"github.com/ak-repo/stream-hub/internal/gateway/clients"
 	"github.com/ak-repo/stream-hub/pkg/db"
 	"github.com/ak-repo/stream-hub/pkg/grpc/interceptors"
 	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/logger"
-	"github.com/redis/go-redis/v9"
+	redisclient "github.com/ak-repo/stream-hub/pkg/redis"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -48,14 +49,18 @@ func main() {
 		log.Fatal("failed to connect MinIo storage:", zap.Error(err))
 	}
 
+	// ---- Create gRPC Client Container ----
+	clientContainer := clients.NewClients(cfg)
+	defer clientContainer.CloseAll()
+
 	// Redis
-	rdbAddr := cfg.Redis.Host + ":" + cfg.Redis.Port
-	rdb := redis.NewClient(&redis.Options{Addr: rdbAddr})
-	tempStore := redisstore.NewTempStore(rdb, 15*time.Minute)
+	rAddr := cfg.Redis.Host + ":" + cfg.Redis.Port
+	redisclient.Init(rAddr)
+	tempStore := redisstore.NewTempStore(redisclient.Client, 15*time.Minute)
 
 	// repo - service - server
 	repo := postgres.NewFileRepository(pgDB.Pool)
-	service := app.NewFileService(repo, tempStore, s3, 15*time.Minute)
+	service := app.NewFileService(repo, tempStore, s3, 15*time.Minute, *clientContainer)
 	server := filegrpc.NewFileServer(service)
 
 	addr := ":" + cfg.Services.File.Port

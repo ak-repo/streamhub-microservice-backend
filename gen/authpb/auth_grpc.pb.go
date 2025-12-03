@@ -19,17 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_Register_FullMethodName             = "/auth.AuthService/Register"
-	AuthService_Login_FullMethodName                = "/auth.AuthService/Login"
-	AuthService_SendMagicLink_FullMethodName        = "/auth.AuthService/SendMagicLink"
-	AuthService_VerifyMagicLink_FullMethodName      = "/auth.AuthService/VerifyMagicLink"
-	AuthService_OAuthLogin_FullMethodName           = "/auth.AuthService/OAuthLogin"
-	AuthService_RequestPasswordReset_FullMethodName = "/auth.AuthService/RequestPasswordReset"
-	AuthService_VerifyPasswordReset_FullMethodName  = "/auth.AuthService/VerifyPasswordReset"
-	AuthService_FindByEmail_FullMethodName          = "/auth.AuthService/FindByEmail"
-	AuthService_FindById_FullMethodName             = "/auth.AuthService/FindById"
-	AuthService_UpdateProfile_FullMethodName        = "/auth.AuthService/UpdateProfile"
-	AuthService_SearchUsers_FullMethodName          = "/auth.AuthService/SearchUsers"
+	AuthService_Register_FullMethodName            = "/auth.AuthService/Register"
+	AuthService_Login_FullMethodName               = "/auth.AuthService/Login"
+	AuthService_SendMagicLink_FullMethodName       = "/auth.AuthService/SendMagicLink"
+	AuthService_VerifyMagicLink_FullMethodName     = "/auth.AuthService/VerifyMagicLink"
+	AuthService_OAuthLogin_FullMethodName          = "/auth.AuthService/OAuthLogin"
+	AuthService_ChangePassword_FullMethodName      = "/auth.AuthService/ChangePassword"
+	AuthService_PasswordReset_FullMethodName       = "/auth.AuthService/PasswordReset"
+	AuthService_VerifyPasswordReset_FullMethodName = "/auth.AuthService/VerifyPasswordReset"
+	AuthService_FindByEmail_FullMethodName         = "/auth.AuthService/FindByEmail"
+	AuthService_FindById_FullMethodName            = "/auth.AuthService/FindById"
+	AuthService_UpdateProfile_FullMethodName       = "/auth.AuthService/UpdateProfile"
+	AuthService_SearchUsers_FullMethodName         = "/auth.AuthService/SearchUsers"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -48,8 +49,9 @@ type AuthServiceClient interface {
 	VerifyMagicLink(ctx context.Context, in *VerifyMagicLinkRequest, opts ...grpc.CallOption) (*VerifyMagicLinkResponse, error)
 	// OAuth
 	OAuthLogin(ctx context.Context, in *OAuthLoginRequest, opts ...grpc.CallOption) (*OAuthLoginResponse, error)
-	// Password Reset
-	RequestPasswordReset(ctx context.Context, in *PasswordResetRequest, opts ...grpc.CallOption) (*PasswordResetResponse, error)
+	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error)
+	// Password Reset for forget password
+	PasswordReset(ctx context.Context, in *PasswordResetRequest, opts ...grpc.CallOption) (*PasswordResetResponse, error)
 	VerifyPasswordReset(ctx context.Context, in *PasswordResetVerifyRequest, opts ...grpc.CallOption) (*PasswordResetVerifyResponse, error)
 	// User Lookup
 	FindByEmail(ctx context.Context, in *FindByEmailRequest, opts ...grpc.CallOption) (*FindUserResponse, error)
@@ -118,10 +120,20 @@ func (c *authServiceClient) OAuthLogin(ctx context.Context, in *OAuthLoginReques
 	return out, nil
 }
 
-func (c *authServiceClient) RequestPasswordReset(ctx context.Context, in *PasswordResetRequest, opts ...grpc.CallOption) (*PasswordResetResponse, error) {
+func (c *authServiceClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ChangePasswordResponse)
+	err := c.cc.Invoke(ctx, AuthService_ChangePassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) PasswordReset(ctx context.Context, in *PasswordResetRequest, opts ...grpc.CallOption) (*PasswordResetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PasswordResetResponse)
-	err := c.cc.Invoke(ctx, AuthService_RequestPasswordReset_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AuthService_PasswordReset_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -194,8 +206,9 @@ type AuthServiceServer interface {
 	VerifyMagicLink(context.Context, *VerifyMagicLinkRequest) (*VerifyMagicLinkResponse, error)
 	// OAuth
 	OAuthLogin(context.Context, *OAuthLoginRequest) (*OAuthLoginResponse, error)
-	// Password Reset
-	RequestPasswordReset(context.Context, *PasswordResetRequest) (*PasswordResetResponse, error)
+	ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error)
+	// Password Reset for forget password
+	PasswordReset(context.Context, *PasswordResetRequest) (*PasswordResetResponse, error)
 	VerifyPasswordReset(context.Context, *PasswordResetVerifyRequest) (*PasswordResetVerifyResponse, error)
 	// User Lookup
 	FindByEmail(context.Context, *FindByEmailRequest) (*FindUserResponse, error)
@@ -229,8 +242,11 @@ func (UnimplementedAuthServiceServer) VerifyMagicLink(context.Context, *VerifyMa
 func (UnimplementedAuthServiceServer) OAuthLogin(context.Context, *OAuthLoginRequest) (*OAuthLoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OAuthLogin not implemented")
 }
-func (UnimplementedAuthServiceServer) RequestPasswordReset(context.Context, *PasswordResetRequest) (*PasswordResetResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RequestPasswordReset not implemented")
+func (UnimplementedAuthServiceServer) ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangePassword not implemented")
+}
+func (UnimplementedAuthServiceServer) PasswordReset(context.Context, *PasswordResetRequest) (*PasswordResetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PasswordReset not implemented")
 }
 func (UnimplementedAuthServiceServer) VerifyPasswordReset(context.Context, *PasswordResetVerifyRequest) (*PasswordResetVerifyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyPasswordReset not implemented")
@@ -358,20 +374,38 @@ func _AuthService_OAuthLogin_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_RequestPasswordReset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthService_ChangePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangePasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).ChangePassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_ChangePassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).ChangePassword(ctx, req.(*ChangePasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_PasswordReset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PasswordResetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).RequestPasswordReset(ctx, in)
+		return srv.(AuthServiceServer).PasswordReset(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_RequestPasswordReset_FullMethodName,
+		FullMethod: AuthService_PasswordReset_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).RequestPasswordReset(ctx, req.(*PasswordResetRequest))
+		return srv.(AuthServiceServer).PasswordReset(ctx, req.(*PasswordResetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -494,8 +528,12 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthService_OAuthLogin_Handler,
 		},
 		{
-			MethodName: "RequestPasswordReset",
-			Handler:    _AuthService_RequestPasswordReset_Handler,
+			MethodName: "ChangePassword",
+			Handler:    _AuthService_ChangePassword_Handler,
+		},
+		{
+			MethodName: "PasswordReset",
+			Handler:    _AuthService_PasswordReset_Handler,
 		},
 		{
 			MethodName: "VerifyPasswordReset",

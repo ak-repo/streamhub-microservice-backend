@@ -2,8 +2,10 @@ package app
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/ak-repo/stream-hub/gen/channelpb"
+	"github.com/ak-repo/stream-hub/gen/filespb"
 	"github.com/ak-repo/stream-hub/internal/admin_service/domain"
 	"github.com/ak-repo/stream-hub/internal/admin_service/port"
 	"github.com/ak-repo/stream-hub/internal/gateway/clients"
@@ -97,9 +99,16 @@ func (s *adminService) UnfreezeChannel(ctx context.Context, channelID string) er
 	return nil
 }
 
-func (s *adminService) DeleteChannel(ctx context.Context, channelID string) error {
-	if err := s.repo.DeleteChannel(ctx, channelID); err != nil {
-		return errors.New(errors.CodeInternal, "failed to delete channel", err)
+func (s *adminService) DeleteChannel(ctx context.Context, adminID, channelID string) error {
+	// if err := s.repo.DeleteChannel(ctx, channelID); err != nil {
+	// 	return errors.New(errors.CodeInternal, "failed to delete channel", err)
+	// }
+
+	_, err := s.clients.Channel.DeleteChannel(ctx, &channelpb.DeleteChannelRequest{RequesterId: adminID, ChannelId: channelID})
+	if err != nil {
+		_, body := errors.GRPCToFiber(err)
+		msg := body["error"]
+		return errors.New(errors.CodeInternal, fmt.Sprintf("%v", msg), err)
 	}
 	return nil
 }
@@ -114,8 +123,13 @@ func (s *adminService) ListAllFiles(ctx context.Context, adminID string) ([]*dom
 }
 
 func (s *adminService) DeleteFile(ctx context.Context, adminID, fileID string) error {
-	if err := s.repo.DeleteFile(ctx, fileID); err != nil {
-		return errors.New(errors.CodeInternal, "failed to delete file", err)
+
+	_, err := s.clients.File.DeleteFile(ctx, &filespb.DeleteFileRequest{RequesterId: adminID, FileId: fileID})
+
+	if err != nil {
+		_, body := errors.GRPCToFiber(err)
+		msg := body["error"]
+		return errors.New(errors.CodeInternal, fmt.Sprintf("%v", msg), err)
 	}
 	return nil
 }

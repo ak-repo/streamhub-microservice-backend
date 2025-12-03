@@ -29,6 +29,7 @@ const (
 	AdminService_UnfreezeChannel_FullMethodName      = "/admin.AdminService/UnfreezeChannel"
 	AdminService_DeleteChannel_FullMethodName        = "/admin.AdminService/DeleteChannel"
 	AdminService_GetAuditLogs_FullMethodName         = "/admin.AdminService/GetAuditLogs"
+	AdminService_IsAdmin_FullMethodName              = "/admin.AdminService/IsAdmin"
 	AdminService_AdminListAllFiles_FullMethodName    = "/admin.AdminService/AdminListAllFiles"
 	AdminService_AdminDeleteFile_FullMethodName      = "/admin.AdminService/AdminDeleteFile"
 	AdminService_AdminBlockUserUpload_FullMethodName = "/admin.AdminService/AdminBlockUserUpload"
@@ -56,6 +57,7 @@ type AdminServiceClient interface {
 	DeleteChannel(ctx context.Context, in *DeleteChannelRequest, opts ...grpc.CallOption) (*DeleteChannelResponse, error)
 	// Activity Monitoring
 	GetAuditLogs(ctx context.Context, in *GetAuditLogsRequest, opts ...grpc.CallOption) (*GetAuditLogsResponse, error)
+	IsAdmin(ctx context.Context, in *IsAdminRequest, opts ...grpc.CallOption) (*IsAdminResponse, error)
 	// Files Management
 	AdminListAllFiles(ctx context.Context, in *AdminListAllFilesRequest, opts ...grpc.CallOption) (*AdminListAllFilesResponse, error)
 	AdminDeleteFile(ctx context.Context, in *AdminDeleteFileRequest, opts ...grpc.CallOption) (*AdminDeleteFileResponse, error)
@@ -171,6 +173,16 @@ func (c *adminServiceClient) GetAuditLogs(ctx context.Context, in *GetAuditLogsR
 	return out, nil
 }
 
+func (c *adminServiceClient) IsAdmin(ctx context.Context, in *IsAdminRequest, opts ...grpc.CallOption) (*IsAdminResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IsAdminResponse)
+	err := c.cc.Invoke(ctx, AdminService_IsAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminServiceClient) AdminListAllFiles(ctx context.Context, in *AdminListAllFilesRequest, opts ...grpc.CallOption) (*AdminListAllFilesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AdminListAllFilesResponse)
@@ -232,6 +244,7 @@ type AdminServiceServer interface {
 	DeleteChannel(context.Context, *DeleteChannelRequest) (*DeleteChannelResponse, error)
 	// Activity Monitoring
 	GetAuditLogs(context.Context, *GetAuditLogsRequest) (*GetAuditLogsResponse, error)
+	IsAdmin(context.Context, *IsAdminRequest) (*IsAdminResponse, error)
 	// Files Management
 	AdminListAllFiles(context.Context, *AdminListAllFilesRequest) (*AdminListAllFilesResponse, error)
 	AdminDeleteFile(context.Context, *AdminDeleteFileRequest) (*AdminDeleteFileResponse, error)
@@ -276,6 +289,9 @@ func (UnimplementedAdminServiceServer) DeleteChannel(context.Context, *DeleteCha
 }
 func (UnimplementedAdminServiceServer) GetAuditLogs(context.Context, *GetAuditLogsRequest) (*GetAuditLogsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAuditLogs not implemented")
+}
+func (UnimplementedAdminServiceServer) IsAdmin(context.Context, *IsAdminRequest) (*IsAdminResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsAdmin not implemented")
 }
 func (UnimplementedAdminServiceServer) AdminListAllFiles(context.Context, *AdminListAllFilesRequest) (*AdminListAllFilesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AdminListAllFiles not implemented")
@@ -490,6 +506,24 @@ func _AdminService_GetAuditLogs_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_IsAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IsAdminRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).IsAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_IsAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).IsAdmin(ctx, req.(*IsAdminRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminService_AdminListAllFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AdminListAllFilesRequest)
 	if err := dec(in); err != nil {
@@ -608,6 +642,10 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAuditLogs",
 			Handler:    _AdminService_GetAuditLogs_Handler,
+		},
+		{
+			MethodName: "IsAdmin",
+			Handler:    _AdminService_IsAdmin_Handler,
 		},
 		{
 			MethodName: "AdminListAllFiles",

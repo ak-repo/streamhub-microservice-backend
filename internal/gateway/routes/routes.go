@@ -33,11 +33,20 @@ func userRoutes(api fiber.Router, cfg *config.Config, clients *clients.Clients) 
 	// AUTH HANDLER
 	// --------------------------
 	auth := handler.NewAuthHandler(clients.Auth, jwtMan)
+	public := api.Group("")
+	public.Post("/login", auth.Login)
+	public.Post("/register", auth.Register)
+	public.Post("/verify-gen", auth.SendMagicLink)
+	public.Get("/verify-link", auth.VerifyMagicLink)
+
+	public.Post("/forget-password", auth.PasswordReset)
+	public.Post("/verify-password", auth.VerifyPasswordReset)
+	// auth needed JWT
 	authR := api.Group("/auth")
-	authR.Post("/login", auth.Login)
-	authR.Post("/register", auth.Register)
-	authR.Post("/verify-gen", auth.SendMagicLink)
-	authR.Get("/verify-link", auth.VerifyMagicLink)
+	authR.Use(middleware.AuthMiddleware(jwtMan))
+
+	authR.Post("/profile-update", auth.UpdateProfile)
+	authR.Post("/password-change", auth.ChangePassword)
 
 	// --------------------------
 	// FILE HANDLER

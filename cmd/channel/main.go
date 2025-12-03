@@ -19,7 +19,7 @@ import (
 	"github.com/ak-repo/stream-hub/pkg/grpc/interceptors"
 	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/logger"
-	"github.com/redis/go-redis/v9"
+	redisclient "github.com/ak-repo/stream-hub/pkg/redis"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -50,12 +50,13 @@ func main() {
 	defer clientContainer.CloseAll()
 
 	// Redis
-	rdbAddr := cfg.Redis.Host + ":" + cfg.Redis.Port
-	rdb := redis.NewClient(&redis.Options{Addr: rdbAddr})
+	rAddr := cfg.Redis.Host + ":" + cfg.Redis.Port
+	redisclient.Init(rAddr)
+	rClient := redisclient.Client
 
 	// 4. Initialize Clean Architecture layers
 	repo := postgres.NewChannelRepo(pgDB.Pool)
-	ps := chatredis.NewRedisPubSub(rdb)
+	ps := chatredis.NewRedisPubSub(rClient)
 	svc := app.NewChannelService(repo, ps, clientContainer)
 	grpcHandler := chatgrpc.NewChannelServer(svc)
 

@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/ak-repo/stream-hub/gen/authpb"
+	"github.com/ak-repo/stream-hub/internal/auth_service/domain"
 	"github.com/ak-repo/stream-hub/internal/auth_service/port"
+	"github.com/ak-repo/stream-hub/pkg/helper"
 )
 
 type AuthServer struct {
@@ -14,6 +16,19 @@ type AuthServer struct {
 
 func NewAuthServer(s port.AuthService) *AuthServer {
 	return &AuthServer{service: s}
+}
+
+func mapUser(u *domain.User) *authpb.AuthUser {
+	return &authpb.AuthUser{
+		Id:            u.ID,
+		Email:         u.Email,
+		Username:      u.Username,
+		Role:          u.Role,
+		EmailVerified: u.EmailVerified,
+		IsBanned:      u.IsBanned,
+		UploadBlocked: u.UploadBlocked,
+		CreatedAt:     helper.TimeToString(u.CreatedAt),
+	}
 }
 
 func (s *AuthServer) Register(ctx context.Context, req *authpb.RegisterRequest) (*authpb.RegisterResponse, error) {
@@ -32,13 +47,7 @@ func (s *AuthServer) Login(ctx context.Context, req *authpb.LoginRequest) (*auth
 		return nil, err
 	}
 
-	resp := &authpb.AuthUser{
-		Id:            user.ID,
-		Email:         user.Email,
-		Username:      user.Username,
-		EmailVerified: user.EmailVerified,
-		Role:          user.Role,
-	}
+	resp := mapUser(user)
 	return &authpb.LoginResponse{
 		User: resp,
 	}, nil
@@ -51,15 +60,7 @@ func (s *AuthServer) FindByEmail(ctx context.Context, req *authpb.FindByEmailReq
 		return nil, err
 	}
 
-	return &authpb.FindUserResponse{User: &authpb.AuthUser{
-		Id:            user.ID,
-		Email:         user.Email,
-		Username:      user.Username,
-		Role:          user.Role,
-		EmailVerified: user.EmailVerified,
-		IsBanned:      user.IsBanned,
-		CreatedAt:     user.CreatedAt.String(),
-	}}, nil
+	return &authpb.FindUserResponse{User: mapUser(user)}, nil
 }
 
 // FindById finds a user by ID
@@ -69,15 +70,7 @@ func (s *AuthServer) FindById(ctx context.Context, req *authpb.FindByIdRequest) 
 		return nil, err
 	}
 
-	return &authpb.FindUserResponse{User: &authpb.AuthUser{
-		Id:            user.ID,
-		Email:         user.Email,
-		Username:      user.Username,
-		Role:          user.Role,
-		EmailVerified: user.EmailVerified,
-		IsBanned:      user.IsBanned,
-		CreatedAt:     user.CreatedAt.String(),
-	}}, nil
+	return &authpb.FindUserResponse{User: mapUser(user)}, nil
 }
 
 // Send Magic Link
@@ -103,4 +96,41 @@ func (s *AuthServer) VerifyMagicLink(ctx context.Context, req *authpb.VerifyMagi
 	}
 
 	return &authpb.VerifyMagicLinkResponse{Success: true}, nil
+}
+
+func (s *AuthServer) PasswordReset(ctx context.Context, req *authpb.PasswordResetRequest) (*authpb.PasswordResetResponse, error) {
+	if err := s.service.PasswordReset(ctx, req.Email); err != nil {
+		return nil, err
+	}
+
+	return &authpb.PasswordResetResponse{Success: true}, nil
+}
+
+func (s *AuthServer) VerifyPasswordReset(ctx context.Context, req *authpb.PasswordResetVerifyRequest) (*authpb.PasswordResetVerifyResponse, error) {
+	if err := s.service.VerifyPasswordReset(ctx, req.Token, req.NewPassword, req.Email); err != nil {
+		return nil, err
+	}
+
+	return &authpb.PasswordResetVerifyResponse{Success: true}, nil
+}
+
+func (s *AuthServer) UpdateProfile(ctx context.Context, req *authpb.UpdateProfileRequest) (*authpb.UpdateProfileResponse, error) {
+
+	user, err := s.service.UpdateProfile(ctx, req.Id, req.Username, req.Email)
+	if err != nil {
+		return nil, err
+	}
+	resp := mapUser(user)
+
+	return &authpb.UpdateProfileResponse{User: resp}, nil
+}
+
+func (s *AuthServer) ChangePassword(ctx context.Context, req *authpb.ChangePasswordRequest) (*authpb.ChangePasswordResponse, error) {
+
+	if err := s.service.ChangePassword(ctx, req.Id, req.Password, req.NewPassword); err != nil {
+		return nil, err
+	}
+
+	return &authpb.ChangePasswordResponse{Success: true}, nil
+
 }

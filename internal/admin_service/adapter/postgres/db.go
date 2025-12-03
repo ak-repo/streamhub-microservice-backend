@@ -68,6 +68,8 @@ func scanFile(row pgx.Row, f *domain.File) error {
 		&f.StoragePath,
 		&f.IsPublic,
 		&f.CreatedAt,
+		&f.OwnerName,
+		&f.ChannelName,
 	)
 }
 
@@ -300,12 +302,12 @@ func (r *adminRepo) UnfreezeChannel(ctx context.Context, channelID string) error
 	return err
 }
 
-func (r *adminRepo) DeleteChannel(ctx context.Context, channelID string) error {
-	_, err := r.pool.Exec(ctx, `
-		DELETE FROM channels WHERE id = $1
-	`, channelID)
-	return err
-}
+// func (r *adminRepo) DeleteChannel(ctx context.Context, channelID string) error {
+// 	_, err := r.pool.Exec(ctx, `
+// 		DELETE FROM channels WHERE id = $1
+// 	`, channelID)
+// 	return err
+// }
 
 //
 // ---------------------------------------------------------
@@ -315,18 +317,23 @@ func (r *adminRepo) DeleteChannel(ctx context.Context, channelID string) error {
 
 func (r *adminRepo) ListAllFiles(ctx context.Context) ([]*domain.File, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT 
-			id,
-			owner_id,
-			channel_id,
-			filename,
-			size,
-			mime_type,
-			storage_path,
-			is_public,
-			created_at
-		FROM files
-	`)
+    SELECT 
+        f.id,
+        f.owner_id,
+        f.channel_id,
+        f.filename,
+        f.size,
+        f.mime_type,
+        f.storage_path,
+        f.is_public,
+        f.created_at,
+        u.username,
+        c.name
+    FROM files f
+    JOIN users u ON f.owner_id = u.id
+    JOIN channels c ON f.channel_id = c.id
+`)
+
 	if err != nil {
 		return nil, fmt.Errorf("list all files: %w", err)
 	}

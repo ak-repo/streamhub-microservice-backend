@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"log"
-
 	"github.com/ak-repo/stream-hub/config"
 	"github.com/ak-repo/stream-hub/gen/adminpb"
 	"github.com/ak-repo/stream-hub/internal/gateway/clients"
@@ -28,7 +26,6 @@ func (h *AdminHandler) ListUsers(c *fiber.Ctx) error {
 
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
-	log.Println("filter", filterBy)
 	resp, err := h.clients.Admin.ListUsers(ctx, &adminpb.ListUsersRequest{FilterBy: filterBy})
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
@@ -178,33 +175,26 @@ func (h *AdminHandler) UnfreezeChannel(c *fiber.Ctx) error {
 }
 
 func (h *AdminHandler) DeleteChannel(c *fiber.Ctx) error {
-	var req struct {
-		ChannelID string `json:"channelId"`
-	}
-
-	if err := c.BodyParser(&req); err != nil {
-		return response.InvalidReqBody(c)
-	}
-	log.Println("chan:",req.ChannelID)
+	channelID := c.Params("id")
+	adminID := c.Locals("userID").(string)
 
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.Admin.DeleteChannel(ctx, &adminpb.DeleteChannelRequest{ChannelId: req.ChannelID})
+	resp, err := h.clients.Admin.DeleteChannel(ctx, &adminpb.DeleteChannelRequest{ChannelId: channelID, AdminId: adminID})
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
 	}
 
-	return response.Success(c, "channel deleted, id: "+req.ChannelID, resp)
+	return response.Success(c, "channel deleted, id: "+channelID, resp)
 
 }
 
 func (h *AdminHandler) ListAllFiles(c *fiber.Ctx) error {
 
 	adminID := c.Locals("userID").(string)
-	log.Println("id:",adminID)
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
@@ -220,19 +210,13 @@ func (h *AdminHandler) ListAllFiles(c *fiber.Ctx) error {
 }
 
 func (h *AdminHandler) DeleteFile(c *fiber.Ctx) error {
-	var req struct {
-		FileID string `json:"fileId"`
-	}
+	fileID := c.Params("id")
+	adminID := c.Locals("userID").(string)
 
-	if err := c.BodyParser(&req); err != nil {
-		return response.InvalidReqBody(c)
-	}
-
-	adminID := c.Locals("userId").(string)
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.Admin.AdminDeleteFile(ctx, &adminpb.AdminDeleteFileRequest{FileId: req.FileID, AdminId: adminID})
+	resp, err := h.clients.Admin.AdminDeleteFile(ctx, &adminpb.AdminDeleteFileRequest{FileId: fileID, AdminId: adminID})
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)

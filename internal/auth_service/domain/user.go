@@ -12,4 +12,5 @@ type User struct {
 	IsBanned      bool      `db:"is_banned"`      // user blocked by admin
 	CreatedAt     time.Time `db:"created_at"`     // creation timestamp
 	UpdatedAt     time.Time `db:"updated_at"`     // creation timestamp
+	UploadBlocked bool      `db:"upload_blocked"`
 }

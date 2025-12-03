@@ -36,8 +36,8 @@ type ChannelMember struct {
 }
 
 type ChannelWithMembers struct {
-	Channel *Channel           `json:"channel"`
-	Members []*ChannelMember   `json:"members"`
+	Channel *Channel         `json:"channel"`
+	Members []*ChannelMember `json:"members"`
 }
 
 // =======================
@@ -53,4 +53,6 @@ type File struct {
 	StoragePath string    `json:"storage_path"`
 	IsPublic    bool      `json:"is_public"`
 	CreatedAt   time.Time `json:"created_at"`
+	OwnerName   string    `json:"owner_name"`
+	ChannelName string    `json:"channel_name"`
 }

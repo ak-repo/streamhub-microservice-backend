@@ -18,7 +18,7 @@ type AdminService interface {
 	ListChannels(ctx context.Context) ([]*domain.ChannelWithMembers, error)
 	FreezeChannel(ctx context.Context, channelID, reason string) error
 	UnfreezeChannel(ctx context.Context, channelID string) error
-	DeleteChannel(ctx context.Context, channelID string) error
+	DeleteChannel(ctx context.Context, adminID, channelID string) error
 
 	// -------- File Management --------
 	ListAllFiles(ctx context.Context, adminID string) ([]*domain.File, error)
@@ -50,10 +50,10 @@ type AdminRepository interface {
 	ListChannelMembers(ctx context.Context, channelID string) ([]*domain.ChannelMember, error)
 	FreezeChannel(ctx context.Context, channelID string, reason string) error
 	UnfreezeChannel(ctx context.Context, channelID string) error
-	DeleteChannel(ctx context.Context, channelID string) error
+	// DeleteChannel(ctx context.Context, channelID string) error
 
 	// ------------- FILE MANAGEMENT -------------
 
 	ListAllFiles(ctx context.Context) ([]*domain.File, error)
-	DeleteFile(ctx context.Context, fileID string) error
+	// DeleteFile(ctx context.Context, fileID string) error
 }

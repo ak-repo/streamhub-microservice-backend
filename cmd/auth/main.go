@@ -10,6 +10,7 @@ import (
 	"github.com/ak-repo/stream-hub/gen/authpb"
 	authgrpc "github.com/ak-repo/stream-hub/internal/auth_service/adapter/grpc"
 	"github.com/ak-repo/stream-hub/internal/auth_service/adapter/postgres"
+	otpredis "github.com/ak-repo/stream-hub/internal/auth_service/adapter/redis"
 	"github.com/ak-repo/stream-hub/internal/auth_service/app"
 
 	"github.com/ak-repo/stream-hub/pkg/db"
@@ -17,6 +18,7 @@ import (
 	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/jwt"
 	"github.com/ak-repo/stream-hub/pkg/logger"
+	redisclient "github.com/ak-repo/stream-hub/pkg/redis"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -42,9 +44,16 @@ func main() {
 	tokenExpiry := 10 * time.Minute
 	jwtMan := jwt.NewJWTManager(cfg.JWT.Secret, tokenExpiry, tokenExpiry)
 
+	// Redis
+	rAddr := cfg.Redis.Host + ":" + cfg.Redis.Port
+	redisclient.Init(rAddr)
+	rClient := redisclient.Client
+
+	otpStore := otpredis.NewOTPStore(rClient, 10*time.Minute)
+
 	// repo -> service -> server
 	repo := postgres.NewUserRepository(pgDB.Pool)
-	service := app.NewAuthService(repo, jwtMan, cfg)
+	service := app.NewAuthService(repo, jwtMan, cfg, otpStore)
 	server := authgrpc.NewAuthServer(service)
 
 	addr := ":" + cfg.Services.Auth.Port

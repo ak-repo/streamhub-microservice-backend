@@ -30,6 +30,8 @@ message File {
   string storage_path = 7;
   bool is_public = 8;
   string created_at = 9;
+  string owner_name = 10;
+  string channel_name = 11;
 }
 
 // ---------------------------------------------------------------
@@ -87,6 +89,8 @@ message UnfreezeChannelResponse {
 
 message DeleteChannelRequest {
   string channel_id = 1;
+  string admin_id = 2;
+
 }
 message DeleteChannelResponse {
   bool success = 1;
@@ -130,28 +134,7 @@ message ListUsersResponse {
   repeated User users = 1;
 }
 
-// ---------------------------------------------------------------
-// AUDIT LOGS
-// ---------------------------------------------------------------
-message GetAuditLogsRequest {
-  int32 page = 1;
-  int32 limit = 2;
-}
 
-message AuditLogEntry {
-  string id = 1;
-  string admin_id = 2;
-  string action = 3;
-  string target_id = 4;
-  string details = 5;
-  string created_at = 6;
-}
-
-message GetAuditLogsResponse {
-  repeated AuditLogEntry logs = 1;
-  int32 total_count = 2;
-  int32 page = 3;
-}
 
 // ---------------------------------------------------------------
 // FILE ADMINISTRATION
@@ -194,6 +177,41 @@ message AdminStorageStatsResponse {
   int64 private_files = 4;
 }
 
+
+
+
+// ---------------------------------------------------------------
+// AUDIT LOGS
+// ---------------------------------------------------------------
+message GetAuditLogsRequest {
+  int32 page = 1;
+  int32 limit = 2;
+}
+
+message AuditLogEntry {
+  string id = 1;
+  string admin_id = 2;
+  string action = 3;
+  string target_id = 4;
+  string details = 5;
+  string created_at = 6;
+}
+
+message GetAuditLogsResponse {
+  repeated AuditLogEntry logs = 1;
+  int32 total_count = 2;
+  int32 page = 3;
+}
+
+
+message IsAdminRequest {
+  string admin_id = 1;
+}
+
+message IsAdminResponse{
+  bool success = 1;
+}
+
 // ---------------------------------------------------------------
 // ADMIN SERVICE
 // ---------------------------------------------------------------
@@ -214,6 +232,7 @@ service AdminService {
 
   // Activity Monitoring
   rpc GetAuditLogs(GetAuditLogsRequest) returns (GetAuditLogsResponse);
+  rpc IsAdmin(IsAdminRequest)returns (IsAdminResponse);
 
   // Files Management
   rpc AdminListAllFiles(AdminListAllFilesRequest) returns (AdminListAllFilesResponse);

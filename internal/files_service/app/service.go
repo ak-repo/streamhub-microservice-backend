@@ -6,25 +6,29 @@ import (
 	"log"
 	"time"
 
+	"github.com/ak-repo/stream-hub/gen/adminpb"
 	"github.com/ak-repo/stream-hub/internal/files_service/domain"
 	"github.com/ak-repo/stream-hub/internal/files_service/port"
+	"github.com/ak-repo/stream-hub/internal/gateway/clients"
 	"github.com/ak-repo/stream-hub/pkg/errors"
 	"github.com/google/uuid"
 )
 
 type fileService struct {
-	repo  port.FileRepository
-	redis port.TempFileStore
-	store port.FileStorage
-	ttl   time.Duration
+	repo    port.FileRepository
+	redis   port.TempFileStore
+	store   port.FileStorage
+	ttl     time.Duration
+	clients clients.Clients
 }
 
-func NewFileService(repo port.FileRepository, redis port.TempFileStore, st port.FileStorage, ttl time.Duration) port.FileService {
+func NewFileService(repo port.FileRepository, redis port.TempFileStore, st port.FileStorage, ttl time.Duration, clients clients.Clients) port.FileService {
 	return &fileService{
-		repo:  repo,
-		redis: redis,
-		store: st,
-		ttl:   ttl,
+		repo:    repo,
+		redis:   redis,
+		store:   st,
+		ttl:     ttl,
+		clients: clients,
 	}
 }
 
@@ -137,34 +141,40 @@ func (s *fileService) ListFiles(ctx context.Context, requesterID, channelID stri
 	return files, nil
 }
 
-// DeleteFile
 func (s *fileService) DeleteFile(ctx context.Context, fileID, requesterID string) error {
 
 	if fileID == "" {
 		return errors.New(errors.CodeInvalidInput, "file_id cannot be empty", nil)
 	}
+
+	// --- fetch file ---
 	f, err := s.repo.GetByID(ctx, fileID)
 	if err != nil {
 		return errors.New(errors.CodeNotFound,
 			fmt.Sprintf("file %s not found", fileID), err)
 	}
 
-	// Only owner or channel admin can delete
-	// isAdmin, err := s.repo.IsChannelAdmin(ctx, f.ChannelID, requesterID)
-	// if err != nil {
-	// 	return errors.New(errors.CodeInternal, "failed to check admin access", err)
-	// }
+	// --- admin validation ---
+	resp, adminErr := s.clients.Admin.IsAdmin(ctx, &adminpb.IsAdminRequest{
+		AdminId: requesterID,
+	})
 
-	if requesterID != f.OwnerID {
+	isOwner := requesterID == f.OwnerID
+	isAdmin := adminErr == nil && resp.Success
+
+	// permission check
+	if !(isOwner || isAdmin) {
 		return errors.New(errors.CodeForbidden,
-			"only owner or channel admin can delete this file", nil)
+			"only owner or admin can delete this file", nil)
 	}
 
+	// --- delete from cloud ---
 	if err := s.store.DeleteObject(f); err != nil {
 		return errors.New(errors.CodeInternal,
 			fmt.Sprintf("failed to delete file object %s", fileID), err)
 	}
 
+	// --- delete metadata ---
 	if err := s.repo.Delete(ctx, fileID); err != nil {
 		return errors.New(errors.CodeInternal,
 			fmt.Sprintf("failed to delete file metadata %s", fileID), err)

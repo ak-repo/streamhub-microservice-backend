@@ -78,6 +78,8 @@ func mapFile(f *domain.File) *adminpb.File {
 		StoragePath: f.StoragePath,
 		IsPublic:    f.IsPublic,
 		CreatedAt:   helper.TimeToString(f.CreatedAt),
+		OwnerName:   f.OwnerName,
+		ChannelName: f.ChannelName,
 	}
 }
 
@@ -159,7 +161,7 @@ func (s *AdminServer) UnfreezeChannel(ctx context.Context, req *adminpb.Unfreeze
 }
 
 func (s *AdminServer) DeleteChannel(ctx context.Context, req *adminpb.DeleteChannelRequest) (*adminpb.DeleteChannelResponse, error) {
-	if err := s.service.DeleteChannel(ctx, req.ChannelId); err != nil {
+	if err := s.service.DeleteChannel(ctx, req.AdminId, req.ChannelId); err != nil {
 		return nil, err
 	}
 	return &adminpb.DeleteChannelResponse{Success: true}, nil
@@ -197,4 +199,10 @@ func (s *AdminServer) AdminBlockUserUpload(ctx context.Context, req *adminpb.Adm
 		return nil, err
 	}
 	return &adminpb.AdminBlockUserUploadResponse{Success: true}, nil
+}
+
+func (s *AdminServer) IsAdmin(ctx context.Context, req *adminpb.IsAdminRequest) (*adminpb.IsAdminResponse, error) {
+
+	return &adminpb.IsAdminResponse{Success: true}, nil
+
 }

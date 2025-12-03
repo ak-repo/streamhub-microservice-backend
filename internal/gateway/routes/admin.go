@@ -30,10 +30,10 @@ func adminRoutes(api fiber.Router, clients *clients.Clients, cfg *config.Config)
 	// adminR.Get("/channels/:id", handler.GetChannelById)
 	adminR.Post("/channels/freeze", handler.FreezeChannel)
 	adminR.Post("/channels/unfreeze", handler.UnfreezeChannel)
-	adminR.Delete("/channels/delete", handler.DeleteChannel)
+	adminR.Delete("/channels/:id", handler.DeleteChannel)
 
 	// files actions
 	adminR.Get("/files", handler.ListAllFiles)
-	adminR.Delete("/files/delete", handler.DeleteFile)
+	adminR.Delete("/files/:id", handler.DeleteFile)
 
 }
