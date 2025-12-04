@@ -134,3 +134,19 @@ func (s *AuthServer) ChangePassword(ctx context.Context, req *authpb.ChangePassw
 	return &authpb.ChangePasswordResponse{Success: true}, nil
 
 }
+
+func (s *AuthServer) SearchUsers(ctx context.Context, req *authpb.SearchUsersRequest) (*authpb.SearchUsersResponse, error) {
+
+	users, err := s.service.FindAllUsers(ctx, req.Query)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var resp []*authpb.AuthUser
+	for _, u := range users {
+		resp = append(resp, mapUser(u))
+	}
+
+	return &authpb.SearchUsersResponse{Users: resp, Total: int32(len(resp))}, nil
+}

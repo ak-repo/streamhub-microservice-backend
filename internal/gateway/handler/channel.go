@@ -207,3 +207,31 @@ func (h *ChannelHandler) ListMessages(c *fiber.Ctx) error {
 
 	return response.Success(c, "previous messages", resp)
 }
+
+func (h *ChannelHandler) AddMember(c *fiber.Ctx) error {
+	var req struct {
+		ChannelID string `json:"channelId"`
+		UserID    string `json:"userId"`
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return response.InvalidReqBody(c)
+
+	}
+
+	ctx, cancel := helper.WithGRPCTimeout()
+	defer cancel()
+
+	resp, err := h.client.AddMember(ctx, &channelpb.AddMemberRequest{
+		ChannelId: req.ChannelID,
+		UserId:    req.UserID,
+	})
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return response.Error(c, code, body)
+
+	}
+
+	return response.Success(c, fmt.Sprintf("joined channel: %s", req.ChannelID), resp)
+
+}

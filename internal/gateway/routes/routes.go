@@ -44,7 +44,7 @@ func userRoutes(api fiber.Router, cfg *config.Config, clients *clients.Clients) 
 	// auth needed JWT
 	authR := api.Group("/auth")
 	authR.Use(middleware.AuthMiddleware(jwtMan))
-
+	authR.Get("/users", auth.SearchUsers)
 	authR.Post("/profile-update", auth.UpdateProfile)
 	authR.Post("/password-change", auth.ChangePassword)
 

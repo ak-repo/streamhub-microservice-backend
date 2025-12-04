@@ -142,3 +142,45 @@ func (r *userRepo) UpdatePassword(ctx context.Context, email, hash string) error
 
 	return nil
 }
+
+func (r *userRepo) FindAll(ctx context.Context, query string) ([]*domain.User, error) {
+	users := []*domain.User{}
+
+	// Base SQL
+	sql := `
+		SELECT id, username, email, password_hash, role, email_verified,
+		       is_banned, created_at, updated_at, upload_blocked
+		FROM users
+	`
+
+	var args []interface{}
+
+	// Add search condition only when needed
+	if query != "" {
+		sql += " WHERE username ILIKE $1 OR email ILIKE $1"
+		args = append(args, "%"+query+"%")
+	}
+
+	rows, err := r.pool.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		u := &domain.User{}
+		err := rows.Scan(
+			&u.ID, &u.Username, &u.Email, &u.PasswordHash,
+			&u.Role, &u.EmailVerified, &u.IsBanned,
+			&u.CreatedAt, &u.UpdatedAt, &u.UploadBlocked,
+		)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+
+	return users, rows.Err()
+}
+
+

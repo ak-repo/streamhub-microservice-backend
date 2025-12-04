@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"log"
+
 	"github.com/ak-repo/stream-hub/gen/authpb"
 	"github.com/ak-repo/stream-hub/pkg/errors"
 	"github.com/ak-repo/stream-hub/pkg/helper"
@@ -164,6 +166,9 @@ func (h *AuthHandler) VerifyPasswordReset(c *fiber.Ctx) error {
 		return response.InvalidReqBody(c)
 	}
 
+	log.Println("email: for pr", req.Email)
+	log.Println("token:", req.Token)
+	log.Println("pass: ", req.Password)
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
@@ -240,5 +245,25 @@ func (h *AuthHandler) ChangePassword(c *fiber.Ctx) error {
 	}
 
 	return response.Success(c, "password changed", resp)
+
+}
+
+func (h *AuthHandler) SearchUsers(c *fiber.Ctx) error {
+	query := c.Query("query")
+
+	// if query == "" {
+	// 	return nil
+	// }
+	ctx, cancel := helper.WithGRPCTimeout()
+	defer cancel()
+
+	resp, err := h.client.SearchUsers(ctx, &authpb.SearchUsersRequest{Query: query})
+
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return response.Error(c, code, body)
+	}
+
+	return response.Success(c, "users", resp)
 
 }

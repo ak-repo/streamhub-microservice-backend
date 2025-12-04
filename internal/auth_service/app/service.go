@@ -127,6 +127,7 @@ func (s *authService) VerifyMagicLink(ctx context.Context, token, email string) 
 	if err != nil {
 		return errors.New(errors.CodeNotFound, ErrUserNotFound, err)
 	}
+	user.EmailVerified = true
 
 	if err := s.repo.Update(ctx, user); err != nil {
 		return errors.New(errors.CodeInternal, "database update error", err)
@@ -284,4 +285,10 @@ func (s *authService) ChangePassword(ctx context.Context, userID, password, newP
 	}
 
 	return nil
+}
+
+// all users realted services
+func (s *authService) FindAllUsers(ctx context.Context, query string) ([]*domain.User, error) {
+
+	return s.repo.FindAll(ctx, query)
 }

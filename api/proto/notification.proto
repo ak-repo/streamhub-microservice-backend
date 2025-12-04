@@ -1,46 +1,49 @@
 syntax = "proto3";
 
-package notifications;
-option go_package = "./api/notificationspb";
+package notification;
+option go_package = "./gen/notificationpb";
 
 message Notification {
   string id = 1;
-  string recipient_id = 2;
-  string actor_id = 3; // who triggered it
-  string entity_id = 4; // file or chat
-  string type = 5; // new_message, file_shared
-  string title = 6;
-  bool is_read = 7;
-  string created_at = 8;
+  string user_id = 2;
+  string title = 3;
+  string message = 4;
+  string type = 5; // info, alert, success, warning
+  bool is_read = 6;
+  int64 created_at_ms = 7;
+  map<string, string> metadata = 8; // Extra data like channel_id, message_id
 }
 
-message SubscribeRequest {
+message CreateNotificationRequest {
   string user_id = 1;
-}
-
-message SubscribeResponse {
-  string message = 1;
+  string title = 2;
+  string message = 3;
+  string type = 4;
+  map<string, string> metadata = 5;
 }
 
 message ListNotificationsRequest {
   string user_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
 }
 
 message ListNotificationsResponse {
   repeated Notification notifications = 1;
+  int32 total_count = 2;
 }
 
 message MarkReadRequest {
-  string notification_id = 1;
+  string notification_id = 1; // If empty, mark all for user
+  string user_id = 2;
 }
 
 message MarkReadResponse {
-  string message = 1;
+  bool success = 1;
 }
 
-// Service RPC
 service NotificationService {
-  rpc Subscribe(SubscribeRequest) returns (SubscribeResponse);
+  rpc CreateNotification(CreateNotificationRequest) returns (Notification);
   rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
   rpc MarkRead(MarkReadRequest) returns (MarkReadResponse);
 }

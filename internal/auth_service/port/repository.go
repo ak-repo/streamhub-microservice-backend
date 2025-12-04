@@ -14,4 +14,5 @@ type UserRepository interface {
 	FindByUsername(ctx context.Context, username string) (*domain.User, error)
 	Update(ctx context.Context, u *domain.User) error
 	UpdatePassword(ctx context.Context, email, hash string) error
+	FindAll(ctx context.Context, query string) ([]*domain.User, error)
 }
