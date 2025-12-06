@@ -15,4 +15,5 @@ type UserRepository interface {
 	Update(ctx context.Context, u *domain.User) error
 	UpdatePassword(ctx context.Context, email, hash string) error
 	FindAll(ctx context.Context, query string) ([]*domain.User, error)
+	UpdateAvatar(ctx context.Context, userID, url string) error
 }

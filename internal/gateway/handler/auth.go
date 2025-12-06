@@ -1,7 +1,10 @@
 package handler
 
 import (
+	"context"
+	"io"
 	"log"
+	"time"
 
 	"github.com/ak-repo/stream-hub/gen/authpb"
 	"github.com/ak-repo/stream-hub/pkg/errors"
@@ -265,5 +268,62 @@ func (h *AuthHandler) SearchUsers(c *fiber.Ctx) error {
 	}
 
 	return response.Success(c, "users", resp)
+
+}
+
+func (h *AuthHandler) UploadAvatar(c *fiber.Ctx) error {
+
+	c.Set("Content-Type", "application/json")
+
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+	// Parse file
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "file upload error: " + err.Error(),
+		})
+	}
+
+	if fileHeader.Size > 5<<20 { // enforce 5MB
+		return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{
+			"error": "file too large; max 5MB",
+		})
+	}
+
+	// Open file
+	file, err := fileHeader.Open()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to open uploaded file",
+		})
+	}
+	defer file.Close()
+	// Read bytes
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to read file",
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+
+	resp, err := h.client.UploadAvatar(ctx, &authpb.UploadAvatarRequest{
+		UserId:      uid,
+		File:        data,
+		Filename:    fileHeader.Filename,
+		ContentType: fileHeader.Header.Get("Content-Type"),
+	})
+
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return response.Error(c, code, body)
+	}
+
+	return response.Success(c, "profile pic updated", resp)
 
 }

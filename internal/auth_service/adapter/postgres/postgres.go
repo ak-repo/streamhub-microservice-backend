@@ -19,36 +19,56 @@ func NewUserRepository(pool *pgxpool.Pool) port.UserRepository {
 	return &userRepo{pool: pool}
 }
 
+//
 // -------------------------------------------------------------
 // CREATE
 // -------------------------------------------------------------
 func (r *userRepo) Create(ctx context.Context, u *domain.User) error {
 	return r.pool.QueryRow(
 		ctx,
-		`INSERT INTO users (id, username, email, password_hash, role, 
-			email_verified, is_banned, upload_blocked)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-		 RETURNING id, created_at, updated_at`,
-		u.ID, u.Username, u.Email, u.PasswordHash, u.Role,
-		u.EmailVerified, u.IsBanned, u.UploadBlocked,
-	).Scan(&u.ID, &u.CreatedAt, &u.UpdatedAt)
+		`INSERT INTO users (
+			id, username, email, password_hash, role,
+			email_verified, is_banned, upload_blocked, avatar_url
+		)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+		RETURNING id, created_at, updated_at, avatar_url`,
+		u.ID,
+		u.Username,
+		u.Email,
+		u.PasswordHash,
+		u.Role,
+		u.EmailVerified,
+		u.IsBanned,
+		u.UploadBlocked,
+		u.Avatar_url,
+	).Scan(&u.ID, &u.CreatedAt, &u.UpdatedAt, &u.Avatar_url)
 }
 
+//
 // -------------------------------------------------------------
 // FIND BY EMAIL
 // -------------------------------------------------------------
 func (r *userRepo) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
 	row := r.pool.QueryRow(ctx,
 		`SELECT id, username, email, password_hash, role, email_verified,
-		        is_banned, created_at, updated_at, upload_blocked
-		 FROM users WHERE email=$1`, email,
+		        is_banned, created_at, updated_at, upload_blocked, avatar_url
+		 FROM users WHERE email=$1`,
+		email,
 	)
 
 	u := &domain.User{}
 	err := row.Scan(
-		&u.ID, &u.Username, &u.Email, &u.PasswordHash,
-		&u.Role, &u.EmailVerified, &u.IsBanned,
-		&u.CreatedAt, &u.UpdatedAt, &u.UploadBlocked,
+		&u.ID,
+		&u.Username,
+		&u.Email,
+		&u.PasswordHash,
+		&u.Role,
+		&u.EmailVerified,
+		&u.IsBanned,
+		&u.CreatedAt,
+		&u.UpdatedAt,
+		&u.UploadBlocked,
+		&u.Avatar_url,
 	)
 
 	if err == pgx.ErrNoRows {
@@ -57,21 +77,31 @@ func (r *userRepo) FindByEmail(ctx context.Context, email string) (*domain.User,
 	return u, err
 }
 
+//
 // -------------------------------------------------------------
 // FIND BY USERNAME
 // -------------------------------------------------------------
 func (r *userRepo) FindByUsername(ctx context.Context, username string) (*domain.User, error) {
 	row := r.pool.QueryRow(ctx,
 		`SELECT id, username, email, password_hash, role, email_verified,
-		        is_banned, created_at, updated_at, upload_blocked
-		 FROM users WHERE username=$1`, username,
+		        is_banned, created_at, updated_at, upload_blocked, avatar_url
+		 FROM users WHERE username=$1`,
+		username,
 	)
 
 	u := &domain.User{}
 	err := row.Scan(
-		&u.ID, &u.Username, &u.Email, &u.PasswordHash,
-		&u.Role, &u.EmailVerified, &u.IsBanned,
-		&u.CreatedAt, &u.UpdatedAt, &u.UploadBlocked,
+		&u.ID,
+		&u.Username,
+		&u.Email,
+		&u.PasswordHash,
+		&u.Role,
+		&u.EmailVerified,
+		&u.IsBanned,
+		&u.CreatedAt,
+		&u.UpdatedAt,
+		&u.UploadBlocked,
+		&u.Avatar_url,
 	)
 
 	if err == pgx.ErrNoRows {
@@ -80,21 +110,31 @@ func (r *userRepo) FindByUsername(ctx context.Context, username string) (*domain
 	return u, err
 }
 
+//
 // -------------------------------------------------------------
 // FIND BY ID
 // -------------------------------------------------------------
 func (r *userRepo) FindByID(ctx context.Context, id string) (*domain.User, error) {
 	row := r.pool.QueryRow(ctx,
 		`SELECT id, username, email, password_hash, role, email_verified,
-		        is_banned, created_at, updated_at, upload_blocked
-		 FROM users WHERE id=$1`, id,
+		        is_banned, created_at, updated_at, upload_blocked, avatar_url
+		 FROM users WHERE id=$1`,
+		id,
 	)
 
 	u := &domain.User{}
 	err := row.Scan(
-		&u.ID, &u.Username, &u.Email, &u.PasswordHash,
-		&u.Role, &u.EmailVerified, &u.IsBanned,
-		&u.CreatedAt, &u.UpdatedAt, &u.UploadBlocked,
+		&u.ID,
+		&u.Username,
+		&u.Email,
+		&u.PasswordHash,
+		&u.Role,
+		&u.EmailVerified,
+		&u.IsBanned,
+		&u.CreatedAt,
+		&u.UpdatedAt,
+		&u.UploadBlocked,
+		&u.Avatar_url,
 	)
 
 	if err == pgx.ErrNoRows {
@@ -103,8 +143,9 @@ func (r *userRepo) FindByID(ctx context.Context, id string) (*domain.User, error
 	return u, err
 }
 
+//
 // -------------------------------------------------------------
-// UPDATE
+// UPDATE USER
 // -------------------------------------------------------------
 func (r *userRepo) Update(ctx context.Context, u *domain.User) error {
 	log.Println("Updating user:", u.ID)
@@ -115,13 +156,20 @@ func (r *userRepo) Update(ctx context.Context, u *domain.User) error {
 		     email_verified=$5, is_banned=$6, upload_blocked=$7,
 		     updated_at=$8
 		 WHERE id=$9`,
-		u.Username, u.Email, u.PasswordHash, u.Role,
-		u.EmailVerified, u.IsBanned, u.UploadBlocked,
-		u.UpdatedAt, u.ID,
+		u.Username,
+		u.Email,
+		u.PasswordHash,
+		u.Role,
+		u.EmailVerified,
+		u.IsBanned,
+		u.UploadBlocked,
+		u.UpdatedAt,
+		u.ID,
 	)
 	return err
 }
 
+//
 // -------------------------------------------------------------
 // UPDATE PASSWORD
 // -------------------------------------------------------------
@@ -130,8 +178,10 @@ func (r *userRepo) UpdatePassword(ctx context.Context, email, hash string) error
 		`UPDATE users 
 		 SET password_hash = $1, updated_at = NOW() 
 		 WHERE email = $2`,
-		hash, email,
+		hash,
+		email,
 	)
+
 	if err != nil {
 		return err
 	}
@@ -143,19 +193,21 @@ func (r *userRepo) UpdatePassword(ctx context.Context, email, hash string) error
 	return nil
 }
 
+//
+// -------------------------------------------------------------
+// FIND ALL
+// -------------------------------------------------------------
 func (r *userRepo) FindAll(ctx context.Context, query string) ([]*domain.User, error) {
 	users := []*domain.User{}
 
-	// Base SQL
 	sql := `
 		SELECT id, username, email, password_hash, role, email_verified,
-		       is_banned, created_at, updated_at, upload_blocked
+		       is_banned, created_at, updated_at, upload_blocked, avatar_url
 		FROM users
 	`
 
 	var args []interface{}
 
-	// Add search condition only when needed
 	if query != "" {
 		sql += " WHERE username ILIKE $1 OR email ILIKE $1"
 		args = append(args, "%"+query+"%")
@@ -170,9 +222,17 @@ func (r *userRepo) FindAll(ctx context.Context, query string) ([]*domain.User, e
 	for rows.Next() {
 		u := &domain.User{}
 		err := rows.Scan(
-			&u.ID, &u.Username, &u.Email, &u.PasswordHash,
-			&u.Role, &u.EmailVerified, &u.IsBanned,
-			&u.CreatedAt, &u.UpdatedAt, &u.UploadBlocked,
+			&u.ID,
+			&u.Username,
+			&u.Email,
+			&u.PasswordHash,
+			&u.Role,
+			&u.EmailVerified,
+			&u.IsBanned,
+			&u.CreatedAt,
+			&u.UpdatedAt,
+			&u.UploadBlocked,
+			&u.Avatar_url,
 		)
 		if err != nil {
 			return nil, err
@@ -183,4 +243,15 @@ func (r *userRepo) FindAll(ctx context.Context, query string) ([]*domain.User, e
 	return users, rows.Err()
 }
 
-
+//
+// -------------------------------------------------------------
+// UPDATE AVATAR URL
+// -------------------------------------------------------------
+func (r *userRepo) UpdateAvatar(ctx context.Context, userID, url string) error {
+	_, err := r.pool.Exec(ctx,
+		`UPDATE users SET avatar_url = $1 WHERE id = $2`,
+		url,
+		userID,
+	)
+	return err
+}

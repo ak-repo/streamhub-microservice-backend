@@ -212,6 +212,17 @@ message IsAdminResponse{
   bool success = 1;
 }
 
+
+message DashBoardRequest {}
+message DashBoardResponse{
+  repeated User last_users = 1;
+  string total_files = 2;
+  string total_users = 3;
+  string total_channels = 4;
+  string total_storage = 5;
+
+}
+
 // ---------------------------------------------------------------
 // ADMIN SERVICE
 // ---------------------------------------------------------------
@@ -233,6 +244,7 @@ service AdminService {
   // Activity Monitoring
   rpc GetAuditLogs(GetAuditLogsRequest) returns (GetAuditLogsResponse);
   rpc IsAdmin(IsAdminRequest)returns (IsAdminResponse);
+  rpc DashBoardData(DashBoardRequest)returns(DashBoardResponse);
 
   // Files Management
   rpc AdminListAllFiles(AdminListAllFilesRequest) returns (AdminListAllFilesResponse);

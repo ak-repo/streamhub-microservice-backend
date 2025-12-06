@@ -30,6 +30,7 @@ const (
 	AuthService_FindByEmail_FullMethodName         = "/auth.AuthService/FindByEmail"
 	AuthService_FindById_FullMethodName            = "/auth.AuthService/FindById"
 	AuthService_UpdateProfile_FullMethodName       = "/auth.AuthService/UpdateProfile"
+	AuthService_UploadAvatar_FullMethodName        = "/auth.AuthService/UploadAvatar"
 	AuthService_SearchUsers_FullMethodName         = "/auth.AuthService/SearchUsers"
 )
 
@@ -58,6 +59,7 @@ type AuthServiceClient interface {
 	FindById(ctx context.Context, in *FindByIdRequest, opts ...grpc.CallOption) (*FindUserResponse, error)
 	// Profile
 	UpdateProfile(ctx context.Context, in *UpdateProfileRequest, opts ...grpc.CallOption) (*UpdateProfileResponse, error)
+	UploadAvatar(ctx context.Context, in *UploadAvatarRequest, opts ...grpc.CallOption) (*UploadAvatarResponse, error)
 	// Search
 	SearchUsers(ctx context.Context, in *SearchUsersRequest, opts ...grpc.CallOption) (*SearchUsersResponse, error)
 }
@@ -180,6 +182,16 @@ func (c *authServiceClient) UpdateProfile(ctx context.Context, in *UpdateProfile
 	return out, nil
 }
 
+func (c *authServiceClient) UploadAvatar(ctx context.Context, in *UploadAvatarRequest, opts ...grpc.CallOption) (*UploadAvatarResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UploadAvatarResponse)
+	err := c.cc.Invoke(ctx, AuthService_UploadAvatar_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *authServiceClient) SearchUsers(ctx context.Context, in *SearchUsersRequest, opts ...grpc.CallOption) (*SearchUsersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SearchUsersResponse)
@@ -215,6 +227,7 @@ type AuthServiceServer interface {
 	FindById(context.Context, *FindByIdRequest) (*FindUserResponse, error)
 	// Profile
 	UpdateProfile(context.Context, *UpdateProfileRequest) (*UpdateProfileResponse, error)
+	UploadAvatar(context.Context, *UploadAvatarRequest) (*UploadAvatarResponse, error)
 	// Search
 	SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
@@ -259,6 +272,9 @@ func (UnimplementedAuthServiceServer) FindById(context.Context, *FindByIdRequest
 }
 func (UnimplementedAuthServiceServer) UpdateProfile(context.Context, *UpdateProfileRequest) (*UpdateProfileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateProfile not implemented")
+}
+func (UnimplementedAuthServiceServer) UploadAvatar(context.Context, *UploadAvatarRequest) (*UploadAvatarResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UploadAvatar not implemented")
 }
 func (UnimplementedAuthServiceServer) SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SearchUsers not implemented")
@@ -482,6 +498,24 @@ func _AuthService_UpdateProfile_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_UploadAvatar_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UploadAvatarRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).UploadAvatar(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_UploadAvatar_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).UploadAvatar(ctx, req.(*UploadAvatarRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AuthService_SearchUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SearchUsersRequest)
 	if err := dec(in); err != nil {
@@ -550,6 +584,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateProfile",
 			Handler:    _AuthService_UpdateProfile_Handler,
+		},
+		{
+			MethodName: "UploadAvatar",
+			Handler:    _AuthService_UploadAvatar_Handler,
 		},
 		{
 			MethodName: "SearchUsers",

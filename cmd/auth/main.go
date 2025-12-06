@@ -8,12 +8,14 @@ import (
 
 	"github.com/ak-repo/stream-hub/config"
 	"github.com/ak-repo/stream-hub/gen/authpb"
+	authcloudinary "github.com/ak-repo/stream-hub/internal/auth_service/adapter/cloudinary"
 	authgrpc "github.com/ak-repo/stream-hub/internal/auth_service/adapter/grpc"
 	"github.com/ak-repo/stream-hub/internal/auth_service/adapter/postgres"
 	otpredis "github.com/ak-repo/stream-hub/internal/auth_service/adapter/redis"
 	"github.com/ak-repo/stream-hub/internal/auth_service/app"
 
 	"github.com/ak-repo/stream-hub/pkg/db"
+	"github.com/ak-repo/stream-hub/pkg/db/seeder"
 	"github.com/ak-repo/stream-hub/pkg/grpc/interceptors"
 	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/jwt"
@@ -51,9 +53,12 @@ func main() {
 
 	otpStore := otpredis.NewOTPStore(rClient, 10*time.Minute)
 
+	cloudCli, _ := authcloudinary.NewCloudinaryUploader("dersnukrf", "388271549966182", "XQ3QVF6q78P0bhl6rR-eIoTQWO8")
+	seeder.UsersSeeder(context.Background(), pgDB.Pool)
+
 	// repo -> service -> server
 	repo := postgres.NewUserRepository(pgDB.Pool)
-	service := app.NewAuthService(repo, jwtMan, cfg, otpStore)
+	service := app.NewAuthService(repo, jwtMan, cfg, otpStore, cloudCli)
 	server := authgrpc.NewAuthServer(service)
 
 	addr := ":" + cfg.Services.Auth.Port

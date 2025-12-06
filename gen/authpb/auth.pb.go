@@ -1225,6 +1225,118 @@ func (x *UpdateProfileResponse) GetUser() *AuthUser {
 	return nil
 }
 
+type UploadAvatarRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	File          []byte                 `protobuf:"bytes,2,opt,name=file,proto3" json:"file,omitempty"`
+	Filename      string                 `protobuf:"bytes,3,opt,name=filename,proto3" json:"filename,omitempty"`
+	ContentType   string                 `protobuf:"bytes,4,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UploadAvatarRequest) Reset() {
+	*x = UploadAvatarRequest{}
+	mi := &file_api_proto_auth_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UploadAvatarRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadAvatarRequest) ProtoMessage() {}
+
+func (x *UploadAvatarRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_auth_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UploadAvatarRequest.ProtoReflect.Descriptor instead.
+func (*UploadAvatarRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_auth_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *UploadAvatarRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *UploadAvatarRequest) GetFile() []byte {
+	if x != nil {
+		return x.File
+	}
+	return nil
+}
+
+func (x *UploadAvatarRequest) GetFilename() string {
+	if x != nil {
+		return x.Filename
+	}
+	return ""
+}
+
+func (x *UploadAvatarRequest) GetContentType() string {
+	if x != nil {
+		return x.ContentType
+	}
+	return ""
+}
+
+type UploadAvatarResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UploadAvatarResponse) Reset() {
+	*x = UploadAvatarResponse{}
+	mi := &file_api_proto_auth_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UploadAvatarResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadAvatarResponse) ProtoMessage() {}
+
+func (x *UploadAvatarResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_auth_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UploadAvatarResponse.ProtoReflect.Descriptor instead.
+func (*UploadAvatarResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_auth_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *UploadAvatarResponse) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
 // ============================
 // Search (Public/User Facing)
 // ============================
@@ -1238,7 +1350,7 @@ type SearchUsersRequest struct {
 
 func (x *SearchUsersRequest) Reset() {
 	*x = SearchUsersRequest{}
-	mi := &file_api_proto_auth_proto_msgTypes[23]
+	mi := &file_api_proto_auth_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1250,7 +1362,7 @@ func (x *SearchUsersRequest) String() string {
 func (*SearchUsersRequest) ProtoMessage() {}
 
 func (x *SearchUsersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_auth_proto_msgTypes[23]
+	mi := &file_api_proto_auth_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1263,7 +1375,7 @@ func (x *SearchUsersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchUsersRequest.ProtoReflect.Descriptor instead.
 func (*SearchUsersRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_auth_proto_rawDescGZIP(), []int{23}
+	return file_api_proto_auth_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *SearchUsersRequest) GetQuery() string {
@@ -1292,7 +1404,7 @@ type SearchUsersResponse struct {
 
 func (x *SearchUsersResponse) Reset() {
 	*x = SearchUsersResponse{}
-	mi := &file_api_proto_auth_proto_msgTypes[24]
+	mi := &file_api_proto_auth_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1304,7 +1416,7 @@ func (x *SearchUsersResponse) String() string {
 func (*SearchUsersResponse) ProtoMessage() {}
 
 func (x *SearchUsersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_auth_proto_msgTypes[24]
+	mi := &file_api_proto_auth_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1317,7 +1429,7 @@ func (x *SearchUsersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchUsersResponse.ProtoReflect.Descriptor instead.
 func (*SearchUsersResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_auth_proto_rawDescGZIP(), []int{24}
+	return file_api_proto_auth_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *SearchUsersResponse) GetUsers() []*AuthUser {
@@ -1425,7 +1537,14 @@ const file_api_proto_auth_proto_rawDesc = "" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
 	"\x05email\x18\x03 \x01(\tR\x05email\";\n" +
 	"\x15UpdateProfileResponse\x12\"\n" +
-	"\x04user\x18\x01 \x01(\v2\x0e.auth.AuthUserR\x04user\"\\\n" +
+	"\x04user\x18\x01 \x01(\v2\x0e.auth.AuthUserR\x04user\"\x81\x01\n" +
+	"\x13UploadAvatarRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x12\n" +
+	"\x04file\x18\x02 \x01(\fR\x04file\x12\x1a\n" +
+	"\bfilename\x18\x03 \x01(\tR\bfilename\x12!\n" +
+	"\fcontent_type\x18\x04 \x01(\tR\vcontentType\"(\n" +
+	"\x14UploadAvatarResponse\x12\x10\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\"\\\n" +
 	"\x12SearchUsersRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x120\n" +
 	"\n" +
@@ -1435,7 +1554,7 @@ const file_api_proto_auth_proto_rawDesc = "" +
 	"\x05users\x18\x01 \x03(\v2\x0e.auth.AuthUserR\x05users\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x05R\x05total\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x14\n" +
-	"\x05limit\x18\x04 \x01(\x05R\x05limit2\xd2\x06\n" +
+	"\x05limit\x18\x04 \x01(\x05R\x05limit2\x99\a\n" +
 	"\vAuthService\x129\n" +
 	"\bRegister\x12\x15.auth.RegisterRequest\x1a\x16.auth.RegisterResponse\x120\n" +
 	"\x05Login\x12\x12.auth.LoginRequest\x1a\x13.auth.LoginResponse\x12H\n" +
@@ -1448,7 +1567,8 @@ const file_api_proto_auth_proto_rawDesc = "" +
 	"\x13VerifyPasswordReset\x12 .auth.PasswordResetVerifyRequest\x1a!.auth.PasswordResetVerifyResponse\x12?\n" +
 	"\vFindByEmail\x12\x18.auth.FindByEmailRequest\x1a\x16.auth.FindUserResponse\x129\n" +
 	"\bFindById\x12\x15.auth.FindByIdRequest\x1a\x16.auth.FindUserResponse\x12H\n" +
-	"\rUpdateProfile\x12\x1a.auth.UpdateProfileRequest\x1a\x1b.auth.UpdateProfileResponse\x12B\n" +
+	"\rUpdateProfile\x12\x1a.auth.UpdateProfileRequest\x1a\x1b.auth.UpdateProfileResponse\x12E\n" +
+	"\fUploadAvatar\x12\x19.auth.UploadAvatarRequest\x1a\x1a.auth.UploadAvatarResponse\x12B\n" +
 	"\vSearchUsers\x12\x18.auth.SearchUsersRequest\x1a\x19.auth.SearchUsersResponseB\x0eZ\f./gen/authpbb\x06proto3"
 
 var (
@@ -1463,7 +1583,7 @@ func file_api_proto_auth_proto_rawDescGZIP() []byte {
 	return file_api_proto_auth_proto_rawDescData
 }
 
-var file_api_proto_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+var file_api_proto_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_api_proto_auth_proto_goTypes = []any{
 	(*AuthUser)(nil),                    // 0: auth.AuthUser
 	(*Pagination)(nil),                  // 1: auth.Pagination
@@ -1488,8 +1608,10 @@ var file_api_proto_auth_proto_goTypes = []any{
 	(*FindUserResponse)(nil),            // 20: auth.FindUserResponse
 	(*UpdateProfileRequest)(nil),        // 21: auth.UpdateProfileRequest
 	(*UpdateProfileResponse)(nil),       // 22: auth.UpdateProfileResponse
-	(*SearchUsersRequest)(nil),          // 23: auth.SearchUsersRequest
-	(*SearchUsersResponse)(nil),         // 24: auth.SearchUsersResponse
+	(*UploadAvatarRequest)(nil),         // 23: auth.UploadAvatarRequest
+	(*UploadAvatarResponse)(nil),        // 24: auth.UploadAvatarResponse
+	(*SearchUsersRequest)(nil),          // 25: auth.SearchUsersRequest
+	(*SearchUsersResponse)(nil),         // 26: auth.SearchUsersResponse
 }
 var file_api_proto_auth_proto_depIdxs = []int32{
 	0,  // 0: auth.LoginResponse.user:type_name -> auth.AuthUser
@@ -1509,21 +1631,23 @@ var file_api_proto_auth_proto_depIdxs = []int32{
 	18, // 14: auth.AuthService.FindByEmail:input_type -> auth.FindByEmailRequest
 	19, // 15: auth.AuthService.FindById:input_type -> auth.FindByIdRequest
 	21, // 16: auth.AuthService.UpdateProfile:input_type -> auth.UpdateProfileRequest
-	23, // 17: auth.AuthService.SearchUsers:input_type -> auth.SearchUsersRequest
-	3,  // 18: auth.AuthService.Register:output_type -> auth.RegisterResponse
-	5,  // 19: auth.AuthService.Login:output_type -> auth.LoginResponse
-	7,  // 20: auth.AuthService.SendMagicLink:output_type -> auth.SendMagicLinkResponse
-	9,  // 21: auth.AuthService.VerifyMagicLink:output_type -> auth.VerifyMagicLinkResponse
-	11, // 22: auth.AuthService.OAuthLogin:output_type -> auth.OAuthLoginResponse
-	17, // 23: auth.AuthService.ChangePassword:output_type -> auth.ChangePasswordResponse
-	13, // 24: auth.AuthService.PasswordReset:output_type -> auth.PasswordResetResponse
-	15, // 25: auth.AuthService.VerifyPasswordReset:output_type -> auth.PasswordResetVerifyResponse
-	20, // 26: auth.AuthService.FindByEmail:output_type -> auth.FindUserResponse
-	20, // 27: auth.AuthService.FindById:output_type -> auth.FindUserResponse
-	22, // 28: auth.AuthService.UpdateProfile:output_type -> auth.UpdateProfileResponse
-	24, // 29: auth.AuthService.SearchUsers:output_type -> auth.SearchUsersResponse
-	18, // [18:30] is the sub-list for method output_type
-	6,  // [6:18] is the sub-list for method input_type
+	23, // 17: auth.AuthService.UploadAvatar:input_type -> auth.UploadAvatarRequest
+	25, // 18: auth.AuthService.SearchUsers:input_type -> auth.SearchUsersRequest
+	3,  // 19: auth.AuthService.Register:output_type -> auth.RegisterResponse
+	5,  // 20: auth.AuthService.Login:output_type -> auth.LoginResponse
+	7,  // 21: auth.AuthService.SendMagicLink:output_type -> auth.SendMagicLinkResponse
+	9,  // 22: auth.AuthService.VerifyMagicLink:output_type -> auth.VerifyMagicLinkResponse
+	11, // 23: auth.AuthService.OAuthLogin:output_type -> auth.OAuthLoginResponse
+	17, // 24: auth.AuthService.ChangePassword:output_type -> auth.ChangePasswordResponse
+	13, // 25: auth.AuthService.PasswordReset:output_type -> auth.PasswordResetResponse
+	15, // 26: auth.AuthService.VerifyPasswordReset:output_type -> auth.PasswordResetVerifyResponse
+	20, // 27: auth.AuthService.FindByEmail:output_type -> auth.FindUserResponse
+	20, // 28: auth.AuthService.FindById:output_type -> auth.FindUserResponse
+	22, // 29: auth.AuthService.UpdateProfile:output_type -> auth.UpdateProfileResponse
+	24, // 30: auth.AuthService.UploadAvatar:output_type -> auth.UploadAvatarResponse
+	26, // 31: auth.AuthService.SearchUsers:output_type -> auth.SearchUsersResponse
+	19, // [19:32] is the sub-list for method output_type
+	6,  // [6:19] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name
 	6,  // [6:6] is the sub-list for extension extendee
 	0,  // [0:6] is the sub-list for field type_name
@@ -1540,7 +1664,7 @@ func file_api_proto_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_auth_proto_rawDesc), len(file_api_proto_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   25,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

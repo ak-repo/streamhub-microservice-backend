@@ -47,6 +47,7 @@ func userRoutes(api fiber.Router, cfg *config.Config, clients *clients.Clients) 
 	authR.Get("/users", auth.SearchUsers)
 	authR.Post("/profile-update", auth.UpdateProfile)
 	authR.Post("/password-change", auth.ChangePassword)
+	authR.Post("/upload-profile", auth.UploadAvatar)
 
 	// --------------------------
 	// FILE HANDLER

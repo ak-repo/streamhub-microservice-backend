@@ -27,6 +27,7 @@ func mapUser(u *domain.User) *authpb.AuthUser {
 		EmailVerified: u.EmailVerified,
 		IsBanned:      u.IsBanned,
 		UploadBlocked: u.UploadBlocked,
+		AvatarUrl:     u.Avatar_url,
 		CreatedAt:     helper.TimeToString(u.CreatedAt),
 	}
 }
@@ -149,4 +150,13 @@ func (s *AuthServer) SearchUsers(ctx context.Context, req *authpb.SearchUsersReq
 	}
 
 	return &authpb.SearchUsersResponse{Users: resp, Total: int32(len(resp))}, nil
+}
+
+func (s *AuthServer) UploadAvatar(ctx context.Context, req *authpb.UploadAvatarRequest) (*authpb.UploadAvatarResponse, error) {
+	url, err := s.service.UploadAvatar(ctx, req.UserId, req.File, req.Filename, req.ContentType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &authpb.UploadAvatarResponse{Url: url}, nil
 }

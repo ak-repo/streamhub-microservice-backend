@@ -142,6 +142,16 @@ message UpdateProfileResponse {
   AuthUser user = 1;
 }
 
+message UploadAvatarRequest{
+  string user_id = 1;
+  bytes file = 2;
+  string filename = 3;
+  string content_type=4;
+}
+
+message UploadAvatarResponse {
+  string url = 1;
+}
 // ============================
 // Search (Public/User Facing)
 // ============================
@@ -183,6 +193,7 @@ rpc ChangePassword(ChangePasswordRequest)returns(ChangePasswordResponse);
 
   // Profile
   rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+  rpc UploadAvatar(UploadAvatarRequest)returns(UploadAvatarResponse);
 
   // Search
   rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);

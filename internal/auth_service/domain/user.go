@@ -13,4 +13,5 @@ type User struct {
 	CreatedAt     time.Time `db:"created_at"`     // creation timestamp
 	UpdatedAt     time.Time `db:"updated_at"`     // creation timestamp
 	UploadBlocked bool      `db:"upload_blocked"`
+	Avatar_url    string    `db:"avatar_url"`
 }

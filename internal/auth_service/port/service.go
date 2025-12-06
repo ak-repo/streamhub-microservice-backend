@@ -18,4 +18,8 @@ type AuthService interface {
 	UpdateProfile(ctx context.Context, userID, username, email string) (*domain.User, error)
 	ChangePassword(ctx context.Context, userID, password, newPassword string) error
 	FindAllUsers(ctx context.Context, query string) ([]*domain.User, error)
+	UploadAvatar(ctx context.Context, userId string,
+		fileBytes []byte,
+		filename string,
+		contentType string) (string, error)
 }

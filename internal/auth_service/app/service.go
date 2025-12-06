@@ -5,12 +5,14 @@ import (
 	"time"
 
 	"github.com/ak-repo/stream-hub/config"
+	authcloudinary "github.com/ak-repo/stream-hub/internal/auth_service/adapter/cloudinary"
 	otpredis "github.com/ak-repo/stream-hub/internal/auth_service/adapter/redis"
 	"github.com/ak-repo/stream-hub/internal/auth_service/domain"
 	"github.com/ak-repo/stream-hub/internal/auth_service/port"
 	"github.com/ak-repo/stream-hub/pkg/errors"
 	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/jwt"
+	"github.com/ak-repo/stream-hub/pkg/logger"
 	"github.com/ak-repo/stream-hub/pkg/utils"
 	"github.com/google/uuid"
 	"github.com/sendgrid/sendgrid-go"
@@ -24,14 +26,15 @@ var (
 )
 
 type authService struct {
-	repo     port.UserRepository
-	jwt      *jwt.JWTManager
-	cfg      *config.Config
-	otpStore *otpredis.OTPStore
+	repo      port.UserRepository
+	jwt       *jwt.JWTManager
+	cfg       *config.Config
+	otpStore  *otpredis.OTPStore
+	cloudzcli *authcloudinary.CloudinaryUploader
 }
 
-func NewAuthService(repo port.UserRepository, jwtMgr *jwt.JWTManager, cfg *config.Config, otpStore *otpredis.OTPStore) port.AuthService {
-	return &authService{repo: repo, jwt: jwtMgr, cfg: cfg, otpStore: otpStore}
+func NewAuthService(repo port.UserRepository, jwtMgr *jwt.JWTManager, cfg *config.Config, otpStore *otpredis.OTPStore, cloudzcli *authcloudinary.CloudinaryUploader) port.AuthService {
+	return &authService{repo: repo, jwt: jwtMgr, cfg: cfg, otpStore: otpStore, cloudzcli: cloudzcli}
 }
 
 // -------------------- REGISTER --------------------
@@ -49,6 +52,7 @@ func (s *authService) Register(ctx context.Context, email, username, password st
 		Username:     username,
 		PasswordHash: hashed,
 		Role:         "user",
+		Avatar_url:   "https://res.cloudinary.com/dersnukrf/image/upload/v1764929207/avatars/avatars/profile.jpg.webp",
 		CreatedAt:    time.Now(),
 	}
 
@@ -291,4 +295,21 @@ func (s *authService) ChangePassword(ctx context.Context, userID, password, newP
 func (s *authService) FindAllUsers(ctx context.Context, query string) ([]*domain.User, error) {
 
 	return s.repo.FindAll(ctx, query)
+}
+
+func (s *authService) UploadAvatar(ctx context.Context, userId string,
+	fileBytes []byte,
+	filename string,
+	contentType string) (string, error) {
+
+	logger.Log.Info("Starting avatar upload for user" + userId)
+	url, err := s.cloudzcli.UploadAvatar(ctx, fileBytes, filename)
+	if err != nil {
+		return "", errors.New(errors.CodeInternal, "failed to upload profile pic", err)
+	}
+	if err := s.repo.UpdateAvatar(ctx, userId, url); err != nil {
+		return "", errors.New(errors.CodeInternal, "failed to upload profile pic", err)
+	}
+
+	return url, nil
 }
