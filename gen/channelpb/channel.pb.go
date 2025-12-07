@@ -1956,6 +1956,578 @@ func (x *DeleteMessageResponse) GetSuccess() bool {
 	return false
 }
 
+type Request struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ChannelId     string                 `protobuf:"bytes,3,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	ReqType       string                 `protobuf:"bytes,4,opt,name=req_type,json=reqType,proto3" json:"req_type,omitempty"`
+	Status        string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Request) Reset() {
+	*x = Request{}
+	mi := &file_api_proto_channel_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Request) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Request) ProtoMessage() {}
+
+func (x *Request) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Request.ProtoReflect.Descriptor instead.
+func (*Request) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *Request) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Request) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *Request) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
+func (x *Request) GetReqType() string {
+	if x != nil {
+		return x.ReqType
+	}
+	return ""
+}
+
+func (x *Request) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *Request) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type StatusUpdateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StatusUpdateRequest) Reset() {
+	*x = StatusUpdateRequest{}
+	mi := &file_api_proto_channel_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StatusUpdateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatusUpdateRequest) ProtoMessage() {}
+
+func (x *StatusUpdateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StatusUpdateRequest.ProtoReflect.Descriptor instead.
+func (*StatusUpdateRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *StatusUpdateRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *StatusUpdateRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+type StatusUpdateResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=Success,proto3" json:"Success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StatusUpdateResponse) Reset() {
+	*x = StatusUpdateResponse{}
+	mi := &file_api_proto_channel_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StatusUpdateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatusUpdateResponse) ProtoMessage() {}
+
+func (x *StatusUpdateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StatusUpdateResponse.ProtoReflect.Descriptor instead.
+func (*StatusUpdateResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *StatusUpdateResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+type SendInviteRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ChannelId     string                 `protobuf:"bytes,2,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	ReqType       string                 `protobuf:"bytes,3,opt,name=req_type,json=reqType,proto3" json:"req_type,omitempty"` // invite
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendInviteRequest) Reset() {
+	*x = SendInviteRequest{}
+	mi := &file_api_proto_channel_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendInviteRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendInviteRequest) ProtoMessage() {}
+
+func (x *SendInviteRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendInviteRequest.ProtoReflect.Descriptor instead.
+func (*SendInviteRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *SendInviteRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *SendInviteRequest) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
+func (x *SendInviteRequest) GetReqType() string {
+	if x != nil {
+		return x.ReqType
+	}
+	return ""
+}
+
+type SendInviteResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendInviteResponse) Reset() {
+	*x = SendInviteResponse{}
+	mi := &file_api_proto_channel_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendInviteResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendInviteResponse) ProtoMessage() {}
+
+func (x *SendInviteResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendInviteResponse.ProtoReflect.Descriptor instead.
+func (*SendInviteResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *SendInviteResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+type SendJoinRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ChannelId     string                 `protobuf:"bytes,2,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	ReqType       string                 `protobuf:"bytes,3,opt,name=req_type,json=reqType,proto3" json:"req_type,omitempty"` // join
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendJoinRequest) Reset() {
+	*x = SendJoinRequest{}
+	mi := &file_api_proto_channel_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendJoinRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendJoinRequest) ProtoMessage() {}
+
+func (x *SendJoinRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendJoinRequest.ProtoReflect.Descriptor instead.
+func (*SendJoinRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *SendJoinRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *SendJoinRequest) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
+func (x *SendJoinRequest) GetReqType() string {
+	if x != nil {
+		return x.ReqType
+	}
+	return ""
+}
+
+type SendJoinResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Messsge       string                 `protobuf:"bytes,2,opt,name=messsge,proto3" json:"messsge,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendJoinResponse) Reset() {
+	*x = SendJoinResponse{}
+	mi := &file_api_proto_channel_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendJoinResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendJoinResponse) ProtoMessage() {}
+
+func (x *SendJoinResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendJoinResponse.ProtoReflect.Descriptor instead.
+func (*SendJoinResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *SendJoinResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *SendJoinResponse) GetMesssge() string {
+	if x != nil {
+		return x.Messsge
+	}
+	return ""
+}
+
+type ListChannelJoinRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChannelId     string                 `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListChannelJoinRequest) Reset() {
+	*x = ListChannelJoinRequest{}
+	mi := &file_api_proto_channel_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListChannelJoinRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListChannelJoinRequest) ProtoMessage() {}
+
+func (x *ListChannelJoinRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListChannelJoinRequest.ProtoReflect.Descriptor instead.
+func (*ListChannelJoinRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *ListChannelJoinRequest) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
+type ListChannelJoinResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Requests      []*Request             `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListChannelJoinResponse) Reset() {
+	*x = ListChannelJoinResponse{}
+	mi := &file_api_proto_channel_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListChannelJoinResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListChannelJoinResponse) ProtoMessage() {}
+
+func (x *ListChannelJoinResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListChannelJoinResponse.ProtoReflect.Descriptor instead.
+func (*ListChannelJoinResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *ListChannelJoinResponse) GetRequests() []*Request {
+	if x != nil {
+		return x.Requests
+	}
+	return nil
+}
+
+type ListUserInviteRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUserInviteRequest) Reset() {
+	*x = ListUserInviteRequest{}
+	mi := &file_api_proto_channel_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUserInviteRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUserInviteRequest) ProtoMessage() {}
+
+func (x *ListUserInviteRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUserInviteRequest.ProtoReflect.Descriptor instead.
+func (*ListUserInviteRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *ListUserInviteRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type ListUserInviteResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Requests      []*Request             `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUserInviteResponse) Reset() {
+	*x = ListUserInviteResponse{}
+	mi := &file_api_proto_channel_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUserInviteResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUserInviteResponse) ProtoMessage() {}
+
+func (x *ListUserInviteResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUserInviteResponse.ProtoReflect.Descriptor instead.
+func (*ListUserInviteResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *ListUserInviteResponse) GetRequests() []*Request {
+	if x != nil {
+		return x.Requests
+	}
+	return nil
+}
+
 var File_api_proto_channel_proto protoreflect.FileDescriptor
 
 const file_api_proto_channel_proto_rawDesc = "" +
@@ -2109,12 +2681,50 @@ const file_api_proto_channel_proto_rawDesc = "" +
 	"channel_id\x18\x02 \x01(\tR\tchannelId\x12!\n" +
 	"\frequester_id\x18\x03 \x01(\tR\vrequesterId\"1\n" +
 	"\x15DeleteMessageResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess*=\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\xa3\x01\n" +
+	"\aRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x03 \x01(\tR\tchannelId\x12\x19\n" +
+	"\breq_type\x18\x04 \x01(\tR\areqType\x12\x16\n" +
+	"\x06status\x18\x05 \x01(\tR\x06status\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x06 \x01(\tR\tcreatedAt\"=\n" +
+	"\x13StatusUpdateRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\"0\n" +
+	"\x14StatusUpdateResponse\x12\x18\n" +
+	"\aSuccess\x18\x01 \x01(\bR\aSuccess\"f\n" +
+	"\x11SendInviteRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x02 \x01(\tR\tchannelId\x12\x19\n" +
+	"\breq_type\x18\x03 \x01(\tR\areqType\".\n" +
+	"\x12SendInviteResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"d\n" +
+	"\x0fSendJoinRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x02 \x01(\tR\tchannelId\x12\x19\n" +
+	"\breq_type\x18\x03 \x01(\tR\areqType\"F\n" +
+	"\x10SendJoinResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amesssge\x18\x02 \x01(\tR\amesssge\"7\n" +
+	"\x16ListChannelJoinRequest\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x01 \x01(\tR\tchannelId\"G\n" +
+	"\x17ListChannelJoinResponse\x12,\n" +
+	"\brequests\x18\x01 \x03(\v2\x10.channel.RequestR\brequests\"0\n" +
+	"\x15ListUserInviteRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"F\n" +
+	"\x16ListUserInviteResponse\x12,\n" +
+	"\brequests\x18\x01 \x03(\v2\x10.channel.RequestR\brequests*=\n" +
 	"\bUserRole\x12\r\n" +
 	"\tROLE_USER\x10\x00\x12\x12\n" +
 	"\x0eROLE_MODERATOR\x10\x01\x12\x0e\n" +
 	"\n" +
-	"ROLE_ADMIN\x10\x022\xc6\x06\n" +
+	"ROLE_ADMIN\x10\x022\xcd\t\n" +
 	"\x0eChannelService\x12>\n" +
 	"\aConnect\x12\x16.channel.StreamRequest\x1a\x17.channel.StreamResponse(\x010\x01\x12N\n" +
 	"\rCreateChannel\x12\x1d.channel.CreateChannelRequest\x1a\x1e.channel.CreateChannelResponse\x12K\n" +
@@ -2127,7 +2737,13 @@ const file_api_proto_channel_proto_rawDesc = "" +
 	"\vListMembers\x12\x1b.channel.ListMembersRequest\x1a\x1c.channel.ListMembersResponse\x12K\n" +
 	"\fListMessages\x12\x1c.channel.ListMessagesRequest\x1a\x1d.channel.ListMessagesResponse\x12H\n" +
 	"\vEditMessage\x12\x1b.channel.EditMessageRequest\x1a\x1c.channel.EditMessageResponse\x12N\n" +
-	"\rDeleteMessage\x12\x1d.channel.DeleteMessageRequest\x1a\x1e.channel.DeleteMessageResponseB\x11Z\x0f./gen/channelpbb\x06proto3"
+	"\rDeleteMessage\x12\x1d.channel.DeleteMessageRequest\x1a\x1e.channel.DeleteMessageResponse\x12E\n" +
+	"\n" +
+	"SendInvite\x12\x1a.channel.SendInviteRequest\x1a\x1b.channel.SendInviteResponse\x12R\n" +
+	"\x0fListUserInvites\x12\x1e.channel.ListUserInviteRequest\x1a\x1f.channel.ListUserInviteResponse\x12?\n" +
+	"\bSendJoin\x12\x18.channel.SendJoinRequest\x1a\x19.channel.SendJoinResponse\x12U\n" +
+	"\x10ListChannelJoins\x12\x1f.channel.ListChannelJoinRequest\x1a .channel.ListChannelJoinResponse\x12R\n" +
+	"\x13UpdateRequestStatus\x12\x1c.channel.StatusUpdateRequest\x1a\x1d.channel.StatusUpdateResponseB\x11Z\x0f./gen/channelpbb\x06proto3"
 
 var (
 	file_api_proto_channel_proto_rawDescOnce sync.Once
@@ -2142,40 +2758,51 @@ func file_api_proto_channel_proto_rawDescGZIP() []byte {
 }
 
 var file_api_proto_channel_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_api_proto_channel_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
+var file_api_proto_channel_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
 var file_api_proto_channel_proto_goTypes = []any{
-	(UserRole)(0),                 // 0: channel.UserRole
-	(*ChannelInfo)(nil),           // 1: channel.ChannelInfo
-	(*MemberInfo)(nil),            // 2: channel.MemberInfo
-	(*FileAttachment)(nil),        // 3: channel.FileAttachment
-	(*MessageCreated)(nil),        // 4: channel.MessageCreated
-	(*MessageEdited)(nil),         // 5: channel.MessageEdited
-	(*MessageDeleted)(nil),        // 6: channel.MessageDeleted
-	(*StreamRequest)(nil),         // 7: channel.StreamRequest
-	(*JoinPayload)(nil),           // 8: channel.JoinPayload
-	(*MessagePayload)(nil),        // 9: channel.MessagePayload
-	(*StreamResponse)(nil),        // 10: channel.StreamResponse
-	(*CreateChannelRequest)(nil),  // 11: channel.CreateChannelRequest
-	(*CreateChannelResponse)(nil), // 12: channel.CreateChannelResponse
-	(*DeleteChannelRequest)(nil),  // 13: channel.DeleteChannelRequest
-	(*DeleteChannelResponse)(nil), // 14: channel.DeleteChannelResponse
-	(*GetChannelRequest)(nil),     // 15: channel.GetChannelRequest
-	(*GetChannelResponse)(nil),    // 16: channel.GetChannelResponse
-	(*ListChannelsRequest)(nil),   // 17: channel.ListChannelsRequest
-	(*ListChannelsResponse)(nil),  // 18: channel.ListChannelsResponse
-	(*AddMemberRequest)(nil),      // 19: channel.AddMemberRequest
-	(*AddMemberResponse)(nil),     // 20: channel.AddMemberResponse
-	(*RemoveMemberRequest)(nil),   // 21: channel.RemoveMemberRequest
-	(*RemoveMemberResponse)(nil),  // 22: channel.RemoveMemberResponse
-	(*ListMembersRequest)(nil),    // 23: channel.ListMembersRequest
-	(*ListMembersResponse)(nil),   // 24: channel.ListMembersResponse
-	(*ListMessagesRequest)(nil),   // 25: channel.ListMessagesRequest
-	(*MessageInfo)(nil),           // 26: channel.MessageInfo
-	(*ListMessagesResponse)(nil),  // 27: channel.ListMessagesResponse
-	(*EditMessageRequest)(nil),    // 28: channel.EditMessageRequest
-	(*EditMessageResponse)(nil),   // 29: channel.EditMessageResponse
-	(*DeleteMessageRequest)(nil),  // 30: channel.DeleteMessageRequest
-	(*DeleteMessageResponse)(nil), // 31: channel.DeleteMessageResponse
+	(UserRole)(0),                   // 0: channel.UserRole
+	(*ChannelInfo)(nil),             // 1: channel.ChannelInfo
+	(*MemberInfo)(nil),              // 2: channel.MemberInfo
+	(*FileAttachment)(nil),          // 3: channel.FileAttachment
+	(*MessageCreated)(nil),          // 4: channel.MessageCreated
+	(*MessageEdited)(nil),           // 5: channel.MessageEdited
+	(*MessageDeleted)(nil),          // 6: channel.MessageDeleted
+	(*StreamRequest)(nil),           // 7: channel.StreamRequest
+	(*JoinPayload)(nil),             // 8: channel.JoinPayload
+	(*MessagePayload)(nil),          // 9: channel.MessagePayload
+	(*StreamResponse)(nil),          // 10: channel.StreamResponse
+	(*CreateChannelRequest)(nil),    // 11: channel.CreateChannelRequest
+	(*CreateChannelResponse)(nil),   // 12: channel.CreateChannelResponse
+	(*DeleteChannelRequest)(nil),    // 13: channel.DeleteChannelRequest
+	(*DeleteChannelResponse)(nil),   // 14: channel.DeleteChannelResponse
+	(*GetChannelRequest)(nil),       // 15: channel.GetChannelRequest
+	(*GetChannelResponse)(nil),      // 16: channel.GetChannelResponse
+	(*ListChannelsRequest)(nil),     // 17: channel.ListChannelsRequest
+	(*ListChannelsResponse)(nil),    // 18: channel.ListChannelsResponse
+	(*AddMemberRequest)(nil),        // 19: channel.AddMemberRequest
+	(*AddMemberResponse)(nil),       // 20: channel.AddMemberResponse
+	(*RemoveMemberRequest)(nil),     // 21: channel.RemoveMemberRequest
+	(*RemoveMemberResponse)(nil),    // 22: channel.RemoveMemberResponse
+	(*ListMembersRequest)(nil),      // 23: channel.ListMembersRequest
+	(*ListMembersResponse)(nil),     // 24: channel.ListMembersResponse
+	(*ListMessagesRequest)(nil),     // 25: channel.ListMessagesRequest
+	(*MessageInfo)(nil),             // 26: channel.MessageInfo
+	(*ListMessagesResponse)(nil),    // 27: channel.ListMessagesResponse
+	(*EditMessageRequest)(nil),      // 28: channel.EditMessageRequest
+	(*EditMessageResponse)(nil),     // 29: channel.EditMessageResponse
+	(*DeleteMessageRequest)(nil),    // 30: channel.DeleteMessageRequest
+	(*DeleteMessageResponse)(nil),   // 31: channel.DeleteMessageResponse
+	(*Request)(nil),                 // 32: channel.Request
+	(*StatusUpdateRequest)(nil),     // 33: channel.StatusUpdateRequest
+	(*StatusUpdateResponse)(nil),    // 34: channel.StatusUpdateResponse
+	(*SendInviteRequest)(nil),       // 35: channel.SendInviteRequest
+	(*SendInviteResponse)(nil),      // 36: channel.SendInviteResponse
+	(*SendJoinRequest)(nil),         // 37: channel.SendJoinRequest
+	(*SendJoinResponse)(nil),        // 38: channel.SendJoinResponse
+	(*ListChannelJoinRequest)(nil),  // 39: channel.ListChannelJoinRequest
+	(*ListChannelJoinResponse)(nil), // 40: channel.ListChannelJoinResponse
+	(*ListUserInviteRequest)(nil),   // 41: channel.ListUserInviteRequest
+	(*ListUserInviteResponse)(nil),  // 42: channel.ListUserInviteResponse
 }
 var file_api_proto_channel_proto_depIdxs = []int32{
 	2,  // 0: channel.ChannelInfo.members:type_name -> channel.MemberInfo
@@ -2193,33 +2820,45 @@ var file_api_proto_channel_proto_depIdxs = []int32{
 	2,  // 12: channel.ListMembersResponse.members:type_name -> channel.MemberInfo
 	3,  // 13: channel.MessageInfo.attachment:type_name -> channel.FileAttachment
 	26, // 14: channel.ListMessagesResponse.messages:type_name -> channel.MessageInfo
-	7,  // 15: channel.ChannelService.Connect:input_type -> channel.StreamRequest
-	11, // 16: channel.ChannelService.CreateChannel:input_type -> channel.CreateChannelRequest
-	17, // 17: channel.ChannelService.ListChannels:input_type -> channel.ListChannelsRequest
-	15, // 18: channel.ChannelService.GetChannel:input_type -> channel.GetChannelRequest
-	13, // 19: channel.ChannelService.DeleteChannel:input_type -> channel.DeleteChannelRequest
-	19, // 20: channel.ChannelService.AddMember:input_type -> channel.AddMemberRequest
-	21, // 21: channel.ChannelService.RemoveMember:input_type -> channel.RemoveMemberRequest
-	23, // 22: channel.ChannelService.ListMembers:input_type -> channel.ListMembersRequest
-	25, // 23: channel.ChannelService.ListMessages:input_type -> channel.ListMessagesRequest
-	28, // 24: channel.ChannelService.EditMessage:input_type -> channel.EditMessageRequest
-	30, // 25: channel.ChannelService.DeleteMessage:input_type -> channel.DeleteMessageRequest
-	10, // 26: channel.ChannelService.Connect:output_type -> channel.StreamResponse
-	12, // 27: channel.ChannelService.CreateChannel:output_type -> channel.CreateChannelResponse
-	18, // 28: channel.ChannelService.ListChannels:output_type -> channel.ListChannelsResponse
-	16, // 29: channel.ChannelService.GetChannel:output_type -> channel.GetChannelResponse
-	14, // 30: channel.ChannelService.DeleteChannel:output_type -> channel.DeleteChannelResponse
-	20, // 31: channel.ChannelService.AddMember:output_type -> channel.AddMemberResponse
-	22, // 32: channel.ChannelService.RemoveMember:output_type -> channel.RemoveMemberResponse
-	24, // 33: channel.ChannelService.ListMembers:output_type -> channel.ListMembersResponse
-	27, // 34: channel.ChannelService.ListMessages:output_type -> channel.ListMessagesResponse
-	29, // 35: channel.ChannelService.EditMessage:output_type -> channel.EditMessageResponse
-	31, // 36: channel.ChannelService.DeleteMessage:output_type -> channel.DeleteMessageResponse
-	26, // [26:37] is the sub-list for method output_type
-	15, // [15:26] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	32, // 15: channel.ListChannelJoinResponse.requests:type_name -> channel.Request
+	32, // 16: channel.ListUserInviteResponse.requests:type_name -> channel.Request
+	7,  // 17: channel.ChannelService.Connect:input_type -> channel.StreamRequest
+	11, // 18: channel.ChannelService.CreateChannel:input_type -> channel.CreateChannelRequest
+	17, // 19: channel.ChannelService.ListChannels:input_type -> channel.ListChannelsRequest
+	15, // 20: channel.ChannelService.GetChannel:input_type -> channel.GetChannelRequest
+	13, // 21: channel.ChannelService.DeleteChannel:input_type -> channel.DeleteChannelRequest
+	19, // 22: channel.ChannelService.AddMember:input_type -> channel.AddMemberRequest
+	21, // 23: channel.ChannelService.RemoveMember:input_type -> channel.RemoveMemberRequest
+	23, // 24: channel.ChannelService.ListMembers:input_type -> channel.ListMembersRequest
+	25, // 25: channel.ChannelService.ListMessages:input_type -> channel.ListMessagesRequest
+	28, // 26: channel.ChannelService.EditMessage:input_type -> channel.EditMessageRequest
+	30, // 27: channel.ChannelService.DeleteMessage:input_type -> channel.DeleteMessageRequest
+	35, // 28: channel.ChannelService.SendInvite:input_type -> channel.SendInviteRequest
+	41, // 29: channel.ChannelService.ListUserInvites:input_type -> channel.ListUserInviteRequest
+	37, // 30: channel.ChannelService.SendJoin:input_type -> channel.SendJoinRequest
+	39, // 31: channel.ChannelService.ListChannelJoins:input_type -> channel.ListChannelJoinRequest
+	33, // 32: channel.ChannelService.UpdateRequestStatus:input_type -> channel.StatusUpdateRequest
+	10, // 33: channel.ChannelService.Connect:output_type -> channel.StreamResponse
+	12, // 34: channel.ChannelService.CreateChannel:output_type -> channel.CreateChannelResponse
+	18, // 35: channel.ChannelService.ListChannels:output_type -> channel.ListChannelsResponse
+	16, // 36: channel.ChannelService.GetChannel:output_type -> channel.GetChannelResponse
+	14, // 37: channel.ChannelService.DeleteChannel:output_type -> channel.DeleteChannelResponse
+	20, // 38: channel.ChannelService.AddMember:output_type -> channel.AddMemberResponse
+	22, // 39: channel.ChannelService.RemoveMember:output_type -> channel.RemoveMemberResponse
+	24, // 40: channel.ChannelService.ListMembers:output_type -> channel.ListMembersResponse
+	27, // 41: channel.ChannelService.ListMessages:output_type -> channel.ListMessagesResponse
+	29, // 42: channel.ChannelService.EditMessage:output_type -> channel.EditMessageResponse
+	31, // 43: channel.ChannelService.DeleteMessage:output_type -> channel.DeleteMessageResponse
+	36, // 44: channel.ChannelService.SendInvite:output_type -> channel.SendInviteResponse
+	42, // 45: channel.ChannelService.ListUserInvites:output_type -> channel.ListUserInviteResponse
+	38, // 46: channel.ChannelService.SendJoin:output_type -> channel.SendJoinResponse
+	40, // 47: channel.ChannelService.ListChannelJoins:output_type -> channel.ListChannelJoinResponse
+	34, // 48: channel.ChannelService.UpdateRequestStatus:output_type -> channel.StatusUpdateResponse
+	33, // [33:49] is the sub-list for method output_type
+	17, // [17:33] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_api_proto_channel_proto_init() }
@@ -2246,7 +2885,7 @@ func file_api_proto_channel_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_channel_proto_rawDesc), len(file_api_proto_channel_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   31,
+			NumMessages:   42,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

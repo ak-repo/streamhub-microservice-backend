@@ -82,4 +82,12 @@ func userRoutes(api fiber.Router, cfg *config.Config, clients *clients.Clients) 
 	ch.Get("/channel/:channelId", channel.GetChannel)
 	ch.Get("/members/:channelId", channel.ListMembers)
 	ch.Get("/:channelId/history", channel.ListMessages)
+
+	// reques handling in channel
+	ch.Post("/sendinvite", channel.SendInvite)
+	ch.Post("/sendjoin", channel.SendJoin)
+	ch.Get("/invites", channel.ListUserInvites)
+	ch.Get("/joins/:id", channel.ListChannelJoins)
+	ch.Post("/updatereq", channel.UpdateRequestStatus)
+
 }

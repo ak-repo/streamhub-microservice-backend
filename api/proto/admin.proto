@@ -134,6 +134,12 @@ message ListUsersResponse {
   repeated User users = 1;
 }
 
+message DeleteUserRequest{
+  string user_id = 1;
+}
+message DeleteUserResponse{
+  bool success = 2;
+}
 
 
 // ---------------------------------------------------------------
@@ -233,6 +239,7 @@ service AdminService {
   rpc UnbanUser(UnbanUserRequest) returns (UnbanUserResponse);
   rpc UpdateRole(UpdateRoleRequest) returns (UpdateRoleResponse);
   rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  rpc DeleteUser(DeleteUserRequest)returns(DeleteUserResponse);
 
   // Channel Management
   rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse);

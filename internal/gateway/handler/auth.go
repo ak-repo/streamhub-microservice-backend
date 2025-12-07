@@ -279,7 +279,6 @@ func (h *AuthHandler) UploadAvatar(c *fiber.Ctx) error {
 	if !ok || uid == "" {
 		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
 	}
-	// Parse file
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{

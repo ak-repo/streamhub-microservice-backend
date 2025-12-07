@@ -252,3 +252,65 @@ func (r *channelRepo) DeleteChannel(ctx context.Context, channelID string) error
 	_, err := r.pool.Exec(ctx, `DELETE FROM channels WHERE id = $1`, channelID)
 	return err
 }
+
+// --------------requesst handlings -------------------
+
+func scanRequest(row pgx.Row, r *domain.Request) error {
+	return row.Scan(
+		&r.ID,
+		&r.UserID,
+		&r.ChannelID,
+		&r.ReqType,
+		&r.Status,
+		&r.CreatedAt,
+	)
+}
+
+// for channels
+func (r *channelRepo) ListJoinRequests(ctx context.Context, channelID string) ([]*domain.Request, error) {
+	rows, err := r.pool.Query(ctx, `SELECT id, user_id,channel_id, req_type, status,created_at FROM requests WHERE channel_id = $1 AND req_type = 'join'`, channelID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var requests []*domain.Request
+	for rows.Next() {
+		r := new(domain.Request)
+		if err := scanRequest(rows, r); err != nil {
+			return nil, err
+		}
+		requests = append(requests, r)
+	}
+	return requests, nil
+}
+
+func (r *channelRepo) CreateRequest(ctx context.Context, req *domain.Request) error {
+	_, err := r.pool.Exec(ctx, `
+	INSERT INTO requests (id, user_id,channel_id, req_type, status,created_at) VALUES ($1,$2,$3,$4,$5,$6)`,
+		req.ID, req.UserID, req.ChannelID, req.ReqType, req.Status, req.CreatedAt)
+	return err
+}
+
+// for users
+func (r *channelRepo) ListInviteRequests(ctx context.Context, userID string) ([]*domain.Request, error) {
+	rows, err := r.pool.Query(ctx, `SELECT id, user_id,channel_id, req_type, status,created_at FROM requests WHERE user_id = $1 AND req_type = 'invite'`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var requests []*domain.Request
+	for rows.Next() {
+		r := new(domain.Request)
+		if err := scanRequest(rows, r); err != nil {
+			return nil, err
+		}
+		requests = append(requests, r)
+	}
+	return requests, nil
+}
+
+func (r *channelRepo) UpdateRequestStatus(ctx context.Context, reqID, status string) error {
+	_, err := r.pool.Exec(ctx, `
+	UPDATE INTO requests SET status = $1 WHERE id = $2`, status, reqID)
+	return err
+}

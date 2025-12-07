@@ -8,6 +8,7 @@ import (
 	"github.com/ak-repo/stream-hub/gen/channelpb"
 	"github.com/ak-repo/stream-hub/internal/channel_service/domain"
 	"github.com/ak-repo/stream-hub/internal/channel_service/port"
+	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/logger"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -339,3 +340,63 @@ func (s *ChannelServer) DeleteChannel(ctx context.Context, req *channelpb.Delete
 
 }
 
+// Request server handling
+func mapRequest(r *domain.Request) *channelpb.Request {
+	return &channelpb.Request{
+		Id:        r.ID,
+		UserId:    r.UserID,
+		ChannelId: r.ChannelID,
+		Status:    r.Status,
+		ReqType:   r.ReqType,
+		CreatedAt: helper.TimeToString(r.CreatedAt),
+	}
+}
+
+func (s *ChannelServer) SendInvite(ctx context.Context, req *channelpb.SendInviteRequest) (*channelpb.SendInviteResponse, error) {
+
+	if err := s.service.SendInvite(ctx, req.UserId, req.ChannelId); err != nil {
+		return nil, err
+	}
+	return &channelpb.SendInviteResponse{Success: true}, nil
+}
+
+func (s *ChannelServer) SendJoin(ctx context.Context, req *channelpb.SendJoinRequest) (*channelpb.SendJoinResponse, error) {
+
+	if err := s.service.SendJoin(ctx, req.UserId, req.ChannelId); err != nil {
+		return nil, err
+	}
+	return &channelpb.SendJoinResponse{Success: true}, nil
+}
+
+func (s *ChannelServer) ListUserInvites(ctx context.Context, req *channelpb.ListUserInviteRequest) (*channelpb.ListUserInviteResponse, error) {
+	requests, err := s.service.ListUserInvites(ctx, req.UserId)
+	if err != nil {
+		return nil, err
+	}
+	resp := make([]*channelpb.Request, 0, len(requests))
+	for _, r := range requests {
+		resp = append(resp, mapRequest(r))
+	}
+
+	return &channelpb.ListUserInviteResponse{Requests: resp}, nil
+
+}
+
+func (s *ChannelServer) ListChannelJoins(ctx context.Context, req *channelpb.ListChannelJoinRequest) (*channelpb.ListChannelJoinResponse, error) {
+	requests, err := s.service.ListChannelJoins(ctx, req.ChannelId)
+	if err != nil {
+		return nil, err
+	}
+	resp := make([]*channelpb.Request, 0, len(requests))
+	for _, r := range requests {
+		resp = append(resp, mapRequest(r))
+	}
+	return &channelpb.ListChannelJoinResponse{Requests: resp}, nil
+}
+
+func (s *ChannelServer) UpdateRequestStatus(ctx context.Context, req *channelpb.StatusUpdateRequest) (*channelpb.StatusUpdateResponse, error) {
+	if err := s.service.UpdateRequestStatus(ctx, req.Id, req.Status); err != nil {
+		return nil, err
+	}
+	return &channelpb.StatusUpdateResponse{Success: true}, nil
+}

@@ -19,17 +19,22 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ChannelService_Connect_FullMethodName       = "/channel.ChannelService/Connect"
-	ChannelService_CreateChannel_FullMethodName = "/channel.ChannelService/CreateChannel"
-	ChannelService_ListChannels_FullMethodName  = "/channel.ChannelService/ListChannels"
-	ChannelService_GetChannel_FullMethodName    = "/channel.ChannelService/GetChannel"
-	ChannelService_DeleteChannel_FullMethodName = "/channel.ChannelService/DeleteChannel"
-	ChannelService_AddMember_FullMethodName     = "/channel.ChannelService/AddMember"
-	ChannelService_RemoveMember_FullMethodName  = "/channel.ChannelService/RemoveMember"
-	ChannelService_ListMembers_FullMethodName   = "/channel.ChannelService/ListMembers"
-	ChannelService_ListMessages_FullMethodName  = "/channel.ChannelService/ListMessages"
-	ChannelService_EditMessage_FullMethodName   = "/channel.ChannelService/EditMessage"
-	ChannelService_DeleteMessage_FullMethodName = "/channel.ChannelService/DeleteMessage"
+	ChannelService_Connect_FullMethodName             = "/channel.ChannelService/Connect"
+	ChannelService_CreateChannel_FullMethodName       = "/channel.ChannelService/CreateChannel"
+	ChannelService_ListChannels_FullMethodName        = "/channel.ChannelService/ListChannels"
+	ChannelService_GetChannel_FullMethodName          = "/channel.ChannelService/GetChannel"
+	ChannelService_DeleteChannel_FullMethodName       = "/channel.ChannelService/DeleteChannel"
+	ChannelService_AddMember_FullMethodName           = "/channel.ChannelService/AddMember"
+	ChannelService_RemoveMember_FullMethodName        = "/channel.ChannelService/RemoveMember"
+	ChannelService_ListMembers_FullMethodName         = "/channel.ChannelService/ListMembers"
+	ChannelService_ListMessages_FullMethodName        = "/channel.ChannelService/ListMessages"
+	ChannelService_EditMessage_FullMethodName         = "/channel.ChannelService/EditMessage"
+	ChannelService_DeleteMessage_FullMethodName       = "/channel.ChannelService/DeleteMessage"
+	ChannelService_SendInvite_FullMethodName          = "/channel.ChannelService/SendInvite"
+	ChannelService_ListUserInvites_FullMethodName     = "/channel.ChannelService/ListUserInvites"
+	ChannelService_SendJoin_FullMethodName            = "/channel.ChannelService/SendJoin"
+	ChannelService_ListChannelJoins_FullMethodName    = "/channel.ChannelService/ListChannelJoins"
+	ChannelService_UpdateRequestStatus_FullMethodName = "/channel.ChannelService/UpdateRequestStatus"
 )
 
 // ChannelServiceClient is the client API for ChannelService service.
@@ -55,6 +60,13 @@ type ChannelServiceClient interface {
 	ListMessages(ctx context.Context, in *ListMessagesRequest, opts ...grpc.CallOption) (*ListMessagesResponse, error)
 	EditMessage(ctx context.Context, in *EditMessageRequest, opts ...grpc.CallOption) (*EditMessageResponse, error)
 	DeleteMessage(ctx context.Context, in *DeleteMessageRequest, opts ...grpc.CallOption) (*DeleteMessageResponse, error)
+	// requests management
+	SendInvite(ctx context.Context, in *SendInviteRequest, opts ...grpc.CallOption) (*SendInviteResponse, error)
+	// rpc ListChannelInvites(ListChannelInviteRequest)returns(ListChannelInviteResponse);
+	ListUserInvites(ctx context.Context, in *ListUserInviteRequest, opts ...grpc.CallOption) (*ListUserInviteResponse, error)
+	SendJoin(ctx context.Context, in *SendJoinRequest, opts ...grpc.CallOption) (*SendJoinResponse, error)
+	ListChannelJoins(ctx context.Context, in *ListChannelJoinRequest, opts ...grpc.CallOption) (*ListChannelJoinResponse, error)
+	UpdateRequestStatus(ctx context.Context, in *StatusUpdateRequest, opts ...grpc.CallOption) (*StatusUpdateResponse, error)
 }
 
 type channelServiceClient struct {
@@ -178,6 +190,56 @@ func (c *channelServiceClient) DeleteMessage(ctx context.Context, in *DeleteMess
 	return out, nil
 }
 
+func (c *channelServiceClient) SendInvite(ctx context.Context, in *SendInviteRequest, opts ...grpc.CallOption) (*SendInviteResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendInviteResponse)
+	err := c.cc.Invoke(ctx, ChannelService_SendInvite_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *channelServiceClient) ListUserInvites(ctx context.Context, in *ListUserInviteRequest, opts ...grpc.CallOption) (*ListUserInviteResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListUserInviteResponse)
+	err := c.cc.Invoke(ctx, ChannelService_ListUserInvites_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *channelServiceClient) SendJoin(ctx context.Context, in *SendJoinRequest, opts ...grpc.CallOption) (*SendJoinResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendJoinResponse)
+	err := c.cc.Invoke(ctx, ChannelService_SendJoin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *channelServiceClient) ListChannelJoins(ctx context.Context, in *ListChannelJoinRequest, opts ...grpc.CallOption) (*ListChannelJoinResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListChannelJoinResponse)
+	err := c.cc.Invoke(ctx, ChannelService_ListChannelJoins_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *channelServiceClient) UpdateRequestStatus(ctx context.Context, in *StatusUpdateRequest, opts ...grpc.CallOption) (*StatusUpdateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StatusUpdateResponse)
+	err := c.cc.Invoke(ctx, ChannelService_UpdateRequestStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChannelServiceServer is the server API for ChannelService service.
 // All implementations must embed UnimplementedChannelServiceServer
 // for forward compatibility.
@@ -201,6 +263,13 @@ type ChannelServiceServer interface {
 	ListMessages(context.Context, *ListMessagesRequest) (*ListMessagesResponse, error)
 	EditMessage(context.Context, *EditMessageRequest) (*EditMessageResponse, error)
 	DeleteMessage(context.Context, *DeleteMessageRequest) (*DeleteMessageResponse, error)
+	// requests management
+	SendInvite(context.Context, *SendInviteRequest) (*SendInviteResponse, error)
+	// rpc ListChannelInvites(ListChannelInviteRequest)returns(ListChannelInviteResponse);
+	ListUserInvites(context.Context, *ListUserInviteRequest) (*ListUserInviteResponse, error)
+	SendJoin(context.Context, *SendJoinRequest) (*SendJoinResponse, error)
+	ListChannelJoins(context.Context, *ListChannelJoinRequest) (*ListChannelJoinResponse, error)
+	UpdateRequestStatus(context.Context, *StatusUpdateRequest) (*StatusUpdateResponse, error)
 	mustEmbedUnimplementedChannelServiceServer()
 }
 
@@ -243,6 +312,21 @@ func (UnimplementedChannelServiceServer) EditMessage(context.Context, *EditMessa
 }
 func (UnimplementedChannelServiceServer) DeleteMessage(context.Context, *DeleteMessageRequest) (*DeleteMessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteMessage not implemented")
+}
+func (UnimplementedChannelServiceServer) SendInvite(context.Context, *SendInviteRequest) (*SendInviteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendInvite not implemented")
+}
+func (UnimplementedChannelServiceServer) ListUserInvites(context.Context, *ListUserInviteRequest) (*ListUserInviteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListUserInvites not implemented")
+}
+func (UnimplementedChannelServiceServer) SendJoin(context.Context, *SendJoinRequest) (*SendJoinResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendJoin not implemented")
+}
+func (UnimplementedChannelServiceServer) ListChannelJoins(context.Context, *ListChannelJoinRequest) (*ListChannelJoinResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListChannelJoins not implemented")
+}
+func (UnimplementedChannelServiceServer) UpdateRequestStatus(context.Context, *StatusUpdateRequest) (*StatusUpdateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateRequestStatus not implemented")
 }
 func (UnimplementedChannelServiceServer) mustEmbedUnimplementedChannelServiceServer() {}
 func (UnimplementedChannelServiceServer) testEmbeddedByValue()                        {}
@@ -452,6 +536,96 @@ func _ChannelService_DeleteMessage_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChannelService_SendInvite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendInviteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChannelServiceServer).SendInvite(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChannelService_SendInvite_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChannelServiceServer).SendInvite(ctx, req.(*SendInviteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChannelService_ListUserInvites_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListUserInviteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChannelServiceServer).ListUserInvites(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChannelService_ListUserInvites_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChannelServiceServer).ListUserInvites(ctx, req.(*ListUserInviteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChannelService_SendJoin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendJoinRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChannelServiceServer).SendJoin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChannelService_SendJoin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChannelServiceServer).SendJoin(ctx, req.(*SendJoinRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChannelService_ListChannelJoins_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListChannelJoinRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChannelServiceServer).ListChannelJoins(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChannelService_ListChannelJoins_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChannelServiceServer).ListChannelJoins(ctx, req.(*ListChannelJoinRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChannelService_UpdateRequestStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatusUpdateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChannelServiceServer).UpdateRequestStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChannelService_UpdateRequestStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChannelServiceServer).UpdateRequestStatus(ctx, req.(*StatusUpdateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ChannelService_ServiceDesc is the grpc.ServiceDesc for ChannelService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -498,6 +672,26 @@ var ChannelService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteMessage",
 			Handler:    _ChannelService_DeleteMessage_Handler,
+		},
+		{
+			MethodName: "SendInvite",
+			Handler:    _ChannelService_SendInvite_Handler,
+		},
+		{
+			MethodName: "ListUserInvites",
+			Handler:    _ChannelService_ListUserInvites_Handler,
+		},
+		{
+			MethodName: "SendJoin",
+			Handler:    _ChannelService_SendJoin_Handler,
+		},
+		{
+			MethodName: "ListChannelJoins",
+			Handler:    _ChannelService_ListChannelJoins_Handler,
+		},
+		{
+			MethodName: "UpdateRequestStatus",
+			Handler:    _ChannelService_UpdateRequestStatus_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

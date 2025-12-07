@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/ak-repo/stream-hub/config"
@@ -74,6 +75,11 @@ func (s *authService) Login(ctx context.Context, email, password string) (*domai
 
 	if !utils.ComparePassword(user.PasswordHash, password) {
 		return nil, errors.New(errors.CodeConflict, ErrInvalidCreds, err)
+	}
+
+	log.Println("user: ", user.Username, " is banned: ", user.IsBanned)
+	if user.IsBanned {
+		return nil, errors.New(errors.CodeForbidden, "email is banned", nil)
 	}
 
 	return user, nil

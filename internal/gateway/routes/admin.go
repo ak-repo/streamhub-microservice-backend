@@ -24,6 +24,7 @@ func adminRoutes(api fiber.Router, clients *clients.Clients, cfg *config.Config)
 	adminR.Post("/users/unban", handler.UnbanUser)
 	adminR.Post("/users/change-role", handler.UpdateRole)
 	adminR.Post("/users/uploads-block", handler.BlockUserUpload)
+	adminR.Delete("/users/:id", handler.DeleteUser)
 
 	// channels actions
 	adminR.Get("/channels", handler.ListChannels)

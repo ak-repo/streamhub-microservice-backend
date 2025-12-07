@@ -86,6 +86,20 @@ func (h *AdminHandler) UnbanUser(c *fiber.Ctx) error {
 	return response.Success(c, "channel created", resp)
 }
 
+func (h *AdminHandler) DeleteUser(c *fiber.Ctx) error {
+
+	// ctx, cancel := helper.WithGRPCTimeout()
+	// defer cancel()
+
+	// resp, err := h.clients.Admin.
+
+	// if err != nil {
+	// 	code, body := errors.GRPCToFiber(err)
+	// 	return response.Error(c, code, body)
+	// }
+	return response.Success(c, "user deleted", nil)
+}
+
 func (h *AdminHandler) UpdateRole(c *fiber.Ctx) error {
 	var req struct {
 		UserID string `json:"userId"`

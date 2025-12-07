@@ -23,6 +23,7 @@ const (
 	AdminService_UnbanUser_FullMethodName            = "/admin.AdminService/UnbanUser"
 	AdminService_UpdateRole_FullMethodName           = "/admin.AdminService/UpdateRole"
 	AdminService_ListUsers_FullMethodName            = "/admin.AdminService/ListUsers"
+	AdminService_DeleteUser_FullMethodName           = "/admin.AdminService/DeleteUser"
 	AdminService_ListChannels_FullMethodName         = "/admin.AdminService/ListChannels"
 	AdminService_GetChannel_FullMethodName           = "/admin.AdminService/GetChannel"
 	AdminService_FreezeChannel_FullMethodName        = "/admin.AdminService/FreezeChannel"
@@ -30,6 +31,7 @@ const (
 	AdminService_DeleteChannel_FullMethodName        = "/admin.AdminService/DeleteChannel"
 	AdminService_GetAuditLogs_FullMethodName         = "/admin.AdminService/GetAuditLogs"
 	AdminService_IsAdmin_FullMethodName              = "/admin.AdminService/IsAdmin"
+	AdminService_DashBoardData_FullMethodName        = "/admin.AdminService/DashBoardData"
 	AdminService_AdminListAllFiles_FullMethodName    = "/admin.AdminService/AdminListAllFiles"
 	AdminService_AdminDeleteFile_FullMethodName      = "/admin.AdminService/AdminDeleteFile"
 	AdminService_AdminBlockUserUpload_FullMethodName = "/admin.AdminService/AdminBlockUserUpload"
@@ -49,6 +51,7 @@ type AdminServiceClient interface {
 	UnbanUser(ctx context.Context, in *UnbanUserRequest, opts ...grpc.CallOption) (*UnbanUserResponse, error)
 	UpdateRole(ctx context.Context, in *UpdateRoleRequest, opts ...grpc.CallOption) (*UpdateRoleResponse, error)
 	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
+	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error)
 	// Channel Management
 	ListChannels(ctx context.Context, in *ListChannelsRequest, opts ...grpc.CallOption) (*ListChannelsResponse, error)
 	GetChannel(ctx context.Context, in *GetChannelRequest, opts ...grpc.CallOption) (*GetChannelResponse, error)
@@ -58,6 +61,7 @@ type AdminServiceClient interface {
 	// Activity Monitoring
 	GetAuditLogs(ctx context.Context, in *GetAuditLogsRequest, opts ...grpc.CallOption) (*GetAuditLogsResponse, error)
 	IsAdmin(ctx context.Context, in *IsAdminRequest, opts ...grpc.CallOption) (*IsAdminResponse, error)
+	DashBoardData(ctx context.Context, in *DashBoardRequest, opts ...grpc.CallOption) (*DashBoardResponse, error)
 	// Files Management
 	AdminListAllFiles(ctx context.Context, in *AdminListAllFilesRequest, opts ...grpc.CallOption) (*AdminListAllFilesResponse, error)
 	AdminDeleteFile(ctx context.Context, in *AdminDeleteFileRequest, opts ...grpc.CallOption) (*AdminDeleteFileResponse, error)
@@ -107,6 +111,16 @@ func (c *adminServiceClient) ListUsers(ctx context.Context, in *ListUsersRequest
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListUsersResponse)
 	err := c.cc.Invoke(ctx, AdminService_ListUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteUserResponse)
+	err := c.cc.Invoke(ctx, AdminService_DeleteUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -183,6 +197,16 @@ func (c *adminServiceClient) IsAdmin(ctx context.Context, in *IsAdminRequest, op
 	return out, nil
 }
 
+func (c *adminServiceClient) DashBoardData(ctx context.Context, in *DashBoardRequest, opts ...grpc.CallOption) (*DashBoardResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DashBoardResponse)
+	err := c.cc.Invoke(ctx, AdminService_DashBoardData_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminServiceClient) AdminListAllFiles(ctx context.Context, in *AdminListAllFilesRequest, opts ...grpc.CallOption) (*AdminListAllFilesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AdminListAllFilesResponse)
@@ -236,6 +260,7 @@ type AdminServiceServer interface {
 	UnbanUser(context.Context, *UnbanUserRequest) (*UnbanUserResponse, error)
 	UpdateRole(context.Context, *UpdateRoleRequest) (*UpdateRoleResponse, error)
 	ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error)
+	DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error)
 	// Channel Management
 	ListChannels(context.Context, *ListChannelsRequest) (*ListChannelsResponse, error)
 	GetChannel(context.Context, *GetChannelRequest) (*GetChannelResponse, error)
@@ -245,6 +270,7 @@ type AdminServiceServer interface {
 	// Activity Monitoring
 	GetAuditLogs(context.Context, *GetAuditLogsRequest) (*GetAuditLogsResponse, error)
 	IsAdmin(context.Context, *IsAdminRequest) (*IsAdminResponse, error)
+	DashBoardData(context.Context, *DashBoardRequest) (*DashBoardResponse, error)
 	// Files Management
 	AdminListAllFiles(context.Context, *AdminListAllFilesRequest) (*AdminListAllFilesResponse, error)
 	AdminDeleteFile(context.Context, *AdminDeleteFileRequest) (*AdminDeleteFileResponse, error)
@@ -272,6 +298,9 @@ func (UnimplementedAdminServiceServer) UpdateRole(context.Context, *UpdateRoleRe
 func (UnimplementedAdminServiceServer) ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListUsers not implemented")
 }
+func (UnimplementedAdminServiceServer) DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteUser not implemented")
+}
 func (UnimplementedAdminServiceServer) ListChannels(context.Context, *ListChannelsRequest) (*ListChannelsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListChannels not implemented")
 }
@@ -292,6 +321,9 @@ func (UnimplementedAdminServiceServer) GetAuditLogs(context.Context, *GetAuditLo
 }
 func (UnimplementedAdminServiceServer) IsAdmin(context.Context, *IsAdminRequest) (*IsAdminResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsAdmin not implemented")
+}
+func (UnimplementedAdminServiceServer) DashBoardData(context.Context, *DashBoardRequest) (*DashBoardResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DashBoardData not implemented")
 }
 func (UnimplementedAdminServiceServer) AdminListAllFiles(context.Context, *AdminListAllFilesRequest) (*AdminListAllFilesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AdminListAllFiles not implemented")
@@ -394,6 +426,24 @@ func _AdminService_ListUsers_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServiceServer).ListUsers(ctx, req.(*ListUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_DeleteUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).DeleteUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_DeleteUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).DeleteUser(ctx, req.(*DeleteUserRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -524,6 +574,24 @@ func _AdminService_IsAdmin_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_DashBoardData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DashBoardRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).DashBoardData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_DashBoardData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).DashBoardData(ctx, req.(*DashBoardRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminService_AdminListAllFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AdminListAllFilesRequest)
 	if err := dec(in); err != nil {
@@ -620,6 +688,10 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AdminService_ListUsers_Handler,
 		},
 		{
+			MethodName: "DeleteUser",
+			Handler:    _AdminService_DeleteUser_Handler,
+		},
+		{
 			MethodName: "ListChannels",
 			Handler:    _AdminService_ListChannels_Handler,
 		},
@@ -646,6 +718,10 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IsAdmin",
 			Handler:    _AdminService_IsAdmin_Handler,
+		},
+		{
+			MethodName: "DashBoardData",
+			Handler:    _AdminService_DashBoardData_Handler,
 		},
 		{
 			MethodName: "AdminListAllFiles",

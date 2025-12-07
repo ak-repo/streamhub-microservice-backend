@@ -23,6 +23,12 @@ type ChannelRepository interface {
 	RemoveMember(ctx context.Context, channelID, userID string) error
 	ListChannelMembers(ctx context.Context, channelID string) ([]*domain.ChannelMember, error)
 	IsUserMember(ctx context.Context, channelID, userID string) (bool, error)
+
+	// Request operations
+	CreateRequest(ctx context.Context, req *domain.Request) error
+	UpdateRequestStatus(ctx context.Context, reqID, status string) error
+	ListInviteRequests(ctx context.Context, userID string) ([]*domain.Request, error)
+	ListJoinRequests(ctx context.Context, channelID string) ([]*domain.Request, error)
 }
 
 // PubSub defines real-time message broadcasting capabilities.
@@ -49,4 +55,11 @@ type ChannelService interface {
 	RemoveMember(ctx context.Context, channelID, userID string) error
 	ListMembers(ctx context.Context, channelID string) ([]*domain.ChannelMember, error)
 	CheckMembership(ctx context.Context, channelID, userID string) (bool, error)
+
+	// Requests management
+	SendInvite(ctx context.Context, userID, channelID string) error
+	SendJoin(ctx context.Context, userID, channelID string) error
+	ListUserInvites(ctx context.Context, userID string) ([]*domain.Request, error)
+	ListChannelJoins(ctx context.Context, channelID string) ([]*domain.Request, error)
+	UpdateRequestStatus(ctx context.Context, reqID, status string) error
 }

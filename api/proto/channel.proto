@@ -242,4 +242,65 @@ service ChannelService {
   rpc EditMessage(EditMessageRequest) returns (EditMessageResponse);
   rpc DeleteMessage(DeleteMessageRequest) returns (DeleteMessageResponse);
 
+
+  // requests management
+  rpc SendInvite(SendInviteRequest)returns(SendInviteResponse);
+  // rpc ListChannelInvites(ListChannelInviteRequest)returns(ListChannelInviteResponse);
+  rpc ListUserInvites(ListUserInviteRequest)returns(ListUserInviteResponse);  // for users
+  rpc SendJoin(SendJoinRequest)returns(SendJoinResponse);
+  rpc ListChannelJoins(ListChannelJoinRequest)returns(ListChannelJoinResponse); // for channels
+  rpc UpdateRequestStatus(StatusUpdateRequest)returns(StatusUpdateResponse);
+}
+
+message Request{
+  string id  = 1;
+  string user_id = 2;
+  string channel_id = 3;
+  string req_type = 4;
+  string status = 5;
+  string created_at = 6;
+}
+
+message StatusUpdateRequest{
+  string id  = 1;
+  string status = 2;
+}
+
+message StatusUpdateResponse{
+  bool Success = 1;
+
+}
+
+message SendInviteRequest{
+  string user_id = 1;
+  string channel_id = 2;
+  string req_type = 3; // invite
+}
+message SendInviteResponse{
+  bool success = 1;
+}
+
+message SendJoinRequest{
+  string user_id = 1;
+  string channel_id = 2;
+  string req_type = 3; // join 
+}
+message SendJoinResponse{
+  bool success = 1;
+  string messsge = 2;
+}
+
+message ListChannelJoinRequest{
+  string channel_id = 1;
+}
+
+message ListChannelJoinResponse{
+  repeated Request requests = 1;
+}
+
+message ListUserInviteRequest{
+  string user_id = 1;
+}
+message ListUserInviteResponse{
+  repeated Request requests = 1;
 }

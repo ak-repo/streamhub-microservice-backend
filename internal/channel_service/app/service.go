@@ -193,3 +193,62 @@ func (s *channelService) DeleteChannel(ctx context.Context, channelID, requester
 	return nil
 
 }
+
+// Requests
+
+func (s *channelService) SendInvite(ctx context.Context, userID, channelID string) error {
+	r := &domain.Request{
+		ID:        uuid.New().String(),
+		UserID:    userID,
+		ChannelID: channelID,
+		ReqType:   "invite",
+		Status:    "pending",
+		CreatedAt: time.Now().UTC(),
+	}
+	err := s.repo.CreateRequest(ctx, r)
+	if err != nil {
+		return errors.New(errors.CodeInternal, "failed to create invite request", err)
+	}
+	return nil
+}
+
+func (s *channelService) SendJoin(ctx context.Context, userID, channelID string) error {
+	r := &domain.Request{
+		ID:        uuid.New().String(),
+		UserID:    userID,
+		ChannelID: channelID,
+		ReqType:   "join",
+		Status:    "pending",
+		CreatedAt: time.Now().UTC(),
+	}
+	err := s.repo.CreateRequest(ctx, r)
+	if err != nil {
+		return errors.New(errors.CodeInternal, "failed to create join request", err)
+	}
+	return nil
+}
+
+func (s *channelService) ListUserInvites(ctx context.Context, userID string) ([]*domain.Request, error) {
+	requests, err := s.repo.ListInviteRequests(ctx, userID)
+	if err != nil {
+		return nil, errors.New(errors.CodeInternal, "failed to fetch user requets", err)
+	}
+	return requests, nil
+
+}
+
+func (s *channelService) ListChannelJoins(ctx context.Context, channelID string) ([]*domain.Request, error) {
+	requests, err := s.repo.ListJoinRequests(ctx, channelID)
+	if err != nil {
+		return nil, errors.New(errors.CodeInternal, "failed to fetch channel requets", err)
+	}
+	return requests, nil
+}
+
+func (s *channelService) UpdateRequestStatus(ctx context.Context, reqID, status string) error {
+	err := s.repo.UpdateRequestStatus(ctx, reqID, status)
+	if err != nil {
+		return errors.New(errors.CodeInternal, "failed to update request status", err)
+	}
+	return nil
+}
