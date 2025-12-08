@@ -9,12 +9,12 @@ import (
 	"github.com/ak-repo/stream-hub/config"
 	"github.com/ak-repo/stream-hub/gen/filespb"
 	filegrpc "github.com/ak-repo/stream-hub/internal/files_service/adapter/grpc"
-	"github.com/ak-repo/stream-hub/internal/files_service/adapter/postgres"
+	repository "github.com/ak-repo/stream-hub/internal/files_service/adapter/postgres"
 	redisstore "github.com/ak-repo/stream-hub/internal/files_service/adapter/redis"
 	"github.com/ak-repo/stream-hub/internal/files_service/adapter/storage"
 	"github.com/ak-repo/stream-hub/internal/files_service/app"
-	"github.com/ak-repo/stream-hub/internal/gateway/clients"
 	"github.com/ak-repo/stream-hub/pkg/db"
+	"github.com/ak-repo/stream-hub/pkg/grpc/clients"
 	"github.com/ak-repo/stream-hub/pkg/grpc/interceptors"
 	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/logger"
@@ -59,9 +59,9 @@ func main() {
 	tempStore := redisstore.NewTempStore(redisclient.Client, 15*time.Minute)
 
 	// repo - service - server
-	repo := postgres.NewFileRepository(pgDB.Pool)
+	repo := repository.NewFileRepository(pgDB.Pool)
 	service := app.NewFileService(repo, tempStore, s3, 15*time.Minute, *clientContainer)
-	server := filegrpc.NewFileServer(service)
+	server := filegrpc.NewServer(service)
 
 	addr := ":" + cfg.Services.File.Port
 	lis, err := net.Listen("tcp", addr)

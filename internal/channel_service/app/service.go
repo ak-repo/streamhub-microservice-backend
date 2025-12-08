@@ -2,15 +2,13 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/ak-repo/stream-hub/gen/adminpb"
 	"github.com/ak-repo/stream-hub/gen/authpb"
 	"github.com/ak-repo/stream-hub/internal/channel_service/domain"
 	"github.com/ak-repo/stream-hub/internal/channel_service/port"
-	"github.com/ak-repo/stream-hub/internal/gateway/clients"
 	"github.com/ak-repo/stream-hub/pkg/errors"
+	"github.com/ak-repo/stream-hub/pkg/grpc/clients"
 	"github.com/ak-repo/stream-hub/pkg/logger"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -22,233 +20,283 @@ type channelService struct {
 	clients *clients.Clients
 }
 
-func NewChannelService(repo port.ChannelRepository, pubsub port.PubSub, clients *clients.Clients) port.ChannelService {
-	return &channelService{repo: repo, pubsub: pubsub, clients: clients}
+func NewChannelService(
+	repo port.ChannelRepository,
+	pubsub port.PubSub,
+	clients *clients.Clients,
+) port.ChannelService {
+	return &channelService{
+		repo:    repo,
+		pubsub:  pubsub,
+		clients: clients,
+	}
 }
 
-// PostMessage handles the message posting flow:
-// 1. Persist to database (durable storage)
-// 2. Broadcast via Redis (real-time delivery)
-// PostMessage handles text or attachment messages
-func (s *channelService) PostMessage(
-	ctx context.Context,
-	senderID, channelID, content string,
-	attachment *domain.FileAttachment,
-) (*domain.Message, error) {
+// =============================================================================
+// MESSAGE HANDLING
+// =============================================================================
+
+func (s *channelService) PostMessage(ctx context.Context, senderID, channelID, content string) (*domain.Message, error) {
+	// 1. Authorization: Is user a member?
 	isMember, err := s.repo.IsUserMember(ctx, channelID, senderID)
 	if err != nil {
-		return nil, errors.New(errors.CodeInternal, "failed to check membership", err)
+		return nil, errors.New(errors.CodeInternal, "membership check failed", err)
 	}
 	if !isMember {
-		return nil, errors.New(errors.CodeUnauthorized, "user is not a member", nil)
+		return nil, errors.New(errors.CodeForbidden, "user is not a member of this channel", nil)
 	}
 
+	// 2. Authorization: Is channel frozen?
+	ch, err := s.repo.GetChannel(ctx, channelID)
+	if err != nil || ch == nil {
+		return nil, errors.New(errors.CodeNotFound, "channel not found", err)
+	}
+	if ch.IsFrozen {
+		return nil, errors.New(errors.CodeForbidden, "channel is frozen", nil)
+	}
+
+	// 3. Create Message Object (attachment removed)
 	msg := &domain.Message{
-		ID:         uuid.New().String(),
-		ChannelID:  channelID,
-		SenderID:   senderID,
-		Content:    content,
-		CreatedAt:  time.Now().UTC(),
-		Attachment: attachment,
+		ID:        uuid.New().String(),
+		ChannelID: channelID,
+		SenderID:  senderID,
+		Content:   content,
+		CreatedAt: time.Now().UTC(),
 	}
 
+	// 4. Persist
 	if err := s.repo.SaveMessage(ctx, msg); err != nil {
 		return nil, errors.New(errors.CodeInternal, "failed to save message", err)
 	}
 
+	// 5. Broadcast (Real-time)
 	if err := s.pubsub.Publish(ctx, channelID, msg); err != nil {
-		logger.Log.Error("failed to publish message to Redis", zap.Error(err))
+		logger.Log.Error("redis publish failed", zap.String("channel_id", channelID), zap.Error(err))
 	}
 
 	return msg, nil
 }
 
-// GetHistory returns paginated message history
 func (s *channelService) GetHistory(ctx context.Context, channelID string, limit, offset int) ([]*domain.Message, error) {
 	messages, err := s.repo.ListHistory(ctx, channelID, limit, offset)
 	if err != nil {
-		return nil, errors.New(errors.CodeNotFound, "messages not found", err)
+		return nil, errors.New(errors.CodeInternal, "failed to fetch history", err)
 	}
 	return messages, nil
 }
 
 func (s *channelService) SubscribeToChannel(ctx context.Context, channelID string) (<-chan *domain.Message, error) {
-	msgChan, err := s.pubsub.Subscribe(ctx, channelID)
-	if err != nil {
-		return nil, errors.New(errors.CodeInternal, fmt.Sprintf("Failed to subscribe to channel %s", channelID), err)
-	}
-	return msgChan, nil
+	return s.pubsub.Subscribe(ctx, channelID)
 }
 
-// CreateChannel creates a new group chat channel and automatically
-// adds the creator as the first member.
-func (s *channelService) CreateChannel(ctx context.Context, name, creatorID string) (*domain.Channel, error) {
+// =============================================================================
+// CHANNEL MANAGEMENT
+// =============================================================================
+
+func (s *channelService) CreateChannel(ctx context.Context, name, description, visibility, creatorID string) (*domain.Channel, error) {
 	ch := &domain.Channel{
-		ID:        uuid.New().String(),
-		Name:      name,
-		CreatedBy: creatorID,
-		CreatedAt: time.Now().UTC(),
+		ID:          uuid.New().String(),
+		Name:        name,
+		Description: description,
+		Visibility:  visibility,
+		OwnerID:     creatorID,
+		CreatedAt:   time.Now().UTC(),
+		IsFrozen:    false,
 	}
 
+	// 1. Create Channel
 	if err := s.repo.CreateChannel(ctx, ch); err != nil {
-		return nil, errors.New(errors.CodeInternal, "failed to create channel", err)
+		return nil, errors.New(errors.CodeInternal, "database error creating channel", err)
 	}
 
-	// Auto-add creator as first member
-	_, err := s.AddMember(ctx, ch.ID, creatorID)
-	if err != nil {
-		// Channel exists but creator not added - log and continue
-		fmt.Printf("Warning: failed to add creator as member: %v\n", err)
+	// 2. Add Creator as Admin/Owner
+	member := &domain.ChannelMember{
+		ID:        uuid.New().String(),
+		ChannelID: ch.ID,
+		UserID:    creatorID,
+		Role:      "admin",
+		JoinedAt:  time.Now().UTC(),
+	}
+	if err := s.repo.AddMember(ctx, member); err != nil {
+		logger.Log.Error("failed to add creator as member", zap.Error(err))
+		return nil, errors.New(errors.CodeInternal, "database error creating channel", err)
 	}
 
 	return ch, nil
 }
 
-// Get All channels of a user
-func (s *channelService) ListChannels(ctx context.Context, userID string) (map[string]*domain.ChannelWithMembers, error) {
-	user, err := s.clients.Auth.FindById(ctx, &authpb.FindByIdRequest{Id: userID})
-
-	if err != nil || user.User.Id != userID {
-		return nil, errors.New(errors.CodeUnauthorized, "user not found", err)
-	}
-
-	channels, err := s.repo.ListChannels(ctx, userID)
+func (s *channelService) GetChannel(ctx context.Context, channelID string) (*domain.Channel, error) {
+	ch, err := s.repo.GetChannel(ctx, channelID)
 	if err != nil {
-		return nil, errors.New(errors.CodeNotFound, "channels not found", err)
+		return nil, errors.New(errors.CodeInternal, "database error", err)
 	}
-	return channels, nil
-
+	if ch == nil {
+		return nil, errors.New(errors.CodeNotFound, "channel not found", nil)
+	}
+	return ch, nil
 }
 
-func (s *channelService) AddMember(ctx context.Context, channelID, userID string) (*domain.ChannelMember, error) {
-	// Verify channel exists
-	_, err := s.repo.GetChannel(ctx, channelID)
+func (s *channelService) ListUserChannels(ctx context.Context, userID string) ([]*domain.Channel, error) {
+	_, err := s.clients.Auth.GetUser(ctx, &authpb.GetUserRequest{Query: &authpb.GetUserRequest_UserId{UserId: userID}})
 	if err != nil {
-		return nil, errors.New(errors.CodeNotFound, "channel not found", err)
+		return nil, errors.New(errors.CodeUnauthorized, "invalid user", err)
+	}
+
+	channels, err := s.repo.ListUserChannels(ctx, userID)
+	if err != nil {
+		return nil, errors.New(errors.CodeInternal, "failed to list channels", err)
+	}
+	return channels, nil
+}
+
+func (s *channelService) DeleteChannel(ctx context.Context, channelID, requesterID string) error {
+	ch, err := s.repo.GetChannel(ctx, channelID)
+	if err != nil {
+		return errors.New(errors.CodeNotFound, "channel not found", err)
+	}
+
+	if ch.OwnerID != requesterID {
+		return errors.New(errors.CodeForbidden, "only owner can delete channel", nil)
+	}
+
+	if err := s.repo.DeleteChannel(ctx, channelID); err != nil {
+		return errors.New(errors.CodeInternal, "delete failed", err)
+	}
+	return nil
+}
+
+// =============================================================================
+// MEMBER MANAGEMENT
+// =============================================================================
+
+func (s *channelService) AddMember(ctx context.Context, channelID, userID string) (*domain.ChannelMember, error) {
+	if _, err := s.GetChannel(ctx, channelID); err != nil {
+		return nil, err
 	}
 
 	m := &domain.ChannelMember{
 		ID:        uuid.New().String(),
 		ChannelID: channelID,
 		UserID:    userID,
+		Role:      "member",
 		JoinedAt:  time.Now().UTC(),
 	}
 
 	if err := s.repo.AddMember(ctx, m); err != nil {
 		return nil, errors.New(errors.CodeInternal, "failed to add member", err)
 	}
-
 	return m, nil
 }
 
-func (s *channelService) GetChannel(ctx context.Context, channelID string) (*domain.Channel, error) {
-	channel, err := s.repo.GetChannel(ctx, channelID)
-	if err != nil {
-		return nil, errors.New(errors.CodeNotFound, "channel not found", err)
-	}
-	return channel, nil
-}
+func (s *channelService) RemoveMember(ctx context.Context, channelID, userID, requesterID string) error {
 
-func (s *channelService) RemoveMember(ctx context.Context, channelID, userID string) error {
+	member, err := s.repo.IsUserMember(ctx, channelID, userID)
+	if err != nil || !member {
+		return errors.New(errors.CodeInternal, "failed to identify member", err)
+	}
+
 	if err := s.repo.RemoveMember(ctx, channelID, userID); err != nil {
-		return errors.New(errors.CodeInternal, "member removing failed", err)
+		return errors.New(errors.CodeInternal, "failed to remove member", err)
 	}
 	return nil
 }
 
 func (s *channelService) ListMembers(ctx context.Context, channelID string) ([]*domain.ChannelMember, error) {
-	return s.repo.ListChannelMembers(ctx, channelID)
+
+	members, err := s.repo.ListChannelMembers(ctx, channelID)
+	if err != nil {
+		return nil, errors.New(errors.CodeNotFound, "failed to get members", err)
+	}
+	return members, nil
 }
 
 func (s *channelService) CheckMembership(ctx context.Context, channelID, userID string) (bool, error) {
 	return s.repo.IsUserMember(ctx, channelID, userID)
 }
 
-func (s *channelService) DeleteChannel(ctx context.Context, channelID, requesterID string) error {
+// =============================================================================
+// REQUESTS (INVITES & JOINS)
+// =============================================================================
 
-	if channelID == "" {
-		return errors.New(errors.CodeInvalidInput, "channelID  cannot be empty", nil)
-	}
-	c, err := s.repo.GetChannel(ctx, channelID)
-	if err != nil {
-		return errors.New(errors.CodeNotFound,
-			fmt.Sprintf("channel %s not found", channelID), err)
-	}
+func (s *channelService) SendInvite(ctx context.Context, targetUserID, channelID, senderID string) error {
 
-	resp, adminErr := s.clients.Admin.IsAdmin(ctx, &adminpb.IsAdminRequest{AdminId: requesterID})
-
-	isOwner := requesterID == c.CreatedBy
-	isAdmin := adminErr == nil && resp.Success
-
-	if !(isOwner || isAdmin) {
-		return errors.New(errors.CodeForbidden,
-			"only owner or  admin can delete this file", err)
+	//TODO check same request exists
+	isMember, _ := s.repo.IsUserMember(ctx, channelID, senderID)
+	if !isMember {
+		return errors.New(errors.CodeForbidden, "must be member to invite", nil)
 	}
 
-	if err := s.repo.DeleteChannel(ctx, channelID); err != nil {
-		return errors.New(errors.CodeInternal,
-			"failed to delete channel", err)
-	}
-
-	return nil
-
-}
-
-// Requests
-
-func (s *channelService) SendInvite(ctx context.Context, userID, channelID string) error {
-	r := &domain.Request{
+	req := &domain.Request{
 		ID:        uuid.New().String(),
-		UserID:    userID,
+		UserID:    targetUserID,
 		ChannelID: channelID,
-		ReqType:   "invite",
+		Type:      "invite",
 		Status:    "pending",
 		CreatedAt: time.Now().UTC(),
 	}
-	err := s.repo.CreateRequest(ctx, r)
-	if err != nil {
-		return errors.New(errors.CodeInternal, "failed to create invite request", err)
+
+	if err := s.repo.CreateRequest(ctx, req); err != nil {
+		return errors.New(errors.CodeInternal, "failed to send invite", err)
 	}
 	return nil
 }
 
 func (s *channelService) SendJoin(ctx context.Context, userID, channelID string) error {
-	r := &domain.Request{
+	//TODO check same request exists
+	req := &domain.Request{
 		ID:        uuid.New().String(),
 		UserID:    userID,
 		ChannelID: channelID,
-		ReqType:   "join",
+		Type:      "join",
 		Status:    "pending",
 		CreatedAt: time.Now().UTC(),
 	}
-	err := s.repo.CreateRequest(ctx, r)
-	if err != nil {
-		return errors.New(errors.CodeInternal, "failed to create join request", err)
+
+	if err := s.repo.CreateRequest(ctx, req); err != nil {
+		return errors.New(errors.CodeInternal, "failed to request join", err)
+	}
+	return nil
+}
+
+func (s *channelService) RespondToRequest(ctx context.Context, requestID, userID, status string) error {
+	if err := s.repo.UpdateRequestStatus(ctx, requestID, status); err != nil {
+		return errors.New(errors.CodeInternal, "update status failed", err)
 	}
 	return nil
 }
 
 func (s *channelService) ListUserInvites(ctx context.Context, userID string) ([]*domain.Request, error) {
-	requests, err := s.repo.ListInviteRequests(ctx, userID)
-	if err != nil {
-		return nil, errors.New(errors.CodeInternal, "failed to fetch user requets", err)
-	}
-	return requests, nil
-
+	return s.repo.ListPendingRequests(ctx, userID, "")
 }
 
 func (s *channelService) ListChannelJoins(ctx context.Context, channelID string) ([]*domain.Request, error) {
-	requests, err := s.repo.ListJoinRequests(ctx, channelID)
-	if err != nil {
-		return nil, errors.New(errors.CodeInternal, "failed to fetch channel requets", err)
-	}
-	return requests, nil
+	return s.repo.ListPendingRequests(ctx, "", channelID)
 }
 
-func (s *channelService) UpdateRequestStatus(ctx context.Context, reqID, status string) error {
-	err := s.repo.UpdateRequestStatus(ctx, reqID, status)
-	if err != nil {
-		return errors.New(errors.CodeInternal, "failed to update request status", err)
+// =============================================================================
+// ADMIN OPERATIONS
+// =============================================================================
+
+func (s *channelService) AdminListChannels(ctx context.Context, limit, offset int) ([]*domain.Channel, error) {
+	return s.repo.AdminListChannels(ctx, limit, offset)
+}
+
+func (s *channelService) AdminFreezeChannel(ctx context.Context, channelID string, freeze bool, reason string) error {
+	if err := s.repo.FreezeChannel(ctx, channelID, freeze); err != nil {
+		return errors.New(errors.CodeInternal, "freeze update failed", err)
+	}
+
+	logger.Log.Info("admin updated channel freeze status",
+		zap.String("channel_id", channelID),
+		zap.Bool("freeze", freeze),
+		zap.String("reason", reason))
+
+	return nil
+}
+
+func (s *channelService) AdminDeleteChannel(ctx context.Context, channelID string) error {
+	if err := s.repo.DeleteChannel(ctx, channelID); err != nil {
+		return errors.New(errors.CodeInternal, "admin delete failed", err)
 	}
 	return nil
 }

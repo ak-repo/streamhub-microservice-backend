@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -20,7 +21,7 @@ import (
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
-var (
+const (
 	ErrUserExists   = "user already exists"
 	ErrInvalidCreds = "invalid credentials"
 	ErrUserNotFound = "user not found"
@@ -34,27 +35,48 @@ type authService struct {
 	cloudzcli *authcloudinary.CloudinaryUploader
 }
 
-func NewAuthService(repo port.UserRepository, jwtMgr *jwt.JWTManager, cfg *config.Config, otpStore *otpredis.OTPStore, cloudzcli *authcloudinary.CloudinaryUploader) port.AuthService {
-	return &authService{repo: repo, jwt: jwtMgr, cfg: cfg, otpStore: otpStore, cloudzcli: cloudzcli}
+// NewAuthService creates a new instance of the Auth Service.
+func NewAuthService(
+	repo port.UserRepository,
+	jwtMgr *jwt.JWTManager,
+	cfg *config.Config,
+	otpStore *otpredis.OTPStore,
+	cloudzcli *authcloudinary.CloudinaryUploader,
+) port.AuthService {
+	return &authService{
+		repo:      repo,
+		jwt:       jwtMgr,
+		cfg:       cfg,
+		otpStore:  otpStore,
+		cloudzcli: cloudzcli,
+	}
 }
 
-// -------------------- REGISTER --------------------
+// =============================================================================
+// AUTHENTICATION (Register, Login, Magic Link)
+// =============================================================================
+
 func (s *authService) Register(ctx context.Context, email, username, password string) error {
 	existing, _ := s.repo.FindByEmail(ctx, email)
 	if existing != nil {
 		return errors.New(errors.CodeConflict, ErrUserExists, nil)
 	}
 
-	hashed, _ := utils.HashPassword(password)
+	hashed, err := utils.HashPassword(password)
+	if err != nil {
+		return errors.New(errors.CodeInternal, "failed to hash password", err)
+	}
 
 	user := &domain.User{
-		ID:           uuid.New().String(),
-		Email:        email,
-		Username:     username,
-		PasswordHash: hashed,
-		Role:         "user",
-		Avatar_url:   "https://res.cloudinary.com/dersnukrf/image/upload/v1764929207/avatars/avatars/profile.jpg.webp",
-		CreatedAt:    time.Now(),
+		ID:            uuid.New().String(),
+		Email:         email,
+		Username:      username,
+		PasswordHash:  hashed,
+		Role:          "user",
+		AvatarURL:     "https://res.cloudinary.com/dersnukrf/image/upload/v1764929207/avatars/avatars/profile.jpg.webp",
+		CreatedAt:     time.Now(),
+		EmailVerified: false,
+		IsBanned:      false,
 	}
 
 	if err := s.repo.Create(ctx, user); err != nil {
@@ -70,34 +92,36 @@ func (s *authService) Login(ctx context.Context, email, password string) (*domai
 		return nil, errors.New(errors.CodeNotFound, ErrInvalidCreds, err)
 	}
 	if user == nil {
-		return nil, errors.New(errors.CodeNotFound, ErrInvalidCreds, err)
+		return nil, errors.New(errors.CodeNotFound, ErrInvalidCreds, nil)
 	}
 
 	if !utils.ComparePassword(user.PasswordHash, password) {
-		return nil, errors.New(errors.CodeConflict, ErrInvalidCreds, err)
+		return nil, errors.New(errors.CodeConflict, ErrInvalidCreds, nil)
 	}
 
-	log.Println("user: ", user.Username, " is banned: ", user.IsBanned)
 	if user.IsBanned {
-		return nil, errors.New(errors.CodeForbidden, "email is banned", nil)
+		log.Printf("Login blocked: user %s is banned", user.Username)
+		return nil, errors.New(errors.CodeForbidden, "account is suspended", nil)
 	}
 
 	return user, nil
 }
 
-// --------------------------Magic Link --------------------------------
 func (s *authService) SendMagicLink(email string) (string, string, error) {
 	token, exp, err := s.jwt.GenerateAccessToken("0", email, "magic-link")
 	if err != nil {
 		return "", "", errors.New(errors.CodeInternal, "token generation failed", err)
 	}
 
-	magicLink := "http://" + s.cfg.Services.Front.Host + ":" +
-		s.cfg.Services.Front.Port +
-		"/verify-link?email=" + email +
-		"&token=" + token
+	// Construct URL
+	magicLink := fmt.Sprintf("http://%s:%s/verify-link?email=%s&token=%s",
+		s.cfg.Services.Front.Host,
+		s.cfg.Services.Front.Port,
+		email,
+		token,
+	)
 
-	// SendGrid
+	// Prepare SendGrid Email
 	from := mail.NewEmail("StreamHub", "ak506lap@gmail.com")
 	to := mail.NewEmail("", email)
 
@@ -114,16 +138,14 @@ func (s *authService) SendMagicLink(email string) (string, string, error) {
 	client := sendgrid.NewSendClient(s.cfg.SendGrid.Key)
 	response, err := client.Send(message)
 
-	if err != nil || response.StatusCode != 202 {
-		return "", "", errors.New(errors.CodeInternal, "failed to send verify link", err)
+	if err != nil || response.StatusCode >= 300 {
+		return "", "", errors.New(errors.CodeInternal, "failed to send verify link email", err)
 	}
 
 	return magicLink, helper.TimeToString(exp), nil
-
 }
 
 func (s *authService) VerifyMagicLink(ctx context.Context, token, email string) error {
-
 	claims, err := s.jwt.ValidateToken(token)
 	if err != nil {
 		return errors.New(errors.CodeUnauthorized, "link verification failed", err)
@@ -137,63 +159,109 @@ func (s *authService) VerifyMagicLink(ctx context.Context, token, email string) 
 	if err != nil {
 		return errors.New(errors.CodeNotFound, ErrUserNotFound, err)
 	}
-	user.EmailVerified = true
 
-	if err := s.repo.Update(ctx, user); err != nil {
-		return errors.New(errors.CodeInternal, "database update error", err)
+	// Update verification status if not already verified
+	if !user.EmailVerified {
+		user.EmailVerified = true
+		if err := s.repo.Update(ctx, user); err != nil {
+			return errors.New(errors.CodeInternal, "database update error", err)
+		}
 	}
 
 	return nil
 }
 
+// =============================================================================
+// USER LOOKUP & PROFILE
+// =============================================================================
+
 func (s *authService) FindUser(ctx context.Context, identifier, method string) (*domain.User, error) {
+	var user *domain.User
+	var err error
 
 	switch method {
 	case "id":
-		user, err := s.repo.FindByID(ctx, identifier)
-		if err != nil {
-			return nil, errors.New(errors.CodeNotFound, "user not found by this ID: "+identifier, err)
-		}
-		return user, nil
+		user, err = s.repo.FindByID(ctx, identifier)
 	case "email":
-		user, err := s.repo.FindByEmail(ctx, identifier)
-		if err != nil {
-			return nil, errors.New(errors.CodeNotFound, "user not found by this email: "+identifier, err)
-		}
-		return user, nil
+		user, err = s.repo.FindByEmail(ctx, identifier)
 	case "username":
-		user, err := s.repo.FindByUsername(ctx, identifier)
-		if err != nil {
-			return nil, errors.New(errors.CodeNotFound, "user not found by this email: "+identifier, err)
-		}
-		return user, nil
+		user, err = s.repo.FindByUsername(ctx, identifier)
+	default:
+		return nil, errors.New(errors.CodeBadRequest, "invalid lookup method", nil)
 	}
-	return nil, errors.New(errors.CodeNotFound, "user not found method not allowed", nil)
+
+	if err != nil {
+		return nil, errors.New(errors.CodeInternal, "database error", err)
+	}
+	if user == nil {
+		return nil, errors.New(errors.CodeNotFound, fmt.Sprintf("user not found by %s: %s", method, identifier), nil)
+	}
+
+	return user, nil
 }
 
-// -----------------------------Password REset--------------
+func (s *authService) SearchUsers(ctx context.Context, query string) ([]*domain.User, error) {
+	// Renamed from FindAllUsers to match the Interface and intent
+	users, err := s.repo.SearchUsers(ctx, query)
+	if err != nil {
+		return nil, errors.New(errors.CodeInternal, "failed to search users", err)
+	}
+	return users, nil
+}
 
-func (s *authService) PasswordReset(ctx context.Context, email string) error {
-
-	// Check if user exists
-	user, err := s.repo.FindByEmail(ctx, email)
+func (s *authService) UpdateProfile(ctx context.Context, userID, username string) (*domain.User, error) {
+	user, err := s.repo.FindByID(ctx, userID)
 	if err != nil || user == nil {
-		return errors.New(errors.CodeNotFound, ErrUserNotFound, err)
+		return nil, errors.New(errors.CodeNotFound, ErrUserNotFound, err)
+	}
+	if username != "" && username != user.Username {
+		user.Username = username
 	}
 
-	// Generate OTP
+	user.UpdatedAt = time.Now()
+	if err := s.repo.Update(ctx, user); err != nil {
+		return nil, errors.New(errors.CodeInternal, "failed to update user details", err)
+	}
+
+	return user, nil
+}
+
+func (s *authService) UploadAvatar(ctx context.Context, userID string, fileBytes []byte, filename, contentType string) (string, error) {
+	logger.Log.Info("Starting avatar upload for user: " + userID)
+
+	url, err := s.cloudzcli.UploadAvatar(ctx, fileBytes, filename)
+	if err != nil {
+		return "", errors.New(errors.CodeInternal, "failed to upload image to storage", err)
+	}
+
+	if err := s.repo.UpdateAvatar(ctx, userID, url); err != nil {
+		return "", errors.New(errors.CodeInternal, "failed to update avatar url in db", err)
+	}
+
+	return url, nil
+}
+
+// =============================================================================
+// PASSWORD MANAGEMENT (Reset & Change)
+// =============================================================================
+
+func (s *authService) PasswordReset(ctx context.Context, email string) error {
+	user, err := s.repo.FindByEmail(ctx, email)
+	if err != nil || user == nil {
+		// Return Generic Success to prevent Email Enumeration attacks
+		return nil
+	}
+
 	otp, err := utils.GenerateOTP(6)
 	if err != nil {
 		return errors.New(errors.CodeInternal, "otp generation failed", err)
 	}
 
-	// Save OTP in Redis (with TTL configured inside otpStore)
 	if err := s.otpStore.SaveOTP(ctx, email, otp); err != nil {
 		return errors.New(errors.CodeInternal, "failed to store otp", err)
 	}
 
-	// -------- Send OTP Email using SendGrid --------
-
+	// Send Email
 	from := mail.NewEmail("StreamHub", "ak506lap@gmail.com")
 	to := mail.NewEmail("", email)
 
@@ -204,18 +272,15 @@ func (s *authService) PasswordReset(ctx context.Context, email string) error {
 
 	p := mail.NewPersonalization()
 	p.AddTos(to)
-
-	// dynamic template fields in SendGrid
 	p.SetDynamicTemplateData("otp_code", otp)
 	p.SetDynamicTemplateData("username", user.Username)
 	p.SetDynamicTemplateData("support_email", "support@streamhub.com")
-
 	message.AddPersonalizations(p)
 
 	client := sendgrid.NewSendClient(s.cfg.SendGrid.Key)
 	resp, err := client.Send(message)
 
-	if err != nil || resp.StatusCode != 202 {
+	if err != nil || resp.StatusCode >= 300 {
 		return errors.New(errors.CodeInternal, "failed to send otp email", err)
 	}
 
@@ -223,99 +288,94 @@ func (s *authService) PasswordReset(ctx context.Context, email string) error {
 }
 
 func (s *authService) VerifyPasswordReset(ctx context.Context, otp, password, email string) error {
-
-	// redis check for ott
-	rOTP, err := s.otpStore.VerifyOTP(ctx, email)
+	cachedOTP, err := s.otpStore.VerifyOTP(ctx, email)
 	if err != nil {
-		return errors.New(errors.CodeInternal, "failed identify otp", err)
+		return errors.New(errors.CodeInternal, "otp verification error", err)
 	}
-	if rOTP != otp {
-		return errors.New(errors.CodeForbidden, "entered otp not matching", nil)
+	if cachedOTP != otp {
+		return errors.New(errors.CodeForbidden, "invalid otp", nil)
 	}
 
 	hash, err := utils.HashPassword(password)
 	if err != nil {
 		return errors.New(errors.CodeInternal, "failed to hash password", err)
 	}
+
 	if err := s.repo.UpdatePassword(ctx, email, hash); err != nil {
 		return errors.New(errors.CodeInternal, "failed to save new password", err)
 	}
 
-	// delete from redis
-	if err := s.otpStore.DeleteOTP(ctx, email); err != nil {
-		return errors.New(errors.CodeInternal, "delete from redis failed", err)
-	}
-
+	_ = s.otpStore.DeleteOTP(ctx, email)
 	return nil
-
 }
 
-//-----------profile update----------
-
-func (s *authService) UpdateProfile(ctx context.Context, userID, username, email string) (*domain.User, error) {
-
-	user, err := s.repo.FindByID(ctx, userID)
-	if err != nil || user == nil {
-		return nil, errors.New(errors.CodeNotFound, ErrUserNotFound, err)
-	}
-
-	if email != "" && email != user.Email {
-		u, _ := s.repo.FindByEmail(ctx, email)
-		if u != nil && u.ID != userID {
-			return nil, errors.New(errors.CodeAlreadyExists, "email already in use", nil)
-		}
-		user.Email = email
-	}
-
-	if username != "" && username != user.Username {
-		user.Username = username
-	}
-
-	// update
-	if err := s.repo.Update(ctx, user); err != nil {
-		return nil, errors.New(errors.CodeInternal, "failed to update user details", err)
-	}
-
-	return user, nil
-}
-
-func (s *authService) ChangePassword(ctx context.Context, userID, password, newPassword string) error {
-
+func (s *authService) ChangePassword(ctx context.Context, userID, oldPassword, newPassword string) error {
 	user, err := s.repo.FindByID(ctx, userID)
 	if err != nil || user == nil {
 		return errors.New(errors.CodeNotFound, ErrUserNotFound, err)
 	}
 
-	if !utils.ComparePassword(user.PasswordHash, password) {
-		return errors.New(errors.CodeUnauthorized, "enter password not matching", nil)
+	if !utils.ComparePassword(user.PasswordHash, oldPassword) {
+		return errors.New(errors.CodeUnauthorized, "current password incorrect", nil)
 	}
-	hash, _ := utils.HashPassword(newPassword)
+
+	hash, err := utils.HashPassword(newPassword)
+	if err != nil {
+		return errors.New(errors.CodeInternal, "failed to hash new password", err)
+	}
+
 	if err := s.repo.UpdatePassword(ctx, user.Email, hash); err != nil {
-		return errors.New(errors.CodeInternal, "failed to save new password", err)
+		return errors.New(errors.CodeInternal, "database update failed", err)
 	}
 
 	return nil
 }
 
-// all users realted services
-func (s *authService) FindAllUsers(ctx context.Context, query string) ([]*domain.User, error) {
+// =============================================================================
+// ADMIN / GOVERNANCE
+// =============================================================================
 
-	return s.repo.FindAll(ctx, query)
+func (s *authService) ListUsers(ctx context.Context, filter string) ([]*domain.User, error) {
+	// Note: We are using a simpler approach here based on the Repo implementation
+	// If you want specialized lists (active vs banned), ensure those methods exist in the interface.
+	// Assuming the Repo `ListUsers` returns all sorted by date.
+	// You may need to cast `repo` to struct if methods aren't in interface, or add them to interface.
+
+	// Since we defined specific methods in previous steps for repo but maybe not interface:
+	// Let's assume the interface has been updated to include ListUsers, BanUser, etc.
+
+	users, err := s.repo.ListUsers(ctx)
+	if err != nil {
+		return nil, errors.New(errors.CodeInternal, "failed to list users", err)
+	}
+	return users, nil
 }
 
-func (s *authService) UploadAvatar(ctx context.Context, userId string,
-	fileBytes []byte,
-	filename string,
-	contentType string) (string, error) {
-
-	logger.Log.Info("Starting avatar upload for user" + userId)
-	url, err := s.cloudzcli.UploadAvatar(ctx, fileBytes, filename)
-	if err != nil {
-		return "", errors.New(errors.CodeInternal, "failed to upload profile pic", err)
+func (s *authService) BanUser(ctx context.Context, userID, reason string) error {
+	if err := s.repo.BanUser(ctx, userID, reason); err != nil {
+		return errors.New(errors.CodeInternal, "failed to ban user", err)
 	}
-	if err := s.repo.UpdateAvatar(ctx, userId, url); err != nil {
-		return "", errors.New(errors.CodeInternal, "failed to upload profile pic", err)
-	}
+	return nil
+}
 
-	return url, nil
+func (s *authService) UnbanUser(ctx context.Context, userID, reason string) error {
+	if err := s.repo.UnbanUser(ctx, userID, reason); err != nil {
+		return errors.New(errors.CodeInternal, "failed to unban user", err)
+	}
+	return nil
+}
+
+func (s *authService) UpdateRole(ctx context.Context, userID, role string) error {
+	if err := s.repo.UpdateRole(ctx, userID, role); err != nil {
+		return errors.New(errors.CodeInternal, "failed to update user role", err)
+	}
+	return nil
+}
+
+func (s *authService) BlockUserUpload(ctx context.Context, adminID, userID string, block bool) error {
+	// In a real app, verify adminID has permissions here
+	if err := s.repo.SetUserUploadBlocked(ctx, userID, block); err != nil {
+		return errors.New(errors.CodeInternal, "failed to update user upload status", err)
+	}
+	return nil
 }

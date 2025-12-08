@@ -1,261 +1,104 @@
 syntax = "proto3";
 
 package admin;
+
 option go_package = "./gen/adminpb";
 
-// ---------------------------------------------------------------
-// USER MODEL
-// ---------------------------------------------------------------
-message User {
-  string id = 1;
-  string email = 2;
-  string username = 3;
-  string role = 4;             
-  bool email_verified = 5;
-  string avatar_url = 6;
-  bool is_banned = 7;
-  string created_at = 8;
-}
+// =============================================================================
+// SHARED MODELS
+// =============================================================================
 
-// ---------------------------------------------------------------
-// FILE MODEL
-// ---------------------------------------------------------------
-message File {
-  string id = 1;
-  string owner_id = 2;
-  string channel_id = 3;
-  string filename = 4;
-  int64 size = 5;
-  string mime_type = 6;
-  string storage_path = 7;
-  bool is_public = 8;
-  string created_at = 9;
-  string owner_name = 10;
-  string channel_name = 11;
-}
-
-// ---------------------------------------------------------------
-// CHANNEL MODEL
-// ---------------------------------------------------------------
-
-message Channel {
-  string id = 1;
-  string name = 2;
-  string description = 3;
-  string created_by = 4;
-  string owner_name = 5;
-  bool is_frozen = 6;
-  string created_at = 7;
-  repeated MemberInfo members = 8;
-}
-
-
-message MemberInfo {
+// Simplified User model for Dashboard display
+message DashboardUserPreview {
   string user_id = 1;
   string username = 2;
-  string id = 3;
+  string email = 3;
   string joined_at = 4;
+  string avatar_url = 5;
 }
 
-message ListChannelsRequest {}
-message ListChannelsResponse {
-  repeated Channel channels = 1;
-}
-
-message GetChannelRequest {
-  string channel_id = 1;
-}
-message GetChannelResponse {
-  Channel channel = 1;
-}
-
-message FreezeChannelRequest {
-  string channel_id = 1;
-  string reason = 2;
-}
-
-message FreezeChannelResponse {
-  bool success = 1;
-}
-
-message UnfreezeChannelRequest {
-  string channel_id = 1;
-}
-
-message UnfreezeChannelResponse {
-  bool success = 1;
-}
-
-
-message DeleteChannelRequest {
-  string channel_id = 1;
-  string admin_id = 2;
-
-}
-message DeleteChannelResponse {
-  bool success = 1;
-}
-
-// ---------------------------------------------------------------
-// USER GOVERNANCE
-// ---------------------------------------------------------------
-message BanUserRequest {
-  string user_id = 1;
-  string reason = 2;
-}
-
-message BanUserResponse {
-  bool success = 1;
-}
-
-message UnbanUserRequest {
-  string user_id = 1;
-  string reason = 2;
-}
-
-message UnbanUserResponse {
-  bool success = 1;
-}
-
-message UpdateRoleRequest {
-  string user_id = 1;
-  string role = 2; 
-}
-
-message UpdateRoleResponse {
-  bool success = 1;
-}
-
-message ListUsersRequest {
-  string filter_by = 1;
-}
-
-message ListUsersResponse {
-  repeated User users = 1;
-}
-
-message DeleteUserRequest{
-  string user_id = 1;
-}
-message DeleteUserResponse{
-  bool success = 2;
-}
-
-
-// ---------------------------------------------------------------
-// FILE ADMINISTRATION
-// ---------------------------------------------------------------
-message AdminListAllFilesRequest {
-  string admin_id = 1;
-}
-
-message AdminListAllFilesResponse {
-  repeated File files = 1;
-}
-
-message AdminDeleteFileRequest {
-  string file_id = 1;
-  string admin_id = 2;
-}
-
-message AdminDeleteFileResponse {
-  bool success = 1;
-}
-
-message AdminBlockUserUploadRequest {
-  string user_id = 1;
-  bool block = 2;
-  string admin_id = 3;
-}
-
-message AdminBlockUserUploadResponse {
-  bool success = 1;
-}
-
-message AdminStorageStatsRequest {
-  string admin_id = 1;
-}
-
-message AdminStorageStatsResponse {
-  int64 total_files = 1;
-  int64 total_storage_bytes = 2;
-  int64 public_files = 3;
-  int64 private_files = 4;
-}
-
-
-
-
-// ---------------------------------------------------------------
-// AUDIT LOGS
-// ---------------------------------------------------------------
-message GetAuditLogsRequest {
+message PaginationRequest {
   int32 page = 1;
   int32 limit = 2;
 }
 
+message PaginationResponse {
+  int32 current_page = 1;
+  int32 total_pages = 2;
+  int32 total_records = 3;
+}
+
+// =============================================================================
+// AUDIT LOGGING
+// =============================================================================
+
 message AuditLogEntry {
   string id = 1;
   string admin_id = 2;
-  string action = 3;
-  string target_id = 4;
-  string details = 5;
-  string created_at = 6;
+  string action = 3;       // e.g., "DELETE_CHANNEL", "BAN_USER"
+  string target_id = 4;    // The ID of the object being acted upon
+  string target_type = 5;  // e.g., "USER", "FILE", "CHANNEL"
+  string details = 6;      // JSON string or description
+  string ip_address = 7;
+  int64 created_at = 8;
 }
 
-message GetAuditLogsResponse {
+message ListAuditLogsRequest {
+  string admin_id = 1;     // Requester
+  string filter_action = 2; // Optional: filter by "DELETE", etc.
+  string filter_target = 3; // Optional: filter by target ID
+  PaginationRequest pagination = 4;
+}
+
+message ListAuditLogsResponse {
   repeated AuditLogEntry logs = 1;
-  int32 total_count = 2;
-  int32 page = 3;
+  PaginationResponse pagination = 2;
 }
 
+// =============================================================================
+// DASHBOARD & ANALYTICS
+// =============================================================================
 
-message IsAdminRequest {
+message GetDashboardStatsRequest {
   string admin_id = 1;
 }
 
-message IsAdminResponse{
-  bool success = 1;
+message GetDashboardStatsResponse {
+  // Numeric Stats (Use int64 for counters)
+  int64 total_users_count = 1;
+  int64 total_files_count = 2;
+  int64 total_channels_count = 3;
+  int64 total_storage_bytes = 4;
+
+  // Recent Activity snapshots
+  repeated DashboardUserPreview recent_users = 5;
+  int64 active_users_24h = 6;
 }
 
+// =============================================================================
+// ACCESS CHECKS
+// =============================================================================
 
-message DashBoardRequest {}
-message DashBoardResponse{
-  repeated User last_users = 1;
-  string total_files = 2;
-  string total_users = 3;
-  string total_channels = 4;
-  string total_storage = 5;
-
+message CheckAdminStatusRequest {
+  string user_id = 1;
 }
 
-// ---------------------------------------------------------------
-// ADMIN SERVICE
-// ---------------------------------------------------------------
+message CheckAdminStatusResponse {
+  bool is_admin = 1;
+  repeated string permissions = 2; // e.g. ["VIEW_DASHBOARD", "BAN_USERS"]
+}
+
+// =============================================================================
+// SERVICE DEFINITION
+// =============================================================================
+
 service AdminService {
+  // Activity Monitoring & Compliance
+  rpc ListAuditLogs(ListAuditLogsRequest) returns (ListAuditLogsResponse);
 
-  // User Governance
-  rpc BanUser(BanUserRequest) returns (BanUserResponse);
-  rpc UnbanUser(UnbanUserRequest) returns (UnbanUserResponse);
-  rpc UpdateRole(UpdateRoleRequest) returns (UpdateRoleResponse);
-  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
-  rpc DeleteUser(DeleteUserRequest)returns(DeleteUserResponse);
+  // System Health & Overview
+  rpc GetDashboardStats(GetDashboardStatsRequest) returns (GetDashboardStatsResponse);
 
-  // Channel Management
-  rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse);
-  rpc GetChannel(GetChannelRequest) returns (GetChannelResponse);
-  rpc FreezeChannel(FreezeChannelRequest) returns (FreezeChannelResponse);
-  rpc UnfreezeChannel(UnfreezeChannelRequest) returns (UnfreezeChannelResponse);
-  rpc DeleteChannel(DeleteChannelRequest) returns (DeleteChannelResponse);
-
-  // Activity Monitoring
-  rpc GetAuditLogs(GetAuditLogsRequest) returns (GetAuditLogsResponse);
-  rpc IsAdmin(IsAdminRequest)returns (IsAdminResponse);
-  rpc DashBoardData(DashBoardRequest)returns(DashBoardResponse);
-
-  // Files Management
-  rpc AdminListAllFiles(AdminListAllFilesRequest) returns (AdminListAllFilesResponse);
-  rpc AdminDeleteFile(AdminDeleteFileRequest) returns (AdminDeleteFileResponse);
-  rpc AdminBlockUserUpload(AdminBlockUserUploadRequest) returns (AdminBlockUserUploadResponse);
-  rpc AdminStorageStats(AdminStorageStatsRequest) returns (AdminStorageStatsResponse);
+  // Security Verification (Middleware helper)
+  rpc CheckAdminStatus(CheckAdminStatusRequest) returns (CheckAdminStatusResponse);
 }

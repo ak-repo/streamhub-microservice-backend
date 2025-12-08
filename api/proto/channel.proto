@@ -1,117 +1,112 @@
 syntax = "proto3";
 
 package channel;
-option go_package = "./gen/channelpb";
 
-// ---------------------------------------------------------
-// ENUMS
-// ---------------------------------------------------------
-enum UserRole {
-  ROLE_USER = 0;
-  ROLE_MODERATOR = 1;
-  ROLE_ADMIN = 2;
-}
+option go_package = "./gen/channelpb;channelpb";
 
-// ---------------------------------------------------------
-// Core Models
-// ---------------------------------------------------------
-message ChannelInfo {
-  string channel_id = 1;
+
+// =============================================================================
+// SHARED DOMAIN MODELS
+// =============================================================================
+
+message Channel {
+  string id = 1;
   string name = 2;
-    string description = 3;
-  string visibility = 4; // public/private
-  string created_by = 5;
-  int64 created_at_ms = 6;
+  string description = 3;
+  string visibility = 4;     // <-- string as requested (public/private/secret/etc)
+  string owner_id = 5;
+  int64 created_at = 6;
   bool is_frozen = 7;
-
-  repeated MemberInfo members = 8;
+  string owner_name = 8;
+  int32 member_count = 9;
 }
 
-message MemberInfo {
+message ChannelMember {
   string user_id = 1;
   string username = 2;
-  int64 joined_at_ms = 3;
-  UserRole role = 4;
+  string channel_id = 3;
+  string role = 4;
+  int64 joined_at = 5;
+  string id = 6;
 }
 
-// ---------------------------------------------------------
-// Message Models
-// ---------------------------------------------------------
-message FileAttachment {
-  string file_id = 1;
-  string url = 2;
-  string mime_type = 3;
-  int64 size = 4;
+// Unified model for both "Invites" and "Join Requests"
+message MembershipRequest {
+  string request_id = 1;
+  string user_id = 2;
+  string channel_id = 3;
+  string type = 4;       
+  string status = 5;
+  int64 created_at = 6;
 }
 
-message MessageCreated {
-  string message_id = 1;
-  string sender_id = 2;
-  string content = 3;
-  FileAttachment attachment = 4;
-  int64 timestamp_ms = 5;
+message ChatMessage {
+  string id = 1;
+  string channel_id = 2;
+  string sender_id = 3;
+  string sender_username = 4;
+  string content = 5;
+  int64 created_at = 6;
 }
 
-message MessageEdited {
-  string message_id = 1;
-  string new_content = 2;
-  int64 edited_at_ms = 3;
-}
 
-message MessageDeleted {
-  string message_id = 1;
-  int64 deleted_at_ms = 2;
-}
+// =============================================================================
+// USER SERVICE MESSAGES
+// =============================================================================
 
-// ---------------------------------------------------------
-// Streaming Payload + Events
-// ---------------------------------------------------------
+// ========== Streaming ==========
 message StreamRequest {
   oneof payload {
-    JoinPayload join = 1;
-    MessagePayload message = 2;
+    StreamConnect connect = 1;
+    StreamSendMessage message = 2;
   }
 }
 
-message JoinPayload {
+message StreamConnect {
   string user_id = 1;
   string channel_id = 2;
 }
 
-message MessagePayload {
-  string user_id = 1;
-  string channel_id = 2;
-
-  oneof body {
-    string content = 3;
-    FileAttachment file = 4;
-  }
+message StreamSendMessage {
+  string content = 1;
 }
 
 message StreamResponse {
   string channel_id = 1;
-  int64 timestamp_ms = 2;
+  int64 timestamp = 2;
 
   oneof event {
-    MessageCreated created = 3;
-    MessageEdited edited = 4;
-    MessageDeleted deleted = 5;
+    ChatMessage message_created = 3;
   }
 }
 
-// ---------------------------------------------------------
-// Channel CRUD
-// ---------------------------------------------------------
+
+// ========== Channel CRUD ==========
 message CreateChannelRequest {
   string name = 1;
-  string creator_id = 2;
+  string description = 2;
+  string visibility = 3;  // <-- keep as string
+  string creator_id = 4;
 }
 
 message CreateChannelResponse {
+  Channel channel = 1;
+}
+
+message GetChannelRequest {
   string channel_id = 1;
-  string name = 2;
-  string created_by = 3;
-  int64 created_at_ms = 4;
+}
+
+message GetChannelResponse {
+  Channel channel = 1;
+}
+
+message ListUserChannelsRequest {
+  string user_id = 1;
+}
+
+message ListUserChannelsResponse {
+  repeated Channel channels = 1;
 }
 
 message DeleteChannelRequest {
@@ -123,25 +118,8 @@ message DeleteChannelResponse {
   bool success = 1;
 }
 
-message GetChannelRequest {
-  string channel_id = 1;
-}
 
-message GetChannelResponse {
-  ChannelInfo channel = 1;
-}
-
-message ListChannelsRequest {
-  string user_id = 1;
-}
-
-message ListChannelsResponse {
-  repeated ChannelInfo channels = 1;
-}
-
-// ---------------------------------------------------------
-// Members
-// ---------------------------------------------------------
+// ========== Member Management ==========
 message AddMemberRequest {
   string channel_id = 1;
   string user_id = 2;
@@ -149,7 +127,7 @@ message AddMemberRequest {
 }
 
 message AddMemberResponse {
-  MemberInfo member = 1;
+  ChannelMember member = 1;
 }
 
 message RemoveMemberRequest {
@@ -167,140 +145,134 @@ message ListMembersRequest {
 }
 
 message ListMembersResponse {
-  repeated MemberInfo members = 1;
+  repeated ChannelMember members = 1;
 }
 
-// ---------------------------------------------------------
-// Chat History + Pagination
-// ---------------------------------------------------------
+
+// ========== Request Management ==========
+message SendInviteRequest {
+  string target_user_id = 1;
+  string channel_id = 2;
+  string sender_id = 3;
+}
+
+message SendInviteResponse {
+  string request_id = 1;
+  bool success = 2;
+}
+
+message SendJoinRequest {
+  string user_id = 1;
+  string channel_id = 2;
+}
+
+message SendJoinResponse {
+  string request_id = 1;
+  string message = 2;
+}
+
+message UpdateRequestStatusRequest {
+  string request_id = 1;
+  string user_id = 2;
+  string status = 3;
+}
+
+message UpdateRequestStatusResponse {
+  bool success = 1;
+}
+
+message ListUserInvitesRequest {
+  string user_id = 1;
+}
+
+message ListUserInvitesResponse {
+  repeated MembershipRequest requests = 1;
+}
+
+message ListChannelJoinsRequest {
+  string channel_id = 1;
+}
+
+message ListChannelJoinsResponse {
+  repeated MembershipRequest requests = 1;
+}
+
+
+// ========== Chat History ==========
 message ListMessagesRequest {
   string channel_id = 1;
-  int32 offset = 2;
-  int32 limit = 3;
-}
-
-message MessageInfo {
-  string message_id = 1;
-  string sender_id = 2;
-  string content = 3;
-  int64 timestamp_ms = 4;
-  string username = 5;
-  FileAttachment attachment = 6;
+  int32 limit = 2;
+  int32 offset = 3;
 }
 
 message ListMessagesResponse {
-  repeated MessageInfo messages = 1;
+  repeated ChatMessage messages = 1;
 }
 
-// ---------------------------------------------------------
-// Moderation
-// ---------------------------------------------------------
-message EditMessageRequest {
-  string message_id = 1;
-  string channel_id = 2;
-  string editor_id = 3;
-  string new_content = 4;
+
+// =============================================================================
+// ADMIN MESSAGES
+// =============================================================================
+
+message AdminListChannelsRequest {
+  string admin_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
 }
 
-message EditMessageResponse {
+message AdminListChannelsResponse {
+  repeated Channel channels = 1;
+}
+
+message AdminFreezeChannelRequest {
+  string channel_id = 1;
+  string admin_id = 2;
+  string reason = 3;
+  bool freeze = 4;
+}
+
+message AdminFreezeChannelResponse {
   bool success = 1;
 }
 
-message DeleteMessageRequest {
-  string message_id = 1;
-  string channel_id = 2;
-  string requester_id = 3;
+message AdminDeleteChannelRequest {
+  string channel_id = 1;
+  string admin_id = 2;
 }
 
-message DeleteMessageResponse {
+message AdminDeleteChannelResponse {
   bool success = 1;
 }
 
 
+// =============================================================================
+// SERVICE DEFINITIONS
+// =============================================================================
 
-// ---------------------------------------------------------
-// SERVICE DEFINITION
-// ---------------------------------------------------------
 service ChannelService {
-
-  // Streaming
   rpc Connect(stream StreamRequest) returns (stream StreamResponse);
 
-  // Channel CRUD
+  rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
+
   rpc CreateChannel(CreateChannelRequest) returns (CreateChannelResponse);
-  rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse);
+  rpc ListUserChannels(ListUserChannelsRequest) returns (ListUserChannelsResponse);
   rpc GetChannel(GetChannelRequest) returns (GetChannelResponse);
   rpc DeleteChannel(DeleteChannelRequest) returns (DeleteChannelResponse);
 
-  // Member Management
   rpc AddMember(AddMemberRequest) returns (AddMemberResponse);
   rpc RemoveMember(RemoveMemberRequest) returns (RemoveMemberResponse);
   rpc ListMembers(ListMembersRequest) returns (ListMembersResponse);
 
-  // Messages
-  rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
-  rpc EditMessage(EditMessageRequest) returns (EditMessageResponse);
-  rpc DeleteMessage(DeleteMessageRequest) returns (DeleteMessageResponse);
+  rpc SendInvite(SendInviteRequest) returns (SendInviteResponse);
+  rpc SendJoin(SendJoinRequest) returns (SendJoinResponse);
+  rpc UpdateRequestStatus(UpdateRequestStatusRequest) returns (UpdateRequestStatusResponse);
 
-
-  // requests management
-  rpc SendInvite(SendInviteRequest)returns(SendInviteResponse);
-  // rpc ListChannelInvites(ListChannelInviteRequest)returns(ListChannelInviteResponse);
-  rpc ListUserInvites(ListUserInviteRequest)returns(ListUserInviteResponse);  // for users
-  rpc SendJoin(SendJoinRequest)returns(SendJoinResponse);
-  rpc ListChannelJoins(ListChannelJoinRequest)returns(ListChannelJoinResponse); // for channels
-  rpc UpdateRequestStatus(StatusUpdateRequest)returns(StatusUpdateResponse);
+  rpc ListUserInvites(ListUserInvitesRequest) returns (ListUserInvitesResponse);
+  rpc ListChannelJoins(ListChannelJoinsRequest) returns (ListChannelJoinsResponse);
 }
 
-message Request{
-  string id  = 1;
-  string user_id = 2;
-  string channel_id = 3;
-  string req_type = 4;
-  string status = 5;
-  string created_at = 6;
-}
-
-message StatusUpdateRequest{
-  string id  = 1;
-  string status = 2;
-}
-
-message StatusUpdateResponse{
-  bool Success = 1;
-
-}
-
-message SendInviteRequest{
-  string user_id = 1;
-  string channel_id = 2;
-  string req_type = 3; // invite
-}
-message SendInviteResponse{
-  bool success = 1;
-}
-
-message SendJoinRequest{
-  string user_id = 1;
-  string channel_id = 2;
-  string req_type = 3; // join 
-}
-message SendJoinResponse{
-  bool success = 1;
-  string messsge = 2;
-}
-
-message ListChannelJoinRequest{
-  string channel_id = 1;
-}
-
-message ListChannelJoinResponse{
-  repeated Request requests = 1;
-}
-
-message ListUserInviteRequest{
-  string user_id = 1;
-}
-message ListUserInviteResponse{
-  repeated Request requests = 1;
+service AdminChannelService {
+  rpc AdminListChannels(AdminListChannelsRequest) returns (AdminListChannelsResponse);
+  rpc AdminFreezeChannel(AdminFreezeChannelRequest) returns (AdminFreezeChannelResponse);
+  rpc AdminDeleteChannel(AdminDeleteChannelRequest) returns (AdminDeleteChannelResponse);
 }

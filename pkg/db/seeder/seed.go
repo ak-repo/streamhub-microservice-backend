@@ -55,7 +55,7 @@ func UsersSeeder(ctx context.Context, pool *pgxpool.Pool) error {
 			Username:      u.Username,
 			PasswordHash:  hash,
 			Role:          "user",
-			Avatar_url:    avatar,
+			AvatarURL:     avatar,
 			CreatedAt:     time.Now(),
 			UpdatedAt:     time.Now(),
 			EmailVerified: true,
@@ -69,7 +69,7 @@ func UsersSeeder(ctx context.Context, pool *pgxpool.Pool) error {
 			 (id, username, email, password_hash, role, avatar_url, created_at, updated_at, email_verified, is_banned, upload_blocked)
 			 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
 			user.ID, user.Username, user.Email, user.PasswordHash, user.Role,
-			user.Avatar_url, user.CreatedAt, user.UpdatedAt,
+			user.AvatarURL, user.CreatedAt, user.UpdatedAt,
 			user.EmailVerified, user.IsBanned, user.UploadBlocked,
 		)
 

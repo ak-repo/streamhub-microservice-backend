@@ -8,16 +8,23 @@ import (
 )
 
 type Config struct {
-	App         AppConfig       `mapstructure:"app"`
-	Database    DatabaseConfig  `mapstructure:"database"`
-	JWT         JWTConfig       `mapstructure:"jwt"`
-	MinIO       MinioConfig     `mapstructure:"minio"`
-	Services    ServicesConfig  `mapstructure:"services"`
-	Logging     LoggingConfig   `mapstructure:"logging"`
-	Server      ServerConfig    `mapstructure:"server"`
-	SendGrid    SendGrid        `mapstructure:"sendgrid"`
-	Redis       RedisConfig     `mapstructure:"redis"`
-	FileService FileServiceConf `mapstructure:"file_service"`
+	App         AppConfig        `mapstructure:"app"`
+	Database    DatabaseConfig   `mapstructure:"database"`
+	JWT         JWTConfig        `mapstructure:"jwt"`
+	MinIO       MinioConfig      `mapstructure:"minio"`
+	Services    ServicesConfig   `mapstructure:"services"`
+	Logging     LoggingConfig    `mapstructure:"logging"`
+	Server      ServerConfig     `mapstructure:"server"`
+	SendGrid    SendGrid         `mapstructure:"sendgrid"`
+	Redis       RedisConfig      `mapstructure:"redis"`
+	FileService FileServiceConf  `mapstructure:"file_service"`
+	Cloudinary  CloudinaryConfig `mapstructure:"cloudinary"`
+}
+
+type CloudinaryConfig struct {
+	CloudName string `mapstructure:"cloud_name"`
+	APIKey    string `mapstructure:"api_key"`
+	APISecret string `mapstructure:"api_secret"`
 }
 
 // APP
@@ -99,8 +106,7 @@ type ServerConfig struct {
 type SendGrid struct {
 	Key           string `mapstructure:"api_key"`
 	MagicTemplate string `mapstructure:"magic_id"`
-	OTPTemplate string `mapstructure:"otp_id"`
-
+	OTPTemplate   string `mapstructure:"otp_id"`
 }
 
 // REDIS (NEW)

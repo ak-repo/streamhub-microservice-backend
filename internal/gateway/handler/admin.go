@@ -2,9 +2,11 @@ package handler
 
 import (
 	"github.com/ak-repo/stream-hub/config"
-	"github.com/ak-repo/stream-hub/gen/adminpb"
-	"github.com/ak-repo/stream-hub/internal/gateway/clients"
+	"github.com/ak-repo/stream-hub/gen/authpb"
+	"github.com/ak-repo/stream-hub/gen/channelpb"
+	"github.com/ak-repo/stream-hub/gen/filespb"
 	"github.com/ak-repo/stream-hub/pkg/errors"
+	"github.com/ak-repo/stream-hub/pkg/grpc/clients"
 	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/response"
 	"github.com/gofiber/fiber/v2"
@@ -26,7 +28,7 @@ func (h *AdminHandler) ListUsers(c *fiber.Ctx) error {
 
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
-	resp, err := h.clients.Admin.ListUsers(ctx, &adminpb.ListUsersRequest{FilterBy: filterBy})
+	resp, err := h.clients.AdminAuth.AdminListUsers(ctx, &authpb.AdminListUsersRequest{FilterQuery: filterBy})
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
@@ -47,9 +49,9 @@ func (h *AdminHandler) BanUser(c *fiber.Ctx) error {
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.Admin.BanUser(ctx, &adminpb.BanUserRequest{
-		UserId: req.UserID,
-		Reason: req.Reason,
+	resp, err := h.clients.AdminAuth.AdminBanUser(ctx, &authpb.AdminBanUserRequest{
+		TargetUserId: req.UserID,
+		Reason:       req.Reason,
 	})
 
 	if err != nil {
@@ -73,9 +75,9 @@ func (h *AdminHandler) UnbanUser(c *fiber.Ctx) error {
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.Admin.UnbanUser(ctx, &adminpb.UnbanUserRequest{
-		UserId: req.UserID,
-		Reason: req.Reason,
+	resp, err := h.clients.AdminAuth.AdminUnbanUser(ctx, &authpb.AdminUnbanUserRequest{
+		TargetUserId: req.UserID,
+		Reason:       req.Reason,
 	})
 
 	if err != nil {
@@ -113,9 +115,9 @@ func (h *AdminHandler) UpdateRole(c *fiber.Ctx) error {
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.Admin.UpdateRole(ctx, &adminpb.UpdateRoleRequest{
-		UserId: req.UserID,
-		Role:   req.Role,
+	resp, err := h.clients.AdminAuth.AdminUpdateRole(ctx, &authpb.AdminUpdateRoleRequest{
+		TargetUserId: req.UserID,
+		NewRole:      req.Role,
 	})
 
 	if err != nil {
@@ -132,7 +134,7 @@ func (h *AdminHandler) ListChannels(c *fiber.Ctx) error {
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.Admin.ListChannels(ctx, &adminpb.ListChannelsRequest{})
+	resp, err := h.clients.AdminChannel.AdminListChannels(ctx, &channelpb.AdminListChannelsRequest{})
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
@@ -154,7 +156,7 @@ func (h *AdminHandler) FreezeChannel(c *fiber.Ctx) error {
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.Admin.FreezeChannel(ctx, &adminpb.FreezeChannelRequest{ChannelId: req.ChannelID, Reason: req.Reason})
+	resp, err := h.clients.AdminChannel.AdminFreezeChannel(ctx, &channelpb.AdminFreezeChannelRequest{ChannelId: req.ChannelID, Reason: req.Reason})
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
@@ -165,29 +167,6 @@ func (h *AdminHandler) FreezeChannel(c *fiber.Ctx) error {
 
 }
 
-func (h *AdminHandler) UnfreezeChannel(c *fiber.Ctx) error {
-	var req struct {
-		ChannelID string `json:"channelId"`
-	}
-
-	if err := c.BodyParser(&req); err != nil {
-		return response.InvalidReqBody(c)
-	}
-
-	ctx, cancel := helper.WithGRPCTimeout()
-	defer cancel()
-
-	resp, err := h.clients.Admin.UnfreezeChannel(ctx, &adminpb.UnfreezeChannelRequest{ChannelId: req.ChannelID})
-
-	if err != nil {
-		code, body := errors.GRPCToFiber(err)
-		return response.Error(c, code, body)
-	}
-
-	return response.Success(c, "channel unfreezed, id: "+req.ChannelID, resp)
-
-}
-
 func (h *AdminHandler) DeleteChannel(c *fiber.Ctx) error {
 	channelID := c.Params("id")
 	adminID := c.Locals("userID").(string)
@@ -195,7 +174,7 @@ func (h *AdminHandler) DeleteChannel(c *fiber.Ctx) error {
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.Admin.DeleteChannel(ctx, &adminpb.DeleteChannelRequest{ChannelId: channelID, AdminId: adminID})
+	resp, err := h.clients.AdminChannel.AdminDeleteChannel(ctx, &channelpb.AdminDeleteChannelRequest{ChannelId: channelID, AdminId: adminID})
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
@@ -212,7 +191,7 @@ func (h *AdminHandler) ListAllFiles(c *fiber.Ctx) error {
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.Admin.AdminListAllFiles(ctx, &adminpb.AdminListAllFilesRequest{AdminId: adminID})
+	resp, err := h.clients.AdminFile.AdminListFiles(ctx, &filespb.AdminListFilesRequest{AdminId: adminID})
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
@@ -230,7 +209,7 @@ func (h *AdminHandler) DeleteFile(c *fiber.Ctx) error {
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.Admin.AdminDeleteFile(ctx, &adminpb.AdminDeleteFileRequest{FileId: fileID, AdminId: adminID})
+	resp, err := h.clients.AdminFile.AdminDeleteFile(ctx, &filespb.AdminDeleteFileRequest{FileId: fileID, AdminId: adminID})
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
@@ -255,7 +234,7 @@ func (h *AdminHandler) BlockUserUpload(c *fiber.Ctx) error {
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.Admin.AdminBlockUserUpload(ctx, &adminpb.AdminBlockUserUploadRequest{AdminId: adminID, Block: req.Block, UserId: req.UserID})
+	resp, err := h.clients.AdminFile.AdminBlockUploads(ctx, &filespb.AdminBlockUploadsRequest{AdminId: adminID, Block: req.Block, TargetUserId: req.UserID})
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)

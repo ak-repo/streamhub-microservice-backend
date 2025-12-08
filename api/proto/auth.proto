@@ -1,34 +1,51 @@
 syntax = "proto3";
 
 package auth;
+
 option go_package = "./gen/authpb";
 
-// ============================
-// Auth User Model
-// ============================
-message AuthUser {
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+
+
+enum AuthProvider {
+  PROVIDER_EMAIL = 0;
+  PROVIDER_GOOGLE = 1;
+  PROVIDER_GITHUB = 2;
+}
+
+// =============================================================================
+// CORE MODELS
+// =============================================================================
+
+message User {
   string id = 1;
   string email = 2;
   string username = 3;
-  string role = 4;          // user / admin
-  bool email_verified = 5;
+  string  role = 4;
+  bool is_email_verified = 5;
   string avatar_url = 6;
   bool is_banned = 7;
-  string created_at = 8;
-  bool  upload_blocked = 9;
+  bool is_upload_blocked = 8;
+  int64 created_at = 9;
+  int64 updated_at = 10;
 }
 
-// ----------------------------
-// Common Shared Messages
-// ----------------------------
-message Pagination {
-  int32 page = 1;
+message PaginationRequest {
+  int32 offset= 1;
   int32 limit = 2;
 }
 
-// ============================
-// Registration & Login
-// ============================
+
+
+// =============================================================================
+// AUTH SERVICE MESSAGES (Public/User)
+// =============================================================================
+
+// --- 1. Registration & Login ---
+
 message RegisterRequest {
   string username = 1;
   string email = 2;
@@ -37,6 +54,7 @@ message RegisterRequest {
 
 message RegisterResponse {
   bool success = 1;
+  string user_id = 2;
 }
 
 message LoginRequest {
@@ -45,156 +63,201 @@ message LoginRequest {
 }
 
 message LoginResponse {
-  AuthUser user = 1;
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
 }
 
-// ============================
-// Magic Link Authentication
-// ============================
+message OAuthLoginRequest {
+  AuthProvider provider = 1;
+  string oauth_token = 2; // Token from provider (e.g., Google ID token)
+}
+
+message OAuthLoginResponse {
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+}
+
+// --- 2. Magic Link Flow ---
+
 message SendMagicLinkRequest {
   string email = 1;
 }
 
 message SendMagicLinkResponse {
-  string magic_link = 1;
-  string expires_at = 2;
+  bool success = 1;
+  string magic_link_id = 2; // Ops usage, actual link usually sent via email
+  int64 expires_at = 3;
 }
 
 message VerifyMagicLinkRequest {
-  string token = 1;
-  string email = 2;
+  string email = 1;
+  string token = 2;
 }
 
 message VerifyMagicLinkResponse {
-  bool success = 1;
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
 }
 
-// ============================
-// OAuth Login
-// ============================
-message OAuthLoginRequest {
-  string provider = 1; 
-  string oauth_token = 2;
-}
+// --- 3. Password Management ---
 
-message OAuthLoginResponse {
-  AuthUser user = 1;
-}
-
-// ============================
-// Password Reset
-// ============================
 message PasswordResetRequest {
   string email = 1;
 }
 
 message PasswordResetResponse {
   bool success = 1;
+  string message = 2; // "If email exists, reset link sent"
 }
 
-message PasswordResetVerifyRequest {
-  string token = 1;
-  string new_password = 2;
-  string email = 3;
-}
-
-message PasswordResetVerifyResponse {
-  bool success = 1;
-}
-
-message ChangePasswordRequest{
-
-  string password = 1;
-  string new_password = 2;
-  string id = 3;
-
-}
-
-message ChangePasswordResponse{
-  bool success = 1;
-}
-
-// ============================
-// User Lookup
-// ============================
-message FindByEmailRequest {
+message VerifyPasswordResetRequest {
   string email = 1;
+  string token = 2;
+  string new_password = 3;
 }
 
-message FindByIdRequest {
-  string id = 1;
+message VerifyPasswordResetResponse {
+  bool success = 1;
 }
 
-message FindUserResponse {
-  AuthUser user = 1;
+message ChangePasswordRequest {
+  string user_id = 1;
+  string current_password = 2;
+  string new_password = 3;
 }
 
-// ============================
-// Profile Management
-// ============================
+message ChangePasswordResponse {
+  bool success = 1;
+}
+
+// --- 4. Profile & Search ---
+
+message GetUserRequest {
+  oneof query {
+    string user_id = 1;
+    string email = 2;
+  }
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
 message UpdateProfileRequest {
-  string id = 1;
-  string username = 2;
-  string email = 3;
+  string user_id = 1;
+  string username = 2; // Optional
 }
 
 message UpdateProfileResponse {
-  AuthUser user = 1;
+  User user = 1;
 }
 
-message UploadAvatarRequest{
+message UploadAvatarRequest {
   string user_id = 1;
-  bytes file = 2;
+  bytes file_data = 2;
   string filename = 3;
-  string content_type=4;
+  string mime_type = 4;
 }
 
 message UploadAvatarResponse {
-  string url = 1;
+  string avatar_url = 1;
 }
-// ============================
-// Search (Public/User Facing)
-// ============================
+
 message SearchUsersRequest {
-  string query = 1;
-  Pagination pagination = 2;
+  string query = 1; // username or email partial match
+  PaginationRequest pagination = 2;
 }
 
 message SearchUsersResponse {
-  repeated AuthUser users = 1;
-  int32 total = 2;
-  int32 page = 3;
-  int32 limit = 4;
+  repeated User users = 1;
 }
 
-// ============================
-// Auth Service Definition
-// ============================
+// =============================================================================
+// ADMIN SERVICE MESSAGES (Governance)
+// =============================================================================
+
+message AdminListUsersRequest {
+  string admin_id = 1;
+  string filter_query = 2; // Optional filter
+  PaginationRequest pagination = 3;
+}
+
+message AdminListUsersResponse {
+  repeated User users = 1;
+}
+
+message AdminUpdateRoleRequest {
+  string target_user_id = 1;
+  string new_role = 2;
+  string admin_id = 3;
+}
+
+message AdminUpdateRoleResponse {
+  bool success = 1;
+}
+
+message AdminBanUserRequest {
+  string target_user_id = 1;
+  string reason = 2;
+  string admin_id = 3;
+}
+
+message AdminBanUserResponse {
+  bool success = 1;
+}
+
+message AdminUnbanUserRequest {
+  string target_user_id = 1;
+  string reason = 2;
+  string admin_id = 3;
+}
+
+message AdminUnbanUserResponse {
+  bool success = 1;
+}
+
+message AdminDeleteUserRequest {
+  string target_user_id = 1;
+  string admin_id = 2;
+}
+
+message AdminDeleteUserResponse {
+  bool success = 1;
+}
+
+// =============================================================================
+// SERVICE DEFINITIONS
+// =============================================================================
+
 service AuthService {
-  // Registration & Login
+  // Authentication
   rpc Register(RegisterRequest) returns (RegisterResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
+  rpc OAuthLogin(OAuthLoginRequest) returns (OAuthLoginResponse);
 
   // Magic Link
   rpc SendMagicLink(SendMagicLinkRequest) returns (SendMagicLinkResponse);
   rpc VerifyMagicLink(VerifyMagicLinkRequest) returns (VerifyMagicLinkResponse);
 
-  // OAuth
-  rpc OAuthLogin(OAuthLoginRequest) returns (OAuthLoginResponse);
-
-rpc ChangePassword(ChangePasswordRequest)returns(ChangePasswordResponse);
-  // Password Reset for forget password
+  // Password Operations
   rpc PasswordReset(PasswordResetRequest) returns (PasswordResetResponse);
-  rpc VerifyPasswordReset(PasswordResetVerifyRequest) returns (PasswordResetVerifyResponse);
+  rpc VerifyPasswordReset(VerifyPasswordResetRequest) returns (VerifyPasswordResetResponse);
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
 
-  // User Lookup
-  rpc FindByEmail(FindByEmailRequest) returns (FindUserResponse);
-  rpc FindById(FindByIdRequest) returns (FindUserResponse);
-
-  // Profile
+  // User Data
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
   rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
-  rpc UploadAvatar(UploadAvatarRequest)returns(UploadAvatarResponse);
-
-  // Search
+  rpc UploadAvatar(UploadAvatarRequest) returns (UploadAvatarResponse);
   rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
+}
+
+service AdminAuthService {
+  rpc AdminListUsers(AdminListUsersRequest) returns (AdminListUsersResponse);
+  rpc AdminUpdateRole(AdminUpdateRoleRequest) returns (AdminUpdateRoleResponse);
+  rpc AdminBanUser(AdminBanUserRequest) returns (AdminBanUserResponse);
+  rpc AdminUnbanUser(AdminUnbanUserRequest) returns (AdminUnbanUserResponse);
+  rpc AdminDeleteUser(AdminDeleteUserRequest) returns (AdminDeleteUserResponse);
 }

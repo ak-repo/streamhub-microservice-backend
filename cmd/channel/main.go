@@ -14,8 +14,8 @@ import (
 	"github.com/ak-repo/stream-hub/internal/channel_service/adapter/postgres"
 	chatredis "github.com/ak-repo/stream-hub/internal/channel_service/adapter/redis"
 	"github.com/ak-repo/stream-hub/internal/channel_service/app"
-	"github.com/ak-repo/stream-hub/internal/gateway/clients"
 	"github.com/ak-repo/stream-hub/pkg/db"
+	"github.com/ak-repo/stream-hub/pkg/grpc/clients"
 	"github.com/ak-repo/stream-hub/pkg/grpc/interceptors"
 	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/logger"
@@ -58,7 +58,7 @@ func main() {
 	repo := postgres.NewChannelRepo(pgDB.Pool)
 	ps := chatredis.NewRedisPubSub(rClient)
 	svc := app.NewChannelService(repo, ps, clientContainer)
-	grpcHandler := chatgrpc.NewChannelServer(svc)
+	grpcHandler := chatgrpc.NewServer(svc)
 
 	// 5. Start gRPC server
 	port := ":" + cfg.Services.Chat.Port

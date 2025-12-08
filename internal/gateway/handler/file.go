@@ -2,10 +2,12 @@ package handler
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/ak-repo/stream-hub/gen/filespb"
 	"github.com/ak-repo/stream-hub/pkg/errors"
+	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/response"
 	"github.com/gofiber/fiber/v2"
 )
@@ -19,30 +21,16 @@ func NewFileHandler(cli filespb.FileServiceClient) *FileHandler {
 }
 
 // -------------------- Generate Upload URL --------------------
-func (h *FileHandler) GenerateUploadURL(c *fiber.Ctx) error {
-	var req struct {
-		OwnerID   string `json:"ownerId"`
-		Filename  string `json:"filename"`
-		Size      int64  `json:"size"`
-		MimeType  string `json:"mimeType"`
-		IsPublic  bool   `json:"isPublic"`
-		ChannelID string `json:"channelId"`
-	}
-	if err := c.BodyParser(&req); err != nil {
+func (h *FileHandler) CreateUploadUrl(c *fiber.Ctx) error {
+	req := new(filespb.CreateUploadUrlRequest)
+	if err := c.BodyParser(req); err != nil {
 		return response.InvalidReqBody(c)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := h.client.GenerateUploadURL(ctx, &filespb.GenerateUploadURLRequest{
-		OwnerId:   req.OwnerID,
-		ChannelId: req.ChannelID,
-		Filename:  req.Filename,
-		Size:      req.Size,
-		MimeType:  req.MimeType,
-		IsPublic:  req.IsPublic,
-	})
+	resp, err := h.client.CreateUploadUrl(ctx, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
@@ -52,20 +40,16 @@ func (h *FileHandler) GenerateUploadURL(c *fiber.Ctx) error {
 }
 
 // -------------------- Confirm Upload --------------------
-func (h *FileHandler) ConfirmUpload(c *fiber.Ctx) error {
-	var req struct {
-		FileID string `json:"fileId"`
-	}
-	if err := c.BodyParser(&req); err != nil {
+func (h *FileHandler) CompleteUpload(c *fiber.Ctx) error {
+	req := new(filespb.CompleteUploadRequest)
+	if err := c.BodyParser(req); err != nil || req.FileId == "" {
 		return response.InvalidReqBody(c)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := h.client.ConfirmUpload(ctx, &filespb.ConfirmUploadRequest{
-		FileId: req.FileID,
-	})
+	resp, err := h.client.CompleteUpload(ctx, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
@@ -76,34 +60,25 @@ func (h *FileHandler) ConfirmUpload(c *fiber.Ctx) error {
 
 // -------------------- Generate Download URL --------------------
 func (h *FileHandler) GenerateDownloadURL(c *fiber.Ctx) error {
-	var req struct {
-		FileID        string `query:"fileId"`
-		ExpireSeconds int64  `query:"expireSeconds"`
-		RequesterID   string `query:"requesterId"`
+	req := new(filespb.GetDownloadUrlRequest)
+	req.FileId = c.Query("file_id")
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
 	}
+	req.RequesterId = uid
 
-	if err := c.QueryParser(&req); err != nil {
-		return response.InvalidReqBody(c)
-	}
-
-	if req.FileID == "" {
-		return response.InvalidReqBody(c)
-	}
-	if req.RequesterID == "" {
+	if req.FileId == "" || req.RequesterId == "" {
 		return response.InvalidReqBody(c)
 	}
 	if req.ExpireSeconds <= 0 {
-		req.ExpireSeconds = 60
+		req.ExpireSeconds = 240
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := h.client.GenerateDownloadURL(ctx, &filespb.GenerateDownloadURLRequest{
-		FileId:        req.FileID,
-		RequesterId:   req.RequesterID,
-		ExpireSeconds: req.ExpireSeconds,
-	})
+	resp, err := h.client.GetDownloadUrl(ctx, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
@@ -114,20 +89,27 @@ func (h *FileHandler) GenerateDownloadURL(c *fiber.Ctx) error {
 
 // -------------------- List Files --------------------
 func (h *FileHandler) ListFiles(c *fiber.Ctx) error {
-	requesterID := c.Query("requesterId")
-	channelID := c.Query("channelId")
+	req := new(filespb.ListFilesRequest)
+	req.ChannelId = c.Query("channel_id")
+	req.Limit = helper.StringToInt32(c.Query("limit"))
+	req.Offset = helper.StringToInt32(c.Query(""))
 
-	if requesterID == "" || channelID == "" {
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+	req.RequesterId = uid
+
+	if req.ChannelId == "" || req.RequesterId == "" {
+		log.Println("req: ", req.RequesterId, " file:", req.ChannelId)
+
 		return response.InvalidReqBody(c)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := h.client.ListFiles(ctx, &filespb.FileListRequest{
-		RequesterId: requesterID,
-		ChannelId:   channelID,
-	})
+	resp, err := h.client.ListFiles(ctx, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
@@ -138,20 +120,23 @@ func (h *FileHandler) ListFiles(c *fiber.Ctx) error {
 
 // -------------------- Delete File --------------------
 func (h *FileHandler) DeleteFile(c *fiber.Ctx) error {
-	fileID := c.Query("fileId")
-	requesterID := c.Query("requesterId")
+	req := new(filespb.DeleteFileRequest)
 
-	if fileID == "" || requesterID == "" {
+	req.FileId = c.Query("file_id")
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+	req.RequesterId = uid
+
+	if req.FileId == "" || req.RequesterId == "" {
 		return response.InvalidReqBody(c)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := h.client.DeleteFile(ctx, &filespb.DeleteFileRequest{
-		FileId:      fileID,
-		RequesterId: requesterID,
-	})
+	resp, err := h.client.DeleteFile(ctx, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)

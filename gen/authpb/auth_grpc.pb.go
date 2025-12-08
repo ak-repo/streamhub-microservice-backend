@@ -21,14 +21,13 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	AuthService_Register_FullMethodName            = "/auth.AuthService/Register"
 	AuthService_Login_FullMethodName               = "/auth.AuthService/Login"
+	AuthService_OAuthLogin_FullMethodName          = "/auth.AuthService/OAuthLogin"
 	AuthService_SendMagicLink_FullMethodName       = "/auth.AuthService/SendMagicLink"
 	AuthService_VerifyMagicLink_FullMethodName     = "/auth.AuthService/VerifyMagicLink"
-	AuthService_OAuthLogin_FullMethodName          = "/auth.AuthService/OAuthLogin"
-	AuthService_ChangePassword_FullMethodName      = "/auth.AuthService/ChangePassword"
 	AuthService_PasswordReset_FullMethodName       = "/auth.AuthService/PasswordReset"
 	AuthService_VerifyPasswordReset_FullMethodName = "/auth.AuthService/VerifyPasswordReset"
-	AuthService_FindByEmail_FullMethodName         = "/auth.AuthService/FindByEmail"
-	AuthService_FindById_FullMethodName            = "/auth.AuthService/FindById"
+	AuthService_ChangePassword_FullMethodName      = "/auth.AuthService/ChangePassword"
+	AuthService_GetUser_FullMethodName             = "/auth.AuthService/GetUser"
 	AuthService_UpdateProfile_FullMethodName       = "/auth.AuthService/UpdateProfile"
 	AuthService_UploadAvatar_FullMethodName        = "/auth.AuthService/UploadAvatar"
 	AuthService_SearchUsers_FullMethodName         = "/auth.AuthService/SearchUsers"
@@ -37,30 +36,22 @@ const (
 // AuthServiceClient is the client API for AuthService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-//
-// ============================
-// Auth Service Definition
-// ============================
 type AuthServiceClient interface {
-	// Registration & Login
+	// Authentication
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
+	OAuthLogin(ctx context.Context, in *OAuthLoginRequest, opts ...grpc.CallOption) (*OAuthLoginResponse, error)
 	// Magic Link
 	SendMagicLink(ctx context.Context, in *SendMagicLinkRequest, opts ...grpc.CallOption) (*SendMagicLinkResponse, error)
 	VerifyMagicLink(ctx context.Context, in *VerifyMagicLinkRequest, opts ...grpc.CallOption) (*VerifyMagicLinkResponse, error)
-	// OAuth
-	OAuthLogin(ctx context.Context, in *OAuthLoginRequest, opts ...grpc.CallOption) (*OAuthLoginResponse, error)
-	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error)
-	// Password Reset for forget password
+	// Password Operations
 	PasswordReset(ctx context.Context, in *PasswordResetRequest, opts ...grpc.CallOption) (*PasswordResetResponse, error)
-	VerifyPasswordReset(ctx context.Context, in *PasswordResetVerifyRequest, opts ...grpc.CallOption) (*PasswordResetVerifyResponse, error)
-	// User Lookup
-	FindByEmail(ctx context.Context, in *FindByEmailRequest, opts ...grpc.CallOption) (*FindUserResponse, error)
-	FindById(ctx context.Context, in *FindByIdRequest, opts ...grpc.CallOption) (*FindUserResponse, error)
-	// Profile
+	VerifyPasswordReset(ctx context.Context, in *VerifyPasswordResetRequest, opts ...grpc.CallOption) (*VerifyPasswordResetResponse, error)
+	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error)
+	// User Data
+	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error)
 	UpdateProfile(ctx context.Context, in *UpdateProfileRequest, opts ...grpc.CallOption) (*UpdateProfileResponse, error)
 	UploadAvatar(ctx context.Context, in *UploadAvatarRequest, opts ...grpc.CallOption) (*UploadAvatarResponse, error)
-	// Search
 	SearchUsers(ctx context.Context, in *SearchUsersRequest, opts ...grpc.CallOption) (*SearchUsersResponse, error)
 }
 
@@ -92,6 +83,16 @@ func (c *authServiceClient) Login(ctx context.Context, in *LoginRequest, opts ..
 	return out, nil
 }
 
+func (c *authServiceClient) OAuthLogin(ctx context.Context, in *OAuthLoginRequest, opts ...grpc.CallOption) (*OAuthLoginResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(OAuthLoginResponse)
+	err := c.cc.Invoke(ctx, AuthService_OAuthLogin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *authServiceClient) SendMagicLink(ctx context.Context, in *SendMagicLinkRequest, opts ...grpc.CallOption) (*SendMagicLinkResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SendMagicLinkResponse)
@@ -112,10 +113,20 @@ func (c *authServiceClient) VerifyMagicLink(ctx context.Context, in *VerifyMagic
 	return out, nil
 }
 
-func (c *authServiceClient) OAuthLogin(ctx context.Context, in *OAuthLoginRequest, opts ...grpc.CallOption) (*OAuthLoginResponse, error) {
+func (c *authServiceClient) PasswordReset(ctx context.Context, in *PasswordResetRequest, opts ...grpc.CallOption) (*PasswordResetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OAuthLoginResponse)
-	err := c.cc.Invoke(ctx, AuthService_OAuthLogin_FullMethodName, in, out, cOpts...)
+	out := new(PasswordResetResponse)
+	err := c.cc.Invoke(ctx, AuthService_PasswordReset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) VerifyPasswordReset(ctx context.Context, in *VerifyPasswordResetRequest, opts ...grpc.CallOption) (*VerifyPasswordResetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VerifyPasswordResetResponse)
+	err := c.cc.Invoke(ctx, AuthService_VerifyPasswordReset_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -132,40 +143,10 @@ func (c *authServiceClient) ChangePassword(ctx context.Context, in *ChangePasswo
 	return out, nil
 }
 
-func (c *authServiceClient) PasswordReset(ctx context.Context, in *PasswordResetRequest, opts ...grpc.CallOption) (*PasswordResetResponse, error) {
+func (c *authServiceClient) GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PasswordResetResponse)
-	err := c.cc.Invoke(ctx, AuthService_PasswordReset_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authServiceClient) VerifyPasswordReset(ctx context.Context, in *PasswordResetVerifyRequest, opts ...grpc.CallOption) (*PasswordResetVerifyResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PasswordResetVerifyResponse)
-	err := c.cc.Invoke(ctx, AuthService_VerifyPasswordReset_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authServiceClient) FindByEmail(ctx context.Context, in *FindByEmailRequest, opts ...grpc.CallOption) (*FindUserResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(FindUserResponse)
-	err := c.cc.Invoke(ctx, AuthService_FindByEmail_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authServiceClient) FindById(ctx context.Context, in *FindByIdRequest, opts ...grpc.CallOption) (*FindUserResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(FindUserResponse)
-	err := c.cc.Invoke(ctx, AuthService_FindById_FullMethodName, in, out, cOpts...)
+	out := new(GetUserResponse)
+	err := c.cc.Invoke(ctx, AuthService_GetUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -205,30 +186,22 @@ func (c *authServiceClient) SearchUsers(ctx context.Context, in *SearchUsersRequ
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
-//
-// ============================
-// Auth Service Definition
-// ============================
 type AuthServiceServer interface {
-	// Registration & Login
+	// Authentication
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
+	OAuthLogin(context.Context, *OAuthLoginRequest) (*OAuthLoginResponse, error)
 	// Magic Link
 	SendMagicLink(context.Context, *SendMagicLinkRequest) (*SendMagicLinkResponse, error)
 	VerifyMagicLink(context.Context, *VerifyMagicLinkRequest) (*VerifyMagicLinkResponse, error)
-	// OAuth
-	OAuthLogin(context.Context, *OAuthLoginRequest) (*OAuthLoginResponse, error)
-	ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error)
-	// Password Reset for forget password
+	// Password Operations
 	PasswordReset(context.Context, *PasswordResetRequest) (*PasswordResetResponse, error)
-	VerifyPasswordReset(context.Context, *PasswordResetVerifyRequest) (*PasswordResetVerifyResponse, error)
-	// User Lookup
-	FindByEmail(context.Context, *FindByEmailRequest) (*FindUserResponse, error)
-	FindById(context.Context, *FindByIdRequest) (*FindUserResponse, error)
-	// Profile
+	VerifyPasswordReset(context.Context, *VerifyPasswordResetRequest) (*VerifyPasswordResetResponse, error)
+	ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error)
+	// User Data
+	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)
 	UpdateProfile(context.Context, *UpdateProfileRequest) (*UpdateProfileResponse, error)
 	UploadAvatar(context.Context, *UploadAvatarRequest) (*UploadAvatarResponse, error)
-	// Search
 	SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
@@ -246,29 +219,26 @@ func (UnimplementedAuthServiceServer) Register(context.Context, *RegisterRequest
 func (UnimplementedAuthServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
+func (UnimplementedAuthServiceServer) OAuthLogin(context.Context, *OAuthLoginRequest) (*OAuthLoginResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OAuthLogin not implemented")
+}
 func (UnimplementedAuthServiceServer) SendMagicLink(context.Context, *SendMagicLinkRequest) (*SendMagicLinkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendMagicLink not implemented")
 }
 func (UnimplementedAuthServiceServer) VerifyMagicLink(context.Context, *VerifyMagicLinkRequest) (*VerifyMagicLinkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyMagicLink not implemented")
 }
-func (UnimplementedAuthServiceServer) OAuthLogin(context.Context, *OAuthLoginRequest) (*OAuthLoginResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method OAuthLogin not implemented")
+func (UnimplementedAuthServiceServer) PasswordReset(context.Context, *PasswordResetRequest) (*PasswordResetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PasswordReset not implemented")
+}
+func (UnimplementedAuthServiceServer) VerifyPasswordReset(context.Context, *VerifyPasswordResetRequest) (*VerifyPasswordResetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerifyPasswordReset not implemented")
 }
 func (UnimplementedAuthServiceServer) ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChangePassword not implemented")
 }
-func (UnimplementedAuthServiceServer) PasswordReset(context.Context, *PasswordResetRequest) (*PasswordResetResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PasswordReset not implemented")
-}
-func (UnimplementedAuthServiceServer) VerifyPasswordReset(context.Context, *PasswordResetVerifyRequest) (*PasswordResetVerifyResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method VerifyPasswordReset not implemented")
-}
-func (UnimplementedAuthServiceServer) FindByEmail(context.Context, *FindByEmailRequest) (*FindUserResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FindByEmail not implemented")
-}
-func (UnimplementedAuthServiceServer) FindById(context.Context, *FindByIdRequest) (*FindUserResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FindById not implemented")
+func (UnimplementedAuthServiceServer) GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUser not implemented")
 }
 func (UnimplementedAuthServiceServer) UpdateProfile(context.Context, *UpdateProfileRequest) (*UpdateProfileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateProfile not implemented")
@@ -336,6 +306,24 @@ func _AuthService_Login_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_OAuthLogin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OAuthLoginRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).OAuthLogin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_OAuthLogin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).OAuthLogin(ctx, req.(*OAuthLoginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AuthService_SendMagicLink_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendMagicLinkRequest)
 	if err := dec(in); err != nil {
@@ -372,20 +360,38 @@ func _AuthService_VerifyMagicLink_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_OAuthLogin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OAuthLoginRequest)
+func _AuthService_PasswordReset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PasswordResetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).OAuthLogin(ctx, in)
+		return srv.(AuthServiceServer).PasswordReset(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_OAuthLogin_FullMethodName,
+		FullMethod: AuthService_PasswordReset_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).OAuthLogin(ctx, req.(*OAuthLoginRequest))
+		return srv.(AuthServiceServer).PasswordReset(ctx, req.(*PasswordResetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_VerifyPasswordReset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyPasswordResetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).VerifyPasswordReset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_VerifyPasswordReset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).VerifyPasswordReset(ctx, req.(*VerifyPasswordResetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -408,74 +414,20 @@ func _AuthService_ChangePassword_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_PasswordReset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PasswordResetRequest)
+func _AuthService_GetUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).PasswordReset(ctx, in)
+		return srv.(AuthServiceServer).GetUser(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_PasswordReset_FullMethodName,
+		FullMethod: AuthService_GetUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).PasswordReset(ctx, req.(*PasswordResetRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthService_VerifyPasswordReset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PasswordResetVerifyRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServiceServer).VerifyPasswordReset(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthService_VerifyPasswordReset_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).VerifyPasswordReset(ctx, req.(*PasswordResetVerifyRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthService_FindByEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindByEmailRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServiceServer).FindByEmail(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthService_FindByEmail_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).FindByEmail(ctx, req.(*FindByEmailRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthService_FindById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindByIdRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServiceServer).FindById(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthService_FindById_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).FindById(ctx, req.(*FindByIdRequest))
+		return srv.(AuthServiceServer).GetUser(ctx, req.(*GetUserRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -550,20 +502,16 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthService_Login_Handler,
 		},
 		{
+			MethodName: "OAuthLogin",
+			Handler:    _AuthService_OAuthLogin_Handler,
+		},
+		{
 			MethodName: "SendMagicLink",
 			Handler:    _AuthService_SendMagicLink_Handler,
 		},
 		{
 			MethodName: "VerifyMagicLink",
 			Handler:    _AuthService_VerifyMagicLink_Handler,
-		},
-		{
-			MethodName: "OAuthLogin",
-			Handler:    _AuthService_OAuthLogin_Handler,
-		},
-		{
-			MethodName: "ChangePassword",
-			Handler:    _AuthService_ChangePassword_Handler,
 		},
 		{
 			MethodName: "PasswordReset",
@@ -574,12 +522,12 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthService_VerifyPasswordReset_Handler,
 		},
 		{
-			MethodName: "FindByEmail",
-			Handler:    _AuthService_FindByEmail_Handler,
+			MethodName: "ChangePassword",
+			Handler:    _AuthService_ChangePassword_Handler,
 		},
 		{
-			MethodName: "FindById",
-			Handler:    _AuthService_FindById_Handler,
+			MethodName: "GetUser",
+			Handler:    _AuthService_GetUser_Handler,
 		},
 		{
 			MethodName: "UpdateProfile",
@@ -592,6 +540,260 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SearchUsers",
 			Handler:    _AuthService_SearchUsers_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "api/proto/auth.proto",
+}
+
+const (
+	AdminAuthService_AdminListUsers_FullMethodName  = "/auth.AdminAuthService/AdminListUsers"
+	AdminAuthService_AdminUpdateRole_FullMethodName = "/auth.AdminAuthService/AdminUpdateRole"
+	AdminAuthService_AdminBanUser_FullMethodName    = "/auth.AdminAuthService/AdminBanUser"
+	AdminAuthService_AdminUnbanUser_FullMethodName  = "/auth.AdminAuthService/AdminUnbanUser"
+	AdminAuthService_AdminDeleteUser_FullMethodName = "/auth.AdminAuthService/AdminDeleteUser"
+)
+
+// AdminAuthServiceClient is the client API for AdminAuthService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type AdminAuthServiceClient interface {
+	AdminListUsers(ctx context.Context, in *AdminListUsersRequest, opts ...grpc.CallOption) (*AdminListUsersResponse, error)
+	AdminUpdateRole(ctx context.Context, in *AdminUpdateRoleRequest, opts ...grpc.CallOption) (*AdminUpdateRoleResponse, error)
+	AdminBanUser(ctx context.Context, in *AdminBanUserRequest, opts ...grpc.CallOption) (*AdminBanUserResponse, error)
+	AdminUnbanUser(ctx context.Context, in *AdminUnbanUserRequest, opts ...grpc.CallOption) (*AdminUnbanUserResponse, error)
+	AdminDeleteUser(ctx context.Context, in *AdminDeleteUserRequest, opts ...grpc.CallOption) (*AdminDeleteUserResponse, error)
+}
+
+type adminAuthServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewAdminAuthServiceClient(cc grpc.ClientConnInterface) AdminAuthServiceClient {
+	return &adminAuthServiceClient{cc}
+}
+
+func (c *adminAuthServiceClient) AdminListUsers(ctx context.Context, in *AdminListUsersRequest, opts ...grpc.CallOption) (*AdminListUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdminListUsersResponse)
+	err := c.cc.Invoke(ctx, AdminAuthService_AdminListUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminAuthServiceClient) AdminUpdateRole(ctx context.Context, in *AdminUpdateRoleRequest, opts ...grpc.CallOption) (*AdminUpdateRoleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdminUpdateRoleResponse)
+	err := c.cc.Invoke(ctx, AdminAuthService_AdminUpdateRole_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminAuthServiceClient) AdminBanUser(ctx context.Context, in *AdminBanUserRequest, opts ...grpc.CallOption) (*AdminBanUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdminBanUserResponse)
+	err := c.cc.Invoke(ctx, AdminAuthService_AdminBanUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminAuthServiceClient) AdminUnbanUser(ctx context.Context, in *AdminUnbanUserRequest, opts ...grpc.CallOption) (*AdminUnbanUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdminUnbanUserResponse)
+	err := c.cc.Invoke(ctx, AdminAuthService_AdminUnbanUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminAuthServiceClient) AdminDeleteUser(ctx context.Context, in *AdminDeleteUserRequest, opts ...grpc.CallOption) (*AdminDeleteUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdminDeleteUserResponse)
+	err := c.cc.Invoke(ctx, AdminAuthService_AdminDeleteUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AdminAuthServiceServer is the server API for AdminAuthService service.
+// All implementations must embed UnimplementedAdminAuthServiceServer
+// for forward compatibility.
+type AdminAuthServiceServer interface {
+	AdminListUsers(context.Context, *AdminListUsersRequest) (*AdminListUsersResponse, error)
+	AdminUpdateRole(context.Context, *AdminUpdateRoleRequest) (*AdminUpdateRoleResponse, error)
+	AdminBanUser(context.Context, *AdminBanUserRequest) (*AdminBanUserResponse, error)
+	AdminUnbanUser(context.Context, *AdminUnbanUserRequest) (*AdminUnbanUserResponse, error)
+	AdminDeleteUser(context.Context, *AdminDeleteUserRequest) (*AdminDeleteUserResponse, error)
+	mustEmbedUnimplementedAdminAuthServiceServer()
+}
+
+// UnimplementedAdminAuthServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedAdminAuthServiceServer struct{}
+
+func (UnimplementedAdminAuthServiceServer) AdminListUsers(context.Context, *AdminListUsersRequest) (*AdminListUsersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AdminListUsers not implemented")
+}
+func (UnimplementedAdminAuthServiceServer) AdminUpdateRole(context.Context, *AdminUpdateRoleRequest) (*AdminUpdateRoleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AdminUpdateRole not implemented")
+}
+func (UnimplementedAdminAuthServiceServer) AdminBanUser(context.Context, *AdminBanUserRequest) (*AdminBanUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AdminBanUser not implemented")
+}
+func (UnimplementedAdminAuthServiceServer) AdminUnbanUser(context.Context, *AdminUnbanUserRequest) (*AdminUnbanUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AdminUnbanUser not implemented")
+}
+func (UnimplementedAdminAuthServiceServer) AdminDeleteUser(context.Context, *AdminDeleteUserRequest) (*AdminDeleteUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AdminDeleteUser not implemented")
+}
+func (UnimplementedAdminAuthServiceServer) mustEmbedUnimplementedAdminAuthServiceServer() {}
+func (UnimplementedAdminAuthServiceServer) testEmbeddedByValue()                          {}
+
+// UnsafeAdminAuthServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AdminAuthServiceServer will
+// result in compilation errors.
+type UnsafeAdminAuthServiceServer interface {
+	mustEmbedUnimplementedAdminAuthServiceServer()
+}
+
+func RegisterAdminAuthServiceServer(s grpc.ServiceRegistrar, srv AdminAuthServiceServer) {
+	// If the following call pancis, it indicates UnimplementedAdminAuthServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&AdminAuthService_ServiceDesc, srv)
+}
+
+func _AdminAuthService_AdminListUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminListUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminAuthServiceServer).AdminListUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminAuthService_AdminListUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminAuthServiceServer).AdminListUsers(ctx, req.(*AdminListUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminAuthService_AdminUpdateRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminUpdateRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminAuthServiceServer).AdminUpdateRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminAuthService_AdminUpdateRole_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminAuthServiceServer).AdminUpdateRole(ctx, req.(*AdminUpdateRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminAuthService_AdminBanUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminBanUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminAuthServiceServer).AdminBanUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminAuthService_AdminBanUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminAuthServiceServer).AdminBanUser(ctx, req.(*AdminBanUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminAuthService_AdminUnbanUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminUnbanUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminAuthServiceServer).AdminUnbanUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminAuthService_AdminUnbanUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminAuthServiceServer).AdminUnbanUser(ctx, req.(*AdminUnbanUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminAuthService_AdminDeleteUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminDeleteUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminAuthServiceServer).AdminDeleteUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminAuthService_AdminDeleteUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminAuthServiceServer).AdminDeleteUser(ctx, req.(*AdminDeleteUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// AdminAuthService_ServiceDesc is the grpc.ServiceDesc for AdminAuthService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var AdminAuthService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "auth.AdminAuthService",
+	HandlerType: (*AdminAuthServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "AdminListUsers",
+			Handler:    _AdminAuthService_AdminListUsers_Handler,
+		},
+		{
+			MethodName: "AdminUpdateRole",
+			Handler:    _AdminAuthService_AdminUpdateRole_Handler,
+		},
+		{
+			MethodName: "AdminBanUser",
+			Handler:    _AdminAuthService_AdminBanUser_Handler,
+		},
+		{
+			MethodName: "AdminUnbanUser",
+			Handler:    _AdminAuthService_AdminUnbanUser_Handler,
+		},
+		{
+			MethodName: "AdminDeleteUser",
+			Handler:    _AdminAuthService_AdminDeleteUser_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

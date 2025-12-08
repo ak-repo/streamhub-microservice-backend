@@ -15,10 +15,13 @@ import (
 )
 
 type Clients struct {
-	Admin   adminpb.AdminServiceClient
-	Auth    authpb.AuthServiceClient
-	File    filespb.FileServiceClient
-	Channel channelpb.ChannelServiceClient
+	Admin        adminpb.AdminServiceClient
+	Auth         authpb.AuthServiceClient
+	AdminAuth    authpb.AdminAuthServiceClient
+	File         filespb.FileServiceClient
+	AdminFile    filespb.AdminFileServiceClient
+	Channel      channelpb.ChannelServiceClient
+	AdminChannel channelpb.AdminChannelServiceClient
 
 	conns []*grpc.ClientConn
 }
@@ -45,14 +48,14 @@ func NewClients(cfg *config.Config) *Clients {
 		conns: make([]*grpc.ClientConn, 0),
 	}
 
-	// Admin Service
+	// Admin Service (Generic Admin)
 	adminClient, adminConn := initClient(cfg.Services.Admin.Host, cfg.Services.Admin.Port, func(conn *grpc.ClientConn) adminpb.AdminServiceClient {
 		return adminpb.NewAdminServiceClient(conn)
 	})
 	c.Admin = adminClient
 	c.conns = append(c.conns, adminConn)
 
-	// Auth Service
+	// Auth Service (User)
 	authClient, authConn := initClient(cfg.Services.Auth.Host, cfg.Services.Auth.Port,
 		func(conn *grpc.ClientConn) authpb.AuthServiceClient {
 			return authpb.NewAuthServiceClient(conn)
@@ -61,7 +64,11 @@ func NewClients(cfg *config.Config) *Clients {
 	c.Auth = authClient
 	c.conns = append(c.conns, authConn)
 
-	// File Service
+	// Auth Service (Admin) - Shares connection with User Auth
+	adminAuthClient := initAuthAdminClient(authConn)
+	c.AdminAuth = adminAuthClient
+
+	// File Service (User)
 	fileClient, fileConn := initClient(cfg.Services.File.Host, cfg.Services.File.Port,
 		func(conn *grpc.ClientConn) filespb.FileServiceClient {
 			return filespb.NewFileServiceClient(conn)
@@ -70,7 +77,11 @@ func NewClients(cfg *config.Config) *Clients {
 	c.File = fileClient
 	c.conns = append(c.conns, fileConn)
 
-	// Chat / Channel Service
+	// File Service (Admin) - Shares connection with User File
+	adminFileClient := initFileAdminClient(fileConn)
+	c.AdminFile = adminFileClient
+
+	// Chat / Channel Service (User)
 	chatClient, chatConn := initClient(cfg.Services.Chat.Host, cfg.Services.Chat.Port,
 		func(conn *grpc.ClientConn) channelpb.ChannelServiceClient {
 			return channelpb.NewChannelServiceClient(conn)
@@ -79,8 +90,26 @@ func NewClients(cfg *config.Config) *Clients {
 	c.Channel = chatClient
 	c.conns = append(c.conns, chatConn)
 
-	return c
+	// Chat / Channel Service (Admin) - Shares connection with User Channel
+	adminChannelClient := initChannelAdminClient(chatConn)
+	c.AdminChannel = adminChannelClient
 
+	return c
+}
+
+// Helper factory for AdminAuthServiceClient
+func initAuthAdminClient(conn *grpc.ClientConn) authpb.AdminAuthServiceClient {
+	return authpb.NewAdminAuthServiceClient(conn)
+}
+
+// Helper factory for AdminFileServiceClient
+func initFileAdminClient(conn *grpc.ClientConn) filespb.AdminFileServiceClient {
+	return filespb.NewAdminFileServiceClient(conn)
+}
+
+// Helper factory for AdminChannelServiceClient
+func initChannelAdminClient(conn *grpc.ClientConn) channelpb.AdminChannelServiceClient {
+	return channelpb.NewAdminChannelServiceClient(conn)
 }
 
 // Gracefully close all gRPC connections

@@ -3,14 +3,12 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
-	"github.com/ak-repo/stream-hub/gen/adminpb"
 	"github.com/ak-repo/stream-hub/internal/files_service/domain"
 	"github.com/ak-repo/stream-hub/internal/files_service/port"
-	"github.com/ak-repo/stream-hub/internal/gateway/clients"
 	"github.com/ak-repo/stream-hub/pkg/errors"
+	"github.com/ak-repo/stream-hub/pkg/grpc/clients"
 	"github.com/google/uuid"
 )
 
@@ -22,7 +20,13 @@ type fileService struct {
 	clients clients.Clients
 }
 
-func NewFileService(repo port.FileRepository, redis port.TempFileStore, st port.FileStorage, ttl time.Duration, clients clients.Clients) port.FileService {
+func NewFileService(
+	repo port.FileRepository,
+	redis port.TempFileStore,
+	st port.FileStorage,
+	ttl time.Duration,
+	clients clients.Clients,
+) port.FileService {
 	return &fileService{
 		repo:    repo,
 		redis:   redis,
@@ -32,21 +36,43 @@ func NewFileService(repo port.FileRepository, redis port.TempFileStore, st port.
 	}
 }
 
-// GenerateUploadURL
-func (s *fileService) GenerateUploadURL(ctx context.Context, ownerID, channelID, filename string, size int64, mime string, isPublic bool) (string, string, string, error) {
+// =============================================================================
+// USER OPERATIONS
+// =============================================================================
 
+func (s *fileService) GenerateUploadURL(ctx context.Context, ownerID, channelID, filename string, size int64, mime string, isPublic bool) (string, string, string, error) {
+	// 1. Check if user is blocked
+	blocked, err := s.repo.IsUserBlocked(ctx, ownerID)
+	if err != nil {
+		return "", "", "", errors.New(errors.CodeInternal, "failed to check block status", err)
+	}
+	if blocked {
+		return "", "", "", errors.New(errors.CodeForbidden, "upload blocked for this user", nil)
+	}
+
+	// 2. Check storage limits
+	used, limit, err := s.repo.GetStorageUsage(ctx, ownerID)
+	if err != nil {
+		return "", "", "", errors.New(errors.CodeInternal, "failed to check storage usage", err)
+	}
+	if limit > 0 && (used+size) > limit {
+		return "", "", "", errors.New(errors.CodeForbidden, "storage limit exceeded", nil)
+	}
+
+	// 3. Check Channel Membership
 	if channelID != "" {
 		isMember, err := s.repo.IsChannelMember(ctx, channelID, ownerID)
 		if err != nil {
-			return "", "", "", errors.New(errors.CodeInternal, "failed to check channel membership", err)
+			return "", "", "", errors.New(errors.CodeInternal, "membership check failed", err)
 		}
 		if !isMember {
-			return "", "", "", errors.New(errors.CodeForbidden, "you are not a member of this channel", nil)
+			return "", "", "", errors.New(errors.CodeForbidden, "not a member of channel", nil)
 		}
 	}
 
+	// 4. Prepare Metadata
 	fileID := uuid.New().String()
-	key := fmt.Sprintf("uploads/%s_%s", fileID, filename)
+	storagePath := fmt.Sprintf("uploads/%s/%s", ownerID, filename)
 
 	f := &domain.File{
 		ID:          fileID,
@@ -55,130 +81,130 @@ func (s *fileService) GenerateUploadURL(ctx context.Context, ownerID, channelID,
 		Filename:    filename,
 		Size:        size,
 		MimeType:    mime,
-		StoragePath: key,
+		StoragePath: storagePath,
 		IsPublic:    isPublic,
 		CreatedAt:   time.Now().UTC(),
 	}
 
+	// 5. Save Temp & Generate URL
 	if err := s.redis.SaveTemp(ctx, f); err != nil {
-		return "", "", "", errors.New(errors.CodeInternal,
-			fmt.Sprintf("failed to save temp metadata for file %s", fileID), err)
+		return "", "", "", errors.New(errors.CodeInternal, "failed to save temp metadata", err)
 	}
 
 	url, err := s.store.GenerateUploadURL(f)
 	if err != nil {
 		s.redis.DeleteTemp(ctx, fileID)
-		return "", "", "", errors.New(errors.CodeInternal,
-			fmt.Sprintf("failed to generate upload URL for file %s", fileID), err)
+		return "", "", "", errors.New(errors.CodeInternal, "failed to generate signed URL", err)
 	}
 
-	return url, key, fileID, nil
+	return url, storagePath, fileID, nil
 }
 
-// ConfirmUpload
 func (s *fileService) ConfirmUpload(ctx context.Context, fileID string) (*domain.File, error) {
 	f, err := s.redis.GetTemp(ctx, fileID)
-
 	if err != nil {
-		return nil, errors.New(errors.CodeNotFound,
-			fmt.Sprintf("temp metadata missing for file %s", fileID), err)
+		return nil, errors.New(errors.CodeNotFound, "upload session expired or invalid", err)
 	}
-	log.Println("channelid: confirm ", f.ChannelID)
 
 	if err := s.repo.Save(ctx, f); err != nil {
-		return nil, errors.New(errors.CodeInternal,
-			fmt.Sprintf("failed to save file metadata to DB for file %s", fileID), err)
+		return nil, errors.New(errors.CodeInternal, "failed to persist file metadata", err)
 	}
 
 	s.redis.DeleteTemp(ctx, fileID)
 	return f, nil
 }
 
-// GenerateDownloadURL
 func (s *fileService) GenerateDownloadURL(ctx context.Context, fileID, requesterID string, expirySeconds int64) (string, error) {
-	log.Println("fie:", fileID, " req:", requesterID)
 	f, err := s.repo.GetByID(ctx, fileID)
 	if err != nil {
-		return "", errors.New(errors.CodeNotFound,
-			fmt.Sprintf("file %s not found", fileID), err)
+		return "", errors.New(errors.CodeNotFound, "file not found", err)
 	}
 
+	// Access Control
 	if f.ChannelID != "" {
 		isMember, err := s.repo.IsChannelMember(ctx, f.ChannelID, requesterID)
 		if err != nil {
-			return "", errors.New(errors.CodeInternal, "failed to check channel membership", err)
+			return "", errors.New(errors.CodeInternal, "membership check failed", err)
 		}
 		if !isMember {
-			return "", errors.New(errors.CodeForbidden, "you are not a member of this channel", nil)
+			return "", errors.New(errors.CodeForbidden, "access denied", nil)
 		}
+	} else if !f.IsPublic && f.OwnerID != requesterID {
+		return "", errors.New(errors.CodeForbidden, "access denied", nil)
 	}
 
-	url, err := s.store.GenerateDownloadURL(f, expirySeconds)
-	if err != nil {
-		return "", errors.New(errors.CodeInternal,
-			fmt.Sprintf("failed to generate download URL for file %s", fileID), err)
-	}
-
-	return url, nil
+	return s.store.GenerateDownloadURL(f, expirySeconds)
 }
 
-// ListFiles
 func (s *fileService) ListFiles(ctx context.Context, requesterID, channelID string) ([]*domain.File, error) {
-	isMember, err := s.repo.IsChannelMember(ctx, channelID, requesterID)
-	if err != nil {
-		return nil, errors.New(errors.CodeInternal, "failed to check channel membership", err)
+	// Simple access check for channel files
+	if channelID != "" {
+		isMember, err := s.repo.IsChannelMember(ctx, channelID, requesterID)
+		if err != nil {
+			return nil, errors.New(errors.CodeInternal, "membership check failed", err)
+		}
+		if !isMember {
+			return nil, errors.New(errors.CodeForbidden, "access denied", nil)
+		}
 	}
-	if !isMember {
-		return nil, errors.New(errors.CodeForbidden, "you are not allowed to access this file", nil)
-	}
-
-	files, err := s.repo.GetByChannel(ctx, channelID)
-	log.Println("files:", files)
-	if err != nil {
-		return nil, errors.New(errors.CodeInternal,
-			fmt.Sprintf("failed to list files for channels %s", channelID), err)
-	}
-	return files, nil
+	return s.repo.GetByChannel(ctx, channelID)
 }
 
 func (s *fileService) DeleteFile(ctx context.Context, fileID, requesterID string) error {
-
-	if fileID == "" {
-		return errors.New(errors.CodeInvalidInput, "file_id cannot be empty", nil)
-	}
-
-	// --- fetch file ---
 	f, err := s.repo.GetByID(ctx, fileID)
 	if err != nil {
-		return errors.New(errors.CodeNotFound,
-			fmt.Sprintf("file %s not found", fileID), err)
+		return errors.New(errors.CodeNotFound, "file not found", err)
 	}
 
-	// --- admin validation ---
-	resp, adminErr := s.clients.Admin.IsAdmin(ctx, &adminpb.IsAdminRequest{
-		AdminId: requesterID,
-	})
+	// Check if requester is owner OR admin
+	isOwner := f.OwnerID == requesterID
+	// isAdmin := false
 
-	isOwner := requesterID == f.OwnerID
-	isAdmin := adminErr == nil && resp.Success
+	// if !isOwner {
 
-	// permission check
-	if !(isOwner || isAdmin) {
-		return errors.New(errors.CodeForbidden,
-			"only owner or admin can delete this file", nil)
+	// }
+
+	if !isOwner {
+		return errors.New(errors.CodeForbidden, "permission denied", nil)
 	}
 
-	// --- delete from cloud ---
+	// Delete from Object Storage
 	if err := s.store.DeleteObject(f); err != nil {
-		return errors.New(errors.CodeInternal,
-			fmt.Sprintf("failed to delete file object %s", fileID), err)
+		return errors.New(errors.CodeInternal, "failed to delete from storage", err)
 	}
 
-	// --- delete metadata ---
-	if err := s.repo.Delete(ctx, fileID); err != nil {
-		return errors.New(errors.CodeInternal,
-			fmt.Sprintf("failed to delete file metadata %s", fileID), err)
-	}
+	return s.repo.Delete(ctx, fileID)
+}
 
-	return nil
+// for channel
+func (s *fileService) GetStorageUsage(ctx context.Context, channelID string) (int64, int64, error) {
+	return s.repo.GetStorageUsage(ctx, channelID)
+}
+
+// =============================================================================
+// ADMIN OPERATIONS
+// =============================================================================
+
+func (s *fileService) AdminListFiles(ctx context.Context, limit, offset int32) ([]*domain.File, error) {
+	return s.repo.ListAllFiles(ctx, limit, offset)
+}
+
+func (s *fileService) AdminDeleteFile(ctx context.Context, fileID, adminID string, force bool) error {
+	return s.DeleteFile(ctx, fileID, adminID)
+}
+
+func (s *fileService) AdminSetStorageLimit(ctx context.Context, channelID string, maxBytes int64) (int64, error) {
+	_, currentLimit, _ := s.repo.GetStorageUsage(ctx, channelID)
+	if err := s.repo.SetStorageLimit(ctx, channelID, maxBytes); err != nil {
+		return 0, errors.New(errors.CodeInternal, "failed to set limit", err)
+	}
+	return currentLimit, nil
+}
+
+func (s *fileService) AdminBlockUploads(ctx context.Context, targetID string, block bool) error {
+	return s.repo.SetUserBlocked(ctx, targetID, block)
+}
+
+func (s *fileService) AdminGetStats(ctx context.Context) (*domain.StorageStats, error) {
+	return s.repo.GetGlobalStats(ctx)
 }

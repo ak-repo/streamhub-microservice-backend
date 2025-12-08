@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"github.com/ak-repo/stream-hub/config"
-	"github.com/ak-repo/stream-hub/internal/gateway/clients"
 	"github.com/ak-repo/stream-hub/internal/gateway/routes"
+	"github.com/ak-repo/stream-hub/pkg/grpc/clients"
 	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/logger"
 	"github.com/gofiber/fiber/v2"

@@ -138,18 +138,16 @@ func (h *AuthHandler) VerifyMagicLink(c *fiber.Ctx) error {
 	return response.Success(c, "magic link verified successfully", resp)
 }
 
-func (h *AuthHandler) PasswordReset(c *fiber.Ctx) error {
-	var req struct {
-		Email string `json:"email"`
-	}
-	if err := c.BodyParser(&req); err != nil {
+func (h *AuthHandler) ForgetPassword(c *fiber.Ctx) error {
+	req := new(authpb.PasswordResetRequest)
+	if err := c.BodyParser(req); err != nil {
 		return response.InvalidReqBody(c)
 	}
 
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.client.PasswordReset(ctx, &authpb.PasswordResetRequest{Email: req.Email})
+	resp, err := h.client.PasswordReset(ctx, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
@@ -159,23 +157,20 @@ func (h *AuthHandler) PasswordReset(c *fiber.Ctx) error {
 
 }
 
-func (h *AuthHandler) VerifyPasswordReset(c *fiber.Ctx) error {
-	var req struct {
-		Email    string `json:"email"`
-		Token    string `json:"token"`
-		Password string `json:"password"`
-	}
-	if err := c.BodyParser(&req); err != nil {
+func (h *AuthHandler) VerifyOTPForPasswordReset(c *fiber.Ctx) error {
+
+	req := new(authpb.VerifyPasswordResetRequest)
+	if err := c.BodyParser(req); err != nil {
 		return response.InvalidReqBody(c)
 	}
 
 	log.Println("email: for pr", req.Email)
 	log.Println("token:", req.Token)
-	log.Println("pass: ", req.Password)
+	log.Println("pass: ", req.NewPassword)
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.client.VerifyPasswordReset(ctx, &authpb.PasswordResetVerifyRequest{Email: req.Email, Token: req.Token, NewPassword: req.Password})
+	resp, err := h.client.VerifyPasswordReset(ctx, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
@@ -186,28 +181,21 @@ func (h *AuthHandler) VerifyPasswordReset(c *fiber.Ctx) error {
 }
 
 func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
-	var req struct {
-		Email    string `json:"email"`
-		Username string `json:"username"`
-	}
+	req := new(authpb.UpdateProfileRequest)
 
+	if err := c.BodyParser(req); err != nil {
+		return response.InvalidReqBody(c)
+	}
 	uid, ok := c.Locals("userID").(string)
 	if !ok || uid == "" {
 		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
 	}
-
-	if err := c.BodyParser(&req); err != nil {
-		return response.InvalidReqBody(c)
-	}
+	req.UserId = uid
 
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.client.UpdateProfile(ctx, &authpb.UpdateProfileRequest{
-		Username: req.Username,
-		Email:    req.Email,
-		Id:       uid,
-	})
+	resp, err := h.client.UpdateProfile(ctx, req)
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
@@ -218,29 +206,21 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 }
 
 func (h *AuthHandler) ChangePassword(c *fiber.Ctx) error {
-
-	var req struct {
-		Password    string `json:"password"`
-		NewPassword string `json:"new_password"`
+	req := new(authpb.ChangePasswordRequest)
+	if err := c.BodyParser(req); err != nil {
+		return response.InvalidReqBody(c)
 	}
 
 	uid, ok := c.Locals("userID").(string)
 	if !ok || uid == "" {
 		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
 	}
-
-	if err := c.BodyParser(&req); err != nil {
-		return response.InvalidReqBody(c)
-	}
+	req.UserId = uid
 
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.client.ChangePassword(ctx, &authpb.ChangePasswordRequest{
-		Id:          uid,
-		Password:    req.Password,
-		NewPassword: req.NewPassword,
-	})
+	resp, err := h.client.ChangePassword(ctx, req)
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
@@ -252,21 +232,20 @@ func (h *AuthHandler) ChangePassword(c *fiber.Ctx) error {
 }
 
 func (h *AuthHandler) SearchUsers(c *fiber.Ctx) error {
-	query := c.Query("query")
-
-	// if query == "" {
-	// 	return nil
-	// }
+	req := new(authpb.SearchUsersRequest)
+	req.Query = c.Query("query")
+	req.Pagination = &authpb.PaginationRequest{
+		Offset: helper.StringToInt32(c.Query("offset")),
+		Limit:  helper.StringToInt32(c.Query("limit")),
+	}
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.client.SearchUsers(ctx, &authpb.SearchUsersRequest{Query: query})
-
+	resp, err := h.client.SearchUsers(ctx, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
 	}
-
 	return response.Success(c, "users", resp)
 
 }
@@ -312,10 +291,10 @@ func (h *AuthHandler) UploadAvatar(c *fiber.Ctx) error {
 	defer cancel()
 
 	resp, err := h.client.UploadAvatar(ctx, &authpb.UploadAvatarRequest{
-		UserId:      uid,
-		File:        data,
-		Filename:    fileHeader.Filename,
-		ContentType: fileHeader.Header.Get("Content-Type"),
+		UserId:   uid,
+		FileData: data,
+		Filename: fileHeader.Filename,
+		MimeType: fileHeader.Header.Get("Content-Type"),
 	})
 
 	if err != nil {

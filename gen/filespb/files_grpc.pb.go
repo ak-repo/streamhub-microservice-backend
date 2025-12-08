@@ -19,33 +19,28 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FileService_GenerateUploadURL_FullMethodName   = "/files.FileService/GenerateUploadURL"
-	FileService_ConfirmUpload_FullMethodName       = "/files.FileService/ConfirmUpload"
-	FileService_GenerateDownloadURL_FullMethodName = "/files.FileService/GenerateDownloadURL"
-	FileService_ListFiles_FullMethodName           = "/files.FileService/ListFiles"
-	FileService_DeleteFile_FullMethodName          = "/files.FileService/DeleteFile"
-	FileService_SetStorageLimit_FullMethodName     = "/files.FileService/SetStorageLimit"
-	FileService_GetStorageUsage_FullMethodName     = "/files.FileService/GetStorageUsage"
+	FileService_CreateUploadUrl_FullMethodName = "/files.FileService/CreateUploadUrl"
+	FileService_CompleteUpload_FullMethodName  = "/files.FileService/CompleteUpload"
+	FileService_GetDownloadUrl_FullMethodName  = "/files.FileService/GetDownloadUrl"
+	FileService_ListFiles_FullMethodName       = "/files.FileService/ListFiles"
+	FileService_DeleteFile_FullMethodName      = "/files.FileService/DeleteFile"
+	FileService_GetStorageUsage_FullMethodName = "/files.FileService/GetStorageUsage"
 )
 
 // FileServiceClient is the client API for FileService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// -----------------------------------------------------------------------
-// SERVICE DEFINITION
-// -----------------------------------------------------------------------
+// Standard service for user-facing file operations
 type FileServiceClient interface {
-	// ===== Uploading =====
-	GenerateUploadURL(ctx context.Context, in *GenerateUploadURLRequest, opts ...grpc.CallOption) (*GenerateUploadURLResponse, error)
-	ConfirmUpload(ctx context.Context, in *ConfirmUploadRequest, opts ...grpc.CallOption) (*ConfirmUploadResponse, error)
-	// ===== Downloading =====
-	GenerateDownloadURL(ctx context.Context, in *GenerateDownloadURLRequest, opts ...grpc.CallOption) (*GenerateDownloadURLResponse, error)
-	// ===== User File Management =====
-	ListFiles(ctx context.Context, in *FileListRequest, opts ...grpc.CallOption) (*FileListResponse, error)
+	// Upload Flow
+	CreateUploadUrl(ctx context.Context, in *CreateUploadUrlRequest, opts ...grpc.CallOption) (*CreateUploadUrlResponse, error)
+	CompleteUpload(ctx context.Context, in *CompleteUploadRequest, opts ...grpc.CallOption) (*CompleteUploadResponse, error)
+	// Download Flow
+	GetDownloadUrl(ctx context.Context, in *GetDownloadUrlRequest, opts ...grpc.CallOption) (*GetDownloadUrlResponse, error)
+	// Management
+	ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error)
 	DeleteFile(ctx context.Context, in *DeleteFileRequest, opts ...grpc.CallOption) (*DeleteFileResponse, error)
-	// ===== Storage Limits =====
-	SetStorageLimit(ctx context.Context, in *SetStorageLimitRequest, opts ...grpc.CallOption) (*SetStorageLimitResponse, error)
 	GetStorageUsage(ctx context.Context, in *GetStorageUsageRequest, opts ...grpc.CallOption) (*GetStorageUsageResponse, error)
 }
 
@@ -57,39 +52,39 @@ func NewFileServiceClient(cc grpc.ClientConnInterface) FileServiceClient {
 	return &fileServiceClient{cc}
 }
 
-func (c *fileServiceClient) GenerateUploadURL(ctx context.Context, in *GenerateUploadURLRequest, opts ...grpc.CallOption) (*GenerateUploadURLResponse, error) {
+func (c *fileServiceClient) CreateUploadUrl(ctx context.Context, in *CreateUploadUrlRequest, opts ...grpc.CallOption) (*CreateUploadUrlResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GenerateUploadURLResponse)
-	err := c.cc.Invoke(ctx, FileService_GenerateUploadURL_FullMethodName, in, out, cOpts...)
+	out := new(CreateUploadUrlResponse)
+	err := c.cc.Invoke(ctx, FileService_CreateUploadUrl_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *fileServiceClient) ConfirmUpload(ctx context.Context, in *ConfirmUploadRequest, opts ...grpc.CallOption) (*ConfirmUploadResponse, error) {
+func (c *fileServiceClient) CompleteUpload(ctx context.Context, in *CompleteUploadRequest, opts ...grpc.CallOption) (*CompleteUploadResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ConfirmUploadResponse)
-	err := c.cc.Invoke(ctx, FileService_ConfirmUpload_FullMethodName, in, out, cOpts...)
+	out := new(CompleteUploadResponse)
+	err := c.cc.Invoke(ctx, FileService_CompleteUpload_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *fileServiceClient) GenerateDownloadURL(ctx context.Context, in *GenerateDownloadURLRequest, opts ...grpc.CallOption) (*GenerateDownloadURLResponse, error) {
+func (c *fileServiceClient) GetDownloadUrl(ctx context.Context, in *GetDownloadUrlRequest, opts ...grpc.CallOption) (*GetDownloadUrlResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GenerateDownloadURLResponse)
-	err := c.cc.Invoke(ctx, FileService_GenerateDownloadURL_FullMethodName, in, out, cOpts...)
+	out := new(GetDownloadUrlResponse)
+	err := c.cc.Invoke(ctx, FileService_GetDownloadUrl_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *fileServiceClient) ListFiles(ctx context.Context, in *FileListRequest, opts ...grpc.CallOption) (*FileListResponse, error) {
+func (c *fileServiceClient) ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(FileListResponse)
+	out := new(ListFilesResponse)
 	err := c.cc.Invoke(ctx, FileService_ListFiles_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -101,16 +96,6 @@ func (c *fileServiceClient) DeleteFile(ctx context.Context, in *DeleteFileReques
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteFileResponse)
 	err := c.cc.Invoke(ctx, FileService_DeleteFile_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *fileServiceClient) SetStorageLimit(ctx context.Context, in *SetStorageLimitRequest, opts ...grpc.CallOption) (*SetStorageLimitResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SetStorageLimitResponse)
-	err := c.cc.Invoke(ctx, FileService_SetStorageLimit_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -131,20 +116,16 @@ func (c *fileServiceClient) GetStorageUsage(ctx context.Context, in *GetStorageU
 // All implementations must embed UnimplementedFileServiceServer
 // for forward compatibility.
 //
-// -----------------------------------------------------------------------
-// SERVICE DEFINITION
-// -----------------------------------------------------------------------
+// Standard service for user-facing file operations
 type FileServiceServer interface {
-	// ===== Uploading =====
-	GenerateUploadURL(context.Context, *GenerateUploadURLRequest) (*GenerateUploadURLResponse, error)
-	ConfirmUpload(context.Context, *ConfirmUploadRequest) (*ConfirmUploadResponse, error)
-	// ===== Downloading =====
-	GenerateDownloadURL(context.Context, *GenerateDownloadURLRequest) (*GenerateDownloadURLResponse, error)
-	// ===== User File Management =====
-	ListFiles(context.Context, *FileListRequest) (*FileListResponse, error)
+	// Upload Flow
+	CreateUploadUrl(context.Context, *CreateUploadUrlRequest) (*CreateUploadUrlResponse, error)
+	CompleteUpload(context.Context, *CompleteUploadRequest) (*CompleteUploadResponse, error)
+	// Download Flow
+	GetDownloadUrl(context.Context, *GetDownloadUrlRequest) (*GetDownloadUrlResponse, error)
+	// Management
+	ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error)
 	DeleteFile(context.Context, *DeleteFileRequest) (*DeleteFileResponse, error)
-	// ===== Storage Limits =====
-	SetStorageLimit(context.Context, *SetStorageLimitRequest) (*SetStorageLimitResponse, error)
 	GetStorageUsage(context.Context, *GetStorageUsageRequest) (*GetStorageUsageResponse, error)
 	mustEmbedUnimplementedFileServiceServer()
 }
@@ -156,23 +137,20 @@ type FileServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedFileServiceServer struct{}
 
-func (UnimplementedFileServiceServer) GenerateUploadURL(context.Context, *GenerateUploadURLRequest) (*GenerateUploadURLResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GenerateUploadURL not implemented")
+func (UnimplementedFileServiceServer) CreateUploadUrl(context.Context, *CreateUploadUrlRequest) (*CreateUploadUrlResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateUploadUrl not implemented")
 }
-func (UnimplementedFileServiceServer) ConfirmUpload(context.Context, *ConfirmUploadRequest) (*ConfirmUploadResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ConfirmUpload not implemented")
+func (UnimplementedFileServiceServer) CompleteUpload(context.Context, *CompleteUploadRequest) (*CompleteUploadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CompleteUpload not implemented")
 }
-func (UnimplementedFileServiceServer) GenerateDownloadURL(context.Context, *GenerateDownloadURLRequest) (*GenerateDownloadURLResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GenerateDownloadURL not implemented")
+func (UnimplementedFileServiceServer) GetDownloadUrl(context.Context, *GetDownloadUrlRequest) (*GetDownloadUrlResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDownloadUrl not implemented")
 }
-func (UnimplementedFileServiceServer) ListFiles(context.Context, *FileListRequest) (*FileListResponse, error) {
+func (UnimplementedFileServiceServer) ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFiles not implemented")
 }
 func (UnimplementedFileServiceServer) DeleteFile(context.Context, *DeleteFileRequest) (*DeleteFileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteFile not implemented")
-}
-func (UnimplementedFileServiceServer) SetStorageLimit(context.Context, *SetStorageLimitRequest) (*SetStorageLimitResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetStorageLimit not implemented")
 }
 func (UnimplementedFileServiceServer) GetStorageUsage(context.Context, *GetStorageUsageRequest) (*GetStorageUsageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStorageUsage not implemented")
@@ -198,62 +176,62 @@ func RegisterFileServiceServer(s grpc.ServiceRegistrar, srv FileServiceServer) {
 	s.RegisterService(&FileService_ServiceDesc, srv)
 }
 
-func _FileService_GenerateUploadURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GenerateUploadURLRequest)
+func _FileService_CreateUploadUrl_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateUploadUrlRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FileServiceServer).GenerateUploadURL(ctx, in)
+		return srv.(FileServiceServer).CreateUploadUrl(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FileService_GenerateUploadURL_FullMethodName,
+		FullMethod: FileService_CreateUploadUrl_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FileServiceServer).GenerateUploadURL(ctx, req.(*GenerateUploadURLRequest))
+		return srv.(FileServiceServer).CreateUploadUrl(ctx, req.(*CreateUploadUrlRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FileService_ConfirmUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ConfirmUploadRequest)
+func _FileService_CompleteUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CompleteUploadRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FileServiceServer).ConfirmUpload(ctx, in)
+		return srv.(FileServiceServer).CompleteUpload(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FileService_ConfirmUpload_FullMethodName,
+		FullMethod: FileService_CompleteUpload_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FileServiceServer).ConfirmUpload(ctx, req.(*ConfirmUploadRequest))
+		return srv.(FileServiceServer).CompleteUpload(ctx, req.(*CompleteUploadRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FileService_GenerateDownloadURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GenerateDownloadURLRequest)
+func _FileService_GetDownloadUrl_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDownloadUrlRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FileServiceServer).GenerateDownloadURL(ctx, in)
+		return srv.(FileServiceServer).GetDownloadUrl(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FileService_GenerateDownloadURL_FullMethodName,
+		FullMethod: FileService_GetDownloadUrl_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FileServiceServer).GenerateDownloadURL(ctx, req.(*GenerateDownloadURLRequest))
+		return srv.(FileServiceServer).GetDownloadUrl(ctx, req.(*GetDownloadUrlRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _FileService_ListFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FileListRequest)
+	in := new(ListFilesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -265,7 +243,7 @@ func _FileService_ListFiles_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: FileService_ListFiles_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FileServiceServer).ListFiles(ctx, req.(*FileListRequest))
+		return srv.(FileServiceServer).ListFiles(ctx, req.(*ListFilesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -284,24 +262,6 @@ func _FileService_DeleteFile_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(FileServiceServer).DeleteFile(ctx, req.(*DeleteFileRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _FileService_SetStorageLimit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetStorageLimitRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FileServiceServer).SetStorageLimit(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: FileService_SetStorageLimit_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FileServiceServer).SetStorageLimit(ctx, req.(*SetStorageLimitRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -332,16 +292,16 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*FileServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GenerateUploadURL",
-			Handler:    _FileService_GenerateUploadURL_Handler,
+			MethodName: "CreateUploadUrl",
+			Handler:    _FileService_CreateUploadUrl_Handler,
 		},
 		{
-			MethodName: "ConfirmUpload",
-			Handler:    _FileService_ConfirmUpload_Handler,
+			MethodName: "CompleteUpload",
+			Handler:    _FileService_CompleteUpload_Handler,
 		},
 		{
-			MethodName: "GenerateDownloadURL",
-			Handler:    _FileService_GenerateDownloadURL_Handler,
+			MethodName: "GetDownloadUrl",
+			Handler:    _FileService_GetDownloadUrl_Handler,
 		},
 		{
 			MethodName: "ListFiles",
@@ -352,12 +312,266 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _FileService_DeleteFile_Handler,
 		},
 		{
-			MethodName: "SetStorageLimit",
-			Handler:    _FileService_SetStorageLimit_Handler,
-		},
-		{
 			MethodName: "GetStorageUsage",
 			Handler:    _FileService_GetStorageUsage_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "api/proto/files.proto",
+}
+
+const (
+	AdminFileService_AdminListFiles_FullMethodName       = "/files.AdminFileService/AdminListFiles"
+	AdminFileService_AdminDeleteFile_FullMethodName      = "/files.AdminFileService/AdminDeleteFile"
+	AdminFileService_AdminSetStorageLimit_FullMethodName = "/files.AdminFileService/AdminSetStorageLimit"
+	AdminFileService_AdminBlockUploads_FullMethodName    = "/files.AdminFileService/AdminBlockUploads"
+	AdminFileService_AdminGetStats_FullMethodName        = "/files.AdminFileService/AdminGetStats"
+)
+
+// AdminFileServiceClient is the client API for AdminFileService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// Dedicated service for administrative operations
+type AdminFileServiceClient interface {
+	AdminListFiles(ctx context.Context, in *AdminListFilesRequest, opts ...grpc.CallOption) (*AdminListFilesResponse, error)
+	AdminDeleteFile(ctx context.Context, in *AdminDeleteFileRequest, opts ...grpc.CallOption) (*AdminDeleteFileResponse, error)
+	AdminSetStorageLimit(ctx context.Context, in *AdminSetStorageLimitRequest, opts ...grpc.CallOption) (*AdminSetStorageLimitResponse, error)
+	AdminBlockUploads(ctx context.Context, in *AdminBlockUploadsRequest, opts ...grpc.CallOption) (*AdminBlockUploadsResponse, error)
+	AdminGetStats(ctx context.Context, in *AdminGetStatsRequest, opts ...grpc.CallOption) (*AdminGetStatsResponse, error)
+}
+
+type adminFileServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewAdminFileServiceClient(cc grpc.ClientConnInterface) AdminFileServiceClient {
+	return &adminFileServiceClient{cc}
+}
+
+func (c *adminFileServiceClient) AdminListFiles(ctx context.Context, in *AdminListFilesRequest, opts ...grpc.CallOption) (*AdminListFilesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdminListFilesResponse)
+	err := c.cc.Invoke(ctx, AdminFileService_AdminListFiles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminFileServiceClient) AdminDeleteFile(ctx context.Context, in *AdminDeleteFileRequest, opts ...grpc.CallOption) (*AdminDeleteFileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdminDeleteFileResponse)
+	err := c.cc.Invoke(ctx, AdminFileService_AdminDeleteFile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminFileServiceClient) AdminSetStorageLimit(ctx context.Context, in *AdminSetStorageLimitRequest, opts ...grpc.CallOption) (*AdminSetStorageLimitResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdminSetStorageLimitResponse)
+	err := c.cc.Invoke(ctx, AdminFileService_AdminSetStorageLimit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminFileServiceClient) AdminBlockUploads(ctx context.Context, in *AdminBlockUploadsRequest, opts ...grpc.CallOption) (*AdminBlockUploadsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdminBlockUploadsResponse)
+	err := c.cc.Invoke(ctx, AdminFileService_AdminBlockUploads_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminFileServiceClient) AdminGetStats(ctx context.Context, in *AdminGetStatsRequest, opts ...grpc.CallOption) (*AdminGetStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdminGetStatsResponse)
+	err := c.cc.Invoke(ctx, AdminFileService_AdminGetStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AdminFileServiceServer is the server API for AdminFileService service.
+// All implementations must embed UnimplementedAdminFileServiceServer
+// for forward compatibility.
+//
+// Dedicated service for administrative operations
+type AdminFileServiceServer interface {
+	AdminListFiles(context.Context, *AdminListFilesRequest) (*AdminListFilesResponse, error)
+	AdminDeleteFile(context.Context, *AdminDeleteFileRequest) (*AdminDeleteFileResponse, error)
+	AdminSetStorageLimit(context.Context, *AdminSetStorageLimitRequest) (*AdminSetStorageLimitResponse, error)
+	AdminBlockUploads(context.Context, *AdminBlockUploadsRequest) (*AdminBlockUploadsResponse, error)
+	AdminGetStats(context.Context, *AdminGetStatsRequest) (*AdminGetStatsResponse, error)
+	mustEmbedUnimplementedAdminFileServiceServer()
+}
+
+// UnimplementedAdminFileServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedAdminFileServiceServer struct{}
+
+func (UnimplementedAdminFileServiceServer) AdminListFiles(context.Context, *AdminListFilesRequest) (*AdminListFilesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AdminListFiles not implemented")
+}
+func (UnimplementedAdminFileServiceServer) AdminDeleteFile(context.Context, *AdminDeleteFileRequest) (*AdminDeleteFileResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AdminDeleteFile not implemented")
+}
+func (UnimplementedAdminFileServiceServer) AdminSetStorageLimit(context.Context, *AdminSetStorageLimitRequest) (*AdminSetStorageLimitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AdminSetStorageLimit not implemented")
+}
+func (UnimplementedAdminFileServiceServer) AdminBlockUploads(context.Context, *AdminBlockUploadsRequest) (*AdminBlockUploadsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AdminBlockUploads not implemented")
+}
+func (UnimplementedAdminFileServiceServer) AdminGetStats(context.Context, *AdminGetStatsRequest) (*AdminGetStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AdminGetStats not implemented")
+}
+func (UnimplementedAdminFileServiceServer) mustEmbedUnimplementedAdminFileServiceServer() {}
+func (UnimplementedAdminFileServiceServer) testEmbeddedByValue()                          {}
+
+// UnsafeAdminFileServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AdminFileServiceServer will
+// result in compilation errors.
+type UnsafeAdminFileServiceServer interface {
+	mustEmbedUnimplementedAdminFileServiceServer()
+}
+
+func RegisterAdminFileServiceServer(s grpc.ServiceRegistrar, srv AdminFileServiceServer) {
+	// If the following call pancis, it indicates UnimplementedAdminFileServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&AdminFileService_ServiceDesc, srv)
+}
+
+func _AdminFileService_AdminListFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminListFilesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminFileServiceServer).AdminListFiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminFileService_AdminListFiles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminFileServiceServer).AdminListFiles(ctx, req.(*AdminListFilesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminFileService_AdminDeleteFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminDeleteFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminFileServiceServer).AdminDeleteFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminFileService_AdminDeleteFile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminFileServiceServer).AdminDeleteFile(ctx, req.(*AdminDeleteFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminFileService_AdminSetStorageLimit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminSetStorageLimitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminFileServiceServer).AdminSetStorageLimit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminFileService_AdminSetStorageLimit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminFileServiceServer).AdminSetStorageLimit(ctx, req.(*AdminSetStorageLimitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminFileService_AdminBlockUploads_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminBlockUploadsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminFileServiceServer).AdminBlockUploads(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminFileService_AdminBlockUploads_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminFileServiceServer).AdminBlockUploads(ctx, req.(*AdminBlockUploadsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminFileService_AdminGetStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminGetStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminFileServiceServer).AdminGetStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminFileService_AdminGetStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminFileServiceServer).AdminGetStats(ctx, req.(*AdminGetStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// AdminFileService_ServiceDesc is the grpc.ServiceDesc for AdminFileService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var AdminFileService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "files.AdminFileService",
+	HandlerType: (*AdminFileServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "AdminListFiles",
+			Handler:    _AdminFileService_AdminListFiles_Handler,
+		},
+		{
+			MethodName: "AdminDeleteFile",
+			Handler:    _AdminFileService_AdminDeleteFile_Handler,
+		},
+		{
+			MethodName: "AdminSetStorageLimit",
+			Handler:    _AdminFileService_AdminSetStorageLimit_Handler,
+		},
+		{
+			MethodName: "AdminBlockUploads",
+			Handler:    _AdminFileService_AdminBlockUploads_Handler,
+		},
+		{
+			MethodName: "AdminGetStats",
+			Handler:    _AdminFileService_AdminGetStats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

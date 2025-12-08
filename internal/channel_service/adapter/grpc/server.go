@@ -1,402 +1,368 @@
-package chatgrpc
+package channelgrpc
 
 import (
 	"context"
 	"io"
-	"log"
+	"time"
 
 	"github.com/ak-repo/stream-hub/gen/channelpb"
 	"github.com/ak-repo/stream-hub/internal/channel_service/domain"
 	"github.com/ak-repo/stream-hub/internal/channel_service/port"
-	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/logger"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-type ChannelServer struct {
+// =============================================================================
+// SERVER FACTORY
+// =============================================================================
+
+type Server struct {
 	channelpb.UnimplementedChannelServiceServer
+	channelpb.UnimplementedAdminChannelServiceServer
 	service port.ChannelService
 }
 
-func NewChannelServer(service port.ChannelService) *ChannelServer {
-	return &ChannelServer{service: service}
+// NewServer returns a server that implements BOTH ChannelService and AdminChannelService
+func NewServer(service port.ChannelService) *Server {
+	return &Server{service: service}
 }
 
-// Connect handles bidirectional streaming for real-time chat.
-// - receives StreamRequest (Join or Message)
-// - on Join: subscribes the client to channel messages and starts sending via stream.Send()
-// - on Message: forwards to service.PostMessa
-func (s *ChannelServer) Connect(stream channelpb.ChannelService_ConnectServer) error {
+// =============================================================================
+// 1. REAL-TIME STREAMING
+// =============================================================================
+
+func (s *Server) Connect(stream channelpb.ChannelService_ConnectServer) error {
 	ctx := stream.Context()
+
+	// State variables for this specific connection
+	var currentUserID string
+	var currentChannelID string
+	var isConnected bool
+
+	// Channel to coordinate sending messages back to the client
+	// We use a separate goroutine for sending to avoid blocking reads
+	sendChan := make(chan *channelpb.StreamResponse, 100)
 	errChan := make(chan error, 1)
 
-	// create a context that cancels when stream is done
-	// (stream.Context() already cancels on client disconnect)
-
-	// We'll use a goroutine to receive messages from client and process them.
-	// For each join we spawn a goroutine that listens on the service subscription and writes back to stream.
+	// 1. Start Sender Goroutine
 	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				logger.Log.Error("Recovered from panic in Connect receiver")
-				errChan <- nil
-			}
-		}()
 		for {
-			req, err := stream.Recv()
-			if err == io.EOF {
-				errChan <- nil
+			select {
+			case <-ctx.Done():
 				return
-			}
-			if err != nil {
-				logger.Log.Error("Stream receive error: " + err.Error())
-				errChan <- err
-				return
-			}
-
-			// handle the oneof payload (Join or Message)
-			switch payload := req.Payload.(type) {
-			case *channelpb.StreamRequest_Join:
-				join := payload.Join
-
-				logger.Log.Info("Join received", zap.String("user", join.UserId), zap.String("channel", join.ChannelId))
-
-				// subscribe and stream messages back to this client
-				go func(userID, channelID string) {
-					if err := s.streamMessagesToClient(stream, userID, channelID); err != nil {
-						// streamMessagesToClient will log; here we also surface error
-						logger.Log.Error("streamMessagesToClient error", zap.Error(err))
-					}
-				}(join.UserId, join.ChannelId)
-
-			case *channelpb.StreamRequest_Message:
-				msg := payload.Message
-
-				// extract text or file attachment
-				log.Println("msg:", msg.GetContent())
-
-				var text string
-				var attachment *domain.FileAttachment
-				if txt := msg.GetContent(); txt != "" {
-					text = txt
-
-				} else if f := msg.GetFile(); f != nil {
-					attachment = &domain.FileAttachment{
-						ID:       uuid.New().String(),
-						FileID:   f.GetFileId(),
-						URL:      f.GetUrl(),
-						MimeType: f.GetMimeType(),
-						Size:     f.GetSize(),
-					}
+			case resp := <-sendChan:
+				if err := stream.Send(resp); err != nil {
+					logger.Log.Error("failed to send to stream", zap.Error(err))
+					errChan <- err
+					return
 				}
-				// log.Println(attachment)
-				if _, err := s.service.PostMessage(ctx, msg.GetUserId(), msg.GetChannelId(), text, attachment); err != nil {
-					logger.Log.Error("PostMessage failed", zap.Error(err))
-				}
-			default:
-				logger.Log.Warn("unknown payload type in stream request")
-
 			}
 		}
-
 	}()
 
-	select {
-	case err := <-errChan:
-		return err
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-
-}
-
-// streamMessagesToClient subscribes to Redis for a channel and
-// pushes messages back to the connected client via gRPC stream.
-func (s *ChannelServer) streamMessagesToClient(stream channelpb.ChannelService_ConnectServer, userID, channelID string) error {
-	ctx := stream.Context()
-	msgChan, err := s.service.SubscribeToChannel(ctx, channelID)
-	if err != nil {
-		logger.Log.Error("SubscribeToChannel failed", zap.Error(err))
-		return err
-	}
-
+	// 2. Main Receiver Loop
 	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case m, ok := <-msgChan:
-			if !ok {
-				return nil
+		req, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		switch payload := req.Payload.(type) {
+
+		// A. Handle Connection Setup
+		case *channelpb.StreamRequest_Connect:
+			if isConnected {
+				continue // Already connected, ignore or handle as re-connect
 			}
-			created := &channelpb.MessageCreated{
-				MessageId:   m.ID,
-				SenderId:    m.SenderID,
-				Content:     m.Content,
-				TimestampMs: m.CreatedAt.UnixMilli(),
+			conn := payload.Connect
+			currentUserID = conn.UserId
+			currentChannelID = conn.ChannelId
+			isConnected = true
+
+			// Subscribe to the PubSub via the Service Layer
+			msgChan, err := s.service.SubscribeToChannel(ctx, currentChannelID)
+			if err != nil {
+				return status.Errorf(codes.Internal, "failed to subscribe: %v", err)
 			}
 
-			if m.Attachment != nil {
-				created.Attachment = &channelpb.FileAttachment{
-					FileId:   m.Attachment.FileID,
-					Url:      m.Attachment.URL,
-					MimeType: m.Attachment.MimeType,
-					Size:     m.Attachment.Size,
+			// Start listening to PubSub events
+			go func() {
+				for msg := range msgChan {
+					// Map Domain Message to Proto
+					pbMsg := mapMessageToProto(msg)
+					sendChan <- &channelpb.StreamResponse{
+						ChannelId: currentChannelID,
+						Timestamp: time.Now().UnixMilli(),
+						Event: &channelpb.StreamResponse_MessageCreated{
+							MessageCreated: pbMsg,
+						},
+					}
 				}
+			}()
+
+			logger.Log.Info("Stream connected", zap.String("user", currentUserID), zap.String("channel", currentChannelID))
+
+		// B. Handle Incoming Messages
+		case *channelpb.StreamRequest_Message:
+			if !isConnected {
+				return status.Error(codes.FailedPrecondition, "must send StreamConnect before sending messages")
 			}
 
-			resp := &channelpb.StreamResponse{
-				ChannelId:   m.ChannelID,
-				TimestampMs: m.CreatedAt.UnixMilli(),
-				Event:       &channelpb.StreamResponse_Created{Created: created},
-			}
+			msgReq := payload.Message
 
-			if err := stream.Send(resp); err != nil {
-				logger.Log.Error("failed to send message to client", zap.Error(err))
-				return err
-			}
-
-		}
-	}
-
-}
-
-// sent history to user
-func (s *ChannelServer) ListMessages(ctx context.Context, req *channelpb.ListMessagesRequest) (*channelpb.ListMessagesResponse, error) {
-	limit := int(req.GetLimit())
-	if limit <= 0 {
-		limit = 50
-	}
-
-	messages, err := s.service.GetHistory(ctx, req.GetChannelId(), limit, int(req.Offset))
-	if err != nil {
-		return nil, err
-	}
-
-	respMessages := make([]*channelpb.MessageInfo, 0, len(messages))
-	for _, m := range messages {
-		var attach *channelpb.FileAttachment
-		if m.Attachment != nil {
-			attach = &channelpb.FileAttachment{
-				FileId:   m.Attachment.FileID,
-				Url:      m.Attachment.URL,
-				MimeType: m.Attachment.MimeType,
-				Size:     m.Attachment.Size,
+			// Call Service
+			_, err := s.service.PostMessage(ctx, currentUserID, currentChannelID, msgReq.Content)
+			if err != nil {
+				logger.Log.Error("failed to post message", zap.Error(err))
+				// Optionally send an error response back via stream if your proto supports it
 			}
 		}
-
-		respMessages = append(respMessages, &channelpb.MessageInfo{
-			MessageId:   m.ID,
-			SenderId:    m.SenderID,
-			Content:     m.Content,
-			TimestampMs: m.CreatedAt.UnixMilli(),
-			Username:    m.Username,
-			Attachment:  attach,
-		})
 	}
-	return &channelpb.ListMessagesResponse{
-		Messages: respMessages,
-	}, nil
 }
 
-// func (s *ChannelServer) EditMessage(ctx context.Context, req *channelpb.EditMessageRequest) (*channelpb.EditMessageResponse, error) {
-// 	if err := s.service.EditMessage(ctx, req.GetMessageId(), req.GetEditorId(), req.GetNewContent()); err != nil {
-// 		return &channelpb.EditMessageResponse{Success: false}, err
-// 	}
-// 	return &channelpb.EditMessageResponse{Success: true}, nil
-// }
+// =============================================================================
+// 2. CHANNEL CRUD
+// =============================================================================
 
-// func (s *ChannelServer) DeleteMessage(ctx context.Context, req *channelpb.DeleteMessageRequest) (*channelpb.DeleteMessageResponse, error) {
-// 	if err := s.service.DeleteMessage(ctx, req.GetMessageId(), req.GetRequesterId()); err != nil {
-// 		return &channelpb.DeleteMessageResponse{Success: false}, err
-// 	}
-// 	return &channelpb.DeleteMessageResponse{Success: true}, nil
-// }
+// TEST
+func (s *Server) CreateChannel(ctx context.Context, req *channelpb.CreateChannelRequest) (*channelpb.CreateChannelResponse, error) {
 
-// CreateChannel handles channel creation requests.
-func (s *ChannelServer) CreateChannel(ctx context.Context, req *channelpb.CreateChannelRequest) (*channelpb.CreateChannelResponse, error) {
-	ch, err := s.service.CreateChannel(ctx, req.GetName(), req.GetCreatorId())
+	ch, err := s.service.CreateChannel(ctx, req.Name, req.Description, req.Visibility, req.CreatorId)
 	if err != nil {
 		return nil, err
 	}
 
-	return &channelpb.CreateChannelResponse{
-		ChannelId:   ch.ID,
-		Name:        ch.Name,
-		CreatedBy:   ch.CreatedBy,
-		CreatedAtMs: ch.CreatedAt.UnixMilli(),
-	}, nil
+	return &channelpb.CreateChannelResponse{Channel: mapChannelToProto(ch)}, nil
 }
 
-// GetChannel retrieves channel information.
-func (s *ChannelServer) GetChannel(ctx context.Context, req *channelpb.GetChannelRequest) (*channelpb.GetChannelResponse, error) {
-	ch, err := s.service.GetChannel(ctx, req.GetChannelId())
+// TEST
+func (s *Server) GetChannel(ctx context.Context, req *channelpb.GetChannelRequest) (*channelpb.GetChannelResponse, error) {
+	ch, err := s.service.GetChannel(ctx, req.ChannelId)
+	if err != nil {
+		return nil, err
+	}
+	return &channelpb.GetChannelResponse{Channel: mapChannelToProto(ch)}, nil
+}
+
+// TEST
+func (s *Server) ListUserChannels(ctx context.Context, req *channelpb.ListUserChannelsRequest) (*channelpb.ListUserChannelsResponse, error) {
+	channels, err := s.service.ListUserChannels(ctx, req.UserId)
 	if err != nil {
 		return nil, err
 	}
 
-	resp := &channelpb.ChannelInfo{
-		ChannelId:   ch.ID,
-		Name:        ch.Name,
-		CreatedBy:   ch.CreatedBy,
-		CreatedAtMs: ch.CreatedAt.UnixMilli(),
+	var pbChannels []*channelpb.Channel
+	for _, c := range channels {
+		pbChannels = append(pbChannels, mapChannelToProto(c))
 	}
-	return &channelpb.GetChannelResponse{
-		Channel: resp,
-	}, nil
+	return &channelpb.ListUserChannelsResponse{Channels: pbChannels}, nil
 }
 
-// Get All channels of a user
-func (s *ChannelServer) ListChannels(ctx context.Context, req *channelpb.ListChannelsRequest) (*channelpb.ListChannelsResponse, error) {
-
-	// Call service to get grouped channels
-	chans, err := s.service.ListChannels(ctx, req.UserId)
+func (s *Server) DeleteChannel(ctx context.Context, req *channelpb.DeleteChannelRequest) (*channelpb.DeleteChannelResponse, error) {
+	err := s.service.DeleteChannel(ctx, req.ChannelId, req.RequesterId)
 	if err != nil {
 		return nil, err
 	}
-
-	resp := &channelpb.ListChannelsResponse{
-		Channels: []*channelpb.ChannelInfo{},
-	}
-
-	for _, ch := range chans {
-
-		// Convert members
-		var members []*channelpb.MemberInfo
-		for _, m := range ch.Members {
-			members = append(members, &channelpb.MemberInfo{
-				UserId:     m.UserID,
-				JoinedAtMs: m.JoinedAt.UnixMilli(),
-			})
-		}
-
-		// Convert channel
-		chanInfo := &channelpb.ChannelInfo{
-			ChannelId:   ch.Channel.ID,
-			Name:        ch.Channel.Name,
-			Description: ch.Channel.Description,
-			IsFrozen:    ch.Channel.IsFrozen,
-			Visibility:  ch.Channel.Visibility,
-			CreatedBy:   ch.Channel.CreatedBy,
-			CreatedAtMs: ch.Channel.CreatedAt.UnixMilli(),
-			Members:     members,
-		}
-
-		resp.Channels = append(resp.Channels, chanInfo)
-	}
-
-	return resp, nil
-}
-
-// AddMember adds a user to a channel.
-func (s *ChannelServer) AddMember(ctx context.Context, req *channelpb.AddMemberRequest) (*channelpb.AddMemberResponse, error) {
-	m, err := s.service.AddMember(ctx, req.GetChannelId(), req.GetUserId())
-	if err != nil {
-		return nil, err
-	}
-
-	return &channelpb.AddMemberResponse{
-		Member: &channelpb.MemberInfo{
-			UserId:     m.UserID,
-			Username:   m.Username,
-			JoinedAtMs: m.JoinedAt.UnixMilli(),
-		},
-	}, nil
-}
-
-// RemoveMember removes a user from a channel.
-func (s *ChannelServer) RemoveMember(ctx context.Context, req *channelpb.RemoveMemberRequest) (*channelpb.RemoveMemberResponse, error) {
-	err := s.service.RemoveMember(ctx, req.GetChannelId(), req.GetUserId())
-	return &channelpb.RemoveMemberResponse{Success: err == nil}, err
-}
-
-// ListMembers returns all members of a channel.
-func (s *ChannelServer) ListMembers(ctx context.Context, req *channelpb.ListMembersRequest) (*channelpb.ListMembersResponse, error) {
-	members, err := s.service.ListMembers(ctx, req.GetChannelId())
-	if err != nil {
-		return nil, err
-	}
-
-	channelpbMembers := make([]*channelpb.MemberInfo, len(members))
-	for i, m := range members {
-		channelpbMembers[i] = &channelpb.MemberInfo{
-			UserId:     m.UserID,
-			Username:   m.Username,
-			JoinedAtMs: m.JoinedAt.UnixMilli(),
-		}
-	}
-
-	return &channelpb.ListMembersResponse{Members: channelpbMembers}, nil
-}
-
-// Delete channel only by owner
-func (s *ChannelServer) DeleteChannel(ctx context.Context, req *channelpb.DeleteChannelRequest) (*channelpb.DeleteChannelResponse, error) {
-
-	if err := s.service.DeleteChannel(ctx, req.ChannelId, req.RequesterId); err != nil {
-		return nil, err
-	}
-
 	return &channelpb.DeleteChannelResponse{Success: true}, nil
-
 }
 
-// Request server handling
-func mapRequest(r *domain.Request) *channelpb.Request {
-	return &channelpb.Request{
-		Id:        r.ID,
-		UserId:    r.UserID,
-		ChannelId: r.ChannelID,
-		Status:    r.Status,
-		ReqType:   r.ReqType,
-		CreatedAt: helper.TimeToString(r.CreatedAt),
-	}
-}
+// =============================================================================
+// 3. MEMBER MANAGEMENT
+// =============================================================================
 
-func (s *ChannelServer) SendInvite(ctx context.Context, req *channelpb.SendInviteRequest) (*channelpb.SendInviteResponse, error) {
-
-	if err := s.service.SendInvite(ctx, req.UserId, req.ChannelId); err != nil {
+func (s *Server) AddMember(ctx context.Context, req *channelpb.AddMemberRequest) (*channelpb.AddMemberResponse, error) {
+	member, err := s.service.AddMember(ctx, req.ChannelId, req.UserId)
+	if err != nil {
 		return nil, err
 	}
-	return &channelpb.SendInviteResponse{Success: true}, nil
+	return &channelpb.AddMemberResponse{Member: mapMemberToProto(member)}, nil
 }
 
-func (s *ChannelServer) SendJoin(ctx context.Context, req *channelpb.SendJoinRequest) (*channelpb.SendJoinResponse, error) {
-
-	if err := s.service.SendJoin(ctx, req.UserId, req.ChannelId); err != nil {
+func (s *Server) RemoveMember(ctx context.Context, req *channelpb.RemoveMemberRequest) (*channelpb.RemoveMemberResponse, error) {
+	err := s.service.RemoveMember(ctx, req.ChannelId, req.UserId, req.RemovedBy)
+	if err != nil {
 		return nil, err
 	}
-	return &channelpb.SendJoinResponse{Success: true}, nil
+	return &channelpb.RemoveMemberResponse{Success: true}, nil
 }
 
-func (s *ChannelServer) ListUserInvites(ctx context.Context, req *channelpb.ListUserInviteRequest) (*channelpb.ListUserInviteResponse, error) {
+func (s *Server) ListMembers(ctx context.Context, req *channelpb.ListMembersRequest) (*channelpb.ListMembersResponse, error) {
+	members, err := s.service.ListMembers(ctx, req.ChannelId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pbMembers []*channelpb.ChannelMember
+	for _, m := range members {
+		pbMembers = append(pbMembers, mapMemberToProto(m))
+	}
+	return &channelpb.ListMembersResponse{Members: pbMembers}, nil
+}
+
+// =============================================================================
+// 4. REQUEST FLOW (INVITES & JOINS)
+// =============================================================================
+
+func (s *Server) SendInvite(ctx context.Context, req *channelpb.SendInviteRequest) (*channelpb.SendInviteResponse, error) {
+
+	err := s.service.SendInvite(ctx, req.TargetUserId, req.ChannelId, req.SenderId)
+	if err != nil {
+		return nil, err
+	}
+	return &channelpb.SendInviteResponse{Success: true, RequestId: uuid.NewString()}, nil
+}
+
+func (s *Server) SendJoin(ctx context.Context, req *channelpb.SendJoinRequest) (*channelpb.SendJoinResponse, error) {
+	err := s.service.SendJoin(ctx, req.UserId, req.ChannelId)
+	if err != nil {
+		return nil, err
+	}
+	return &channelpb.SendJoinResponse{RequestId: uuid.NewString(), Message: "Join request sent"}, nil
+}
+
+func (s *Server) UpdateRequestStatus(ctx context.Context, req *channelpb.UpdateRequestStatusRequest) (*channelpb.UpdateRequestStatusResponse, error) {
+	err := s.service.RespondToRequest(ctx, req.RequestId, req.UserId, req.Status)
+	if err != nil {
+		return nil, err
+	}
+	return &channelpb.UpdateRequestStatusResponse{Success: true}, nil
+}
+
+func (s *Server) ListUserInvites(ctx context.Context, req *channelpb.ListUserInvitesRequest) (*channelpb.ListUserInvitesResponse, error) {
 	requests, err := s.service.ListUserInvites(ctx, req.UserId)
 	if err != nil {
 		return nil, err
 	}
-	resp := make([]*channelpb.Request, 0, len(requests))
-	for _, r := range requests {
-		resp = append(resp, mapRequest(r))
-	}
-
-	return &channelpb.ListUserInviteResponse{Requests: resp}, nil
-
+	return &channelpb.ListUserInvitesResponse{Requests: mapRequestsToProto(requests)}, nil
 }
 
-func (s *ChannelServer) ListChannelJoins(ctx context.Context, req *channelpb.ListChannelJoinRequest) (*channelpb.ListChannelJoinResponse, error) {
+func (s *Server) ListChannelJoins(ctx context.Context, req *channelpb.ListChannelJoinsRequest) (*channelpb.ListChannelJoinsResponse, error) {
 	requests, err := s.service.ListChannelJoins(ctx, req.ChannelId)
 	if err != nil {
 		return nil, err
 	}
-	resp := make([]*channelpb.Request, 0, len(requests))
-	for _, r := range requests {
-		resp = append(resp, mapRequest(r))
-	}
-	return &channelpb.ListChannelJoinResponse{Requests: resp}, nil
+	return &channelpb.ListChannelJoinsResponse{Requests: mapRequestsToProto(requests)}, nil
 }
 
-func (s *ChannelServer) UpdateRequestStatus(ctx context.Context, req *channelpb.StatusUpdateRequest) (*channelpb.StatusUpdateResponse, error) {
-	if err := s.service.UpdateRequestStatus(ctx, req.Id, req.Status); err != nil {
+// =============================================================================
+// 5. CHAT HISTORY
+// =============================================================================
+
+func (s *Server) ListMessages(ctx context.Context, req *channelpb.ListMessagesRequest) (*channelpb.ListMessagesResponse, error) {
+	msgs, err := s.service.GetHistory(ctx, req.ChannelId, int(req.Limit), int(req.Offset))
+	if err != nil {
 		return nil, err
 	}
-	return &channelpb.StatusUpdateResponse{Success: true}, nil
+
+	var pbMsgs []*channelpb.ChatMessage
+	for _, m := range msgs {
+		pbMsgs = append(pbMsgs, mapMessageToProto(m))
+	}
+	return &channelpb.ListMessagesResponse{Messages: pbMsgs}, nil
+}
+
+// =============================================================================
+// 6. ADMIN SERVICE (Implemented on the same struct)
+// =============================================================================
+
+func (s *Server) AdminListChannels(ctx context.Context, req *channelpb.AdminListChannelsRequest) (*channelpb.AdminListChannelsResponse, error) {
+	// Simple pagination mapping
+	limit := int(req.Limit)
+	if limit == 0 {
+		limit = 10
+	}
+
+	channels, err := s.service.AdminListChannels(ctx, limit, int(req.Offset))
+	if err != nil {
+		return nil, err
+	}
+
+	var pbChannels []*channelpb.Channel
+	for _, c := range channels {
+		pbChannels = append(pbChannels, mapChannelToProto(c))
+	}
+	return &channelpb.AdminListChannelsResponse{Channels: pbChannels}, nil
+}
+
+func (s *Server) AdminFreezeChannel(ctx context.Context, req *channelpb.AdminFreezeChannelRequest) (*channelpb.AdminFreezeChannelResponse, error) {
+	err := s.service.AdminFreezeChannel(ctx, req.ChannelId, req.Freeze, req.Reason)
+	if err != nil {
+		return nil, err
+	}
+	return &channelpb.AdminFreezeChannelResponse{Success: true}, nil
+}
+
+func (s *Server) AdminDeleteChannel(ctx context.Context, req *channelpb.AdminDeleteChannelRequest) (*channelpb.AdminDeleteChannelResponse, error) {
+	// Reusing the service delete method.
+	// Note: Real admin delete might bypass "owner check" inside the service.
+	// You might need a specific AdminDelete in the service layer if logic differs.
+	err := s.service.AdminDeleteChannel(ctx, req.ChannelId)
+	if err != nil {
+		return nil, err
+	}
+	return &channelpb.AdminDeleteChannelResponse{Success: true}, nil
+}
+
+// =============================================================================
+// HELPERS & MAPPERS
+// =============================================================================
+
+func mapChannelToProto(c *domain.Channel) *channelpb.Channel {
+	if c == nil {
+		return nil
+	}
+	return &channelpb.Channel{
+		Id:          c.ID,
+		Name:        c.Name,
+		Description: c.Description,
+		Visibility:  c.Visibility,
+		OwnerId:     c.OwnerID,
+		CreatedAt:   c.CreatedAt.UnixMilli(),
+		IsFrozen:    c.IsFrozen,
+		OwnerName:   c.OwnerName,
+	}
+}
+
+func mapMemberToProto(m *domain.ChannelMember) *channelpb.ChannelMember {
+	return &channelpb.ChannelMember{
+		UserId:    m.UserID,
+		Username:  m.Username,
+		ChannelId: m.ChannelID,
+		Role:      m.Role,
+		JoinedAt:  m.JoinedAt.UnixMilli(),
+	}
+}
+
+func mapMessageToProto(m *domain.Message) *channelpb.ChatMessage {
+	msg := &channelpb.ChatMessage{
+		Id:             m.ID,
+		ChannelId:      m.ChannelID,
+		SenderId:       m.SenderID,
+		SenderUsername: m.Username,
+		Content:        m.Content,
+		CreatedAt:      m.CreatedAt.UnixMilli(),
+	}
+	return msg
+}
+
+func mapRequestsToProto(reqs []*domain.Request) []*channelpb.MembershipRequest {
+	var res []*channelpb.MembershipRequest
+	for _, r := range reqs {
+		res = append(res, &channelpb.MembershipRequest{
+			RequestId: r.ID,
+			UserId:    r.UserID,
+			ChannelId: r.ChannelID,
+			Type:      r.Type,   // String in proto now
+			Status:    r.Status, // String in proto now
+			CreatedAt: r.CreatedAt.Unix(),
+		})
+
+	}
+	return res
 }

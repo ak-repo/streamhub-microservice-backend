@@ -19,24 +19,42 @@ func NewChannelHandler(client channelpb.ChannelServiceClient) *ChannelHandler {
 	return &ChannelHandler{client: client}
 }
 
-// -------------------- Create Channel --------------------
-func (h *ChannelHandler) CreateChannel(c *fiber.Ctx) error {
-	var req struct {
-		Name      string `json:"name"`
-		CreatorID string `json:"creatorId"`
+// -------------------- Leave Channel --------------------
+func (h *ChannelHandler) LeaveChannel(c *fiber.Ctx) error {
+	req := new(channelpb.RemoveMemberRequest)
+	if err := c.BodyParser(req); err != nil {
+		return response.InvalidReqBody(c)
 	}
 
-	if err := c.BodyParser(&req); err != nil {
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+	req.RemovedBy = uid
+	req.UserId = uid
+	ctx, cancel := helper.WithGRPCTimeout()
+	defer cancel()
+	resp, err := h.client.RemoveMember(ctx, req)
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return response.Error(c, code, body)
+	}
+
+	return response.Success(c, "leaved", resp)
+}
+
+// -------------------- Create Channel --------------------
+func (h *ChannelHandler) CreateChannel(c *fiber.Ctx) error {
+	req := new(channelpb.CreateChannelRequest)
+
+	if err := c.BodyParser(req); err != nil {
 		return response.InvalidReqBody(c)
 	}
 
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.client.CreateChannel(ctx, &channelpb.CreateChannelRequest{
-		Name:      req.Name,
-		CreatorId: req.CreatorID,
-	})
+	resp, err := h.client.CreateChannel(ctx, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
@@ -45,71 +63,17 @@ func (h *ChannelHandler) CreateChannel(c *fiber.Ctx) error {
 	return response.Success(c, "channel created", resp)
 }
 
-// -------------------- Join Channel --------------------
-func (h *ChannelHandler) JoinChannel(c *fiber.Ctx) error {
-	var req struct {
-		ChannelID string `json:"channelId"`
-		UserID    string `json:"userId"`
-	}
-
-	if err := c.BodyParser(&req); err != nil {
-		return response.InvalidReqBody(c)
-
-	}
-
-	ctx, cancel := helper.WithGRPCTimeout()
-	defer cancel()
-
-	resp, err := h.client.AddMember(ctx, &channelpb.AddMemberRequest{
-		ChannelId: req.ChannelID,
-		UserId:    req.UserID,
-	})
-	if err != nil {
-		code, body := errors.GRPCToFiber(err)
-		return response.Error(c, code, body)
-
-	}
-
-	return response.Success(c, fmt.Sprintf("joined channel: %s", req.ChannelID), resp)
-}
-
-// -------------------- Leave Channel --------------------
-func (h *ChannelHandler) LeaveChannel(c *fiber.Ctx) error {
-	var req struct {
-		ChannelID string `json:"channelId"`
-		UserID    string `json:"userId"`
-	}
-
-	if err := c.BodyParser(&req); err != nil {
-		return response.InvalidReqBody(c)
-	}
-
-	ctx, cancel := helper.WithGRPCTimeout()
-	defer cancel()
-
-	resp, err := h.client.RemoveMember(ctx, &channelpb.RemoveMemberRequest{
-		ChannelId: req.ChannelID,
-		UserId:    req.UserID,
-	})
-	if err != nil {
-		code, body := errors.GRPCToFiber(err)
-		return response.Error(c, code, body)
-	}
-
-	return response.Success(c, fmt.Sprintf("left channel: %s", req.ChannelID), resp)
-}
-
 // -------------------- List Channels --------------------
 func (h *ChannelHandler) ListChannels(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(string)
-	if userID == "" {
-		return response.InvalidReqBody(c)
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
 	}
 
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.client.ListChannels(ctx, &channelpb.ListChannelsRequest{UserId: userID})
+	resp, err := h.client.ListUserChannels(ctx, &channelpb.ListUserChannelsRequest{UserId: uid})
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
@@ -139,26 +103,24 @@ func (h *ChannelHandler) GetChannel(c *fiber.Ctx) error {
 
 // -------------------- Delete Channel --------------------
 func (h *ChannelHandler) DeleteChannel(c *fiber.Ctx) error {
-	channelID := c.Query("channelId")
-	requesterID := c.Query("requesterId")
+	req := new(channelpb.DeleteChannelRequest)
+	req.ChannelId = c.Query("channel_id")
+	req.RequesterId = c.Query("requester_id")
 
-	if channelID == "" || requesterID == "" {
+	if req.ChannelId == "" || req.RequesterId == "" {
 		return response.InvalidReqBody(c)
 	}
 
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.client.DeleteChannel(ctx, &channelpb.DeleteChannelRequest{
-		ChannelId:   channelID,
-		RequesterId: requesterID,
-	})
+	resp, err := h.client.DeleteChannel(ctx, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
 	}
 
-	return response.Success(c, fmt.Sprintf("channel deleted: %s", channelID), resp)
+	return response.Success(c, "channel deleted", resp)
 }
 
 // -------------------- List Members --------------------
@@ -206,47 +168,27 @@ func (h *ChannelHandler) ListMessages(c *fiber.Ctx) error {
 	return response.Success(c, "previous messages", resp)
 }
 
-func (h *ChannelHandler) AddMember(c *fiber.Ctx) error {
-	var req struct {
-		ChannelID string `json:"channelId"`
-		UserID    string `json:"userId"`
-	}
-
-	if err := c.BodyParser(&req); err != nil {
-		return response.InvalidReqBody(c)
-
-	}
-
-	ctx, cancel := helper.WithGRPCTimeout()
-	defer cancel()
-
-	resp, err := h.client.AddMember(ctx, &channelpb.AddMemberRequest{
-		ChannelId: req.ChannelID,
-		UserId:    req.UserID,
-	})
-	if err != nil {
-		code, body := errors.GRPCToFiber(err)
-		return response.Error(c, code, body)
-
-	}
-
-	return response.Success(c, fmt.Sprintf("joined channel: %s", req.ChannelID), resp)
-
-}
-
 // -------------------Request JOIN & INVITE ------------
+
 func (h *ChannelHandler) SendInvite(c *fiber.Ctx) error {
-	var req struct {
-		ChannelID string `json:"channelId"`
-		UserID    string `json:"userId"`
-	}
-	if err := c.BodyParser(&req); err != nil || req.ChannelID == "" || req.UserID == "" {
+	req := new(channelpb.SendInviteRequest)
+	if err := c.BodyParser(req); err != nil {
 		return response.InvalidReqBody(c)
 	}
+	if req.ChannelId == "" || req.TargetUserId == "" {
+		return response.InvalidReqBody(c)
+	}
+
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+	req.SenderId = uid
+
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.client.SendInvite(ctx, &channelpb.SendInviteRequest{UserId: req.UserID, ChannelId: req.ChannelID})
+	resp, err := h.client.SendInvite(ctx, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
@@ -256,17 +198,14 @@ func (h *ChannelHandler) SendInvite(c *fiber.Ctx) error {
 }
 
 func (h *ChannelHandler) SendJoin(c *fiber.Ctx) error {
-	var req struct {
-		ChannelID string `json:"channelId"`
-		UserID    string `json:"userId"`
-	}
-	if err := c.BodyParser(&req); err != nil || req.ChannelID == "" || req.UserID == "" {
+	req := new(channelpb.SendJoinRequest)
+	if err := c.BodyParser(req); err != nil || req.ChannelId == "" || req.UserId == "" {
 		return response.InvalidReqBody(c)
 	}
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.client.SendJoin(ctx, &channelpb.SendJoinRequest{UserId: req.UserID, ChannelId: req.ChannelID})
+	resp, err := h.client.SendJoin(ctx, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
@@ -281,7 +220,7 @@ func (h *ChannelHandler) ListUserInvites(c *fiber.Ctx) error {
 	}
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
-	resp, err := h.client.ListUserInvites(ctx, &channelpb.ListUserInviteRequest{UserId: uid})
+	resp, err := h.client.ListUserInvites(ctx, &channelpb.ListUserInvitesRequest{UserId: uid})
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
@@ -296,7 +235,7 @@ func (h *ChannelHandler) ListChannelJoins(c *fiber.Ctx) error {
 	}
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
-	resp, err := h.client.ListChannelJoins(ctx, &channelpb.ListChannelJoinRequest{ChannelId: channelID})
+	resp, err := h.client.ListChannelJoins(ctx, &channelpb.ListChannelJoinsRequest{ChannelId: channelID})
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
@@ -305,19 +244,24 @@ func (h *ChannelHandler) ListChannelJoins(c *fiber.Ctx) error {
 }
 
 func (h *ChannelHandler) UpdateRequestStatus(c *fiber.Ctx) error {
-	var req struct {
-		ReqID  string `json:"reqId"`
-		Status string `json:"status"`
-	}
-	if err := c.BodyParser(&req); err != nil || req.Status == "" || req.ReqID == "" {
+	req := new(channelpb.UpdateRequestStatusRequest)
+	if err := c.BodyParser(&req); err != nil || req.Status == "" || req.RequestId == "" {
 		return response.InvalidReqBody(c)
 	}
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+	req.UserId = uid
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
-	resp, err := h.client.UpdateRequestStatus(ctx, &channelpb.StatusUpdateRequest{Id: req.ReqID, Status: req.Status})
+	resp, err := h.client.UpdateRequestStatus(ctx, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
 	}
 	return response.Success(c, "request updated", resp)
 }
+
+
+

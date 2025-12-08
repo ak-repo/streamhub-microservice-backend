@@ -112,3 +112,8 @@ file_service:
     enabled: false
     host: clamav
     port: 3310
+
+cloudinary:
+  cloud_name: dersnukrf
+  api_key: 388271549966182
+  api_sceret: s

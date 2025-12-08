@@ -47,3 +47,5 @@ service NotificationService {
   rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
   rpc MarkRead(MarkReadRequest) returns (MarkReadResponse);
 }
+
+

@@ -19,13 +19,14 @@ const (
 )
 
 type WSMessage struct {
-	Type      string `json:"type"`
+	Type      string `json:"type"` // JOIN or MESSAGE
 	UserID    string `json:"userId"`
 	ChannelID string `json:"channelId"`
-	Content   string `json:"content"`
+	Content   string `json:"content"` // Only for MESSAGE
 }
 
 func (h *ChannelHandler) WsHandler(conn *websocket.Conn) {
+	// ✔ Validate user
 	userID := conn.Query("userId")
 	if userID == "" {
 		_ = conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"userId is required"}`))
@@ -38,6 +39,7 @@ func (h *ChannelHandler) WsHandler(conn *websocket.Conn) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// ✔ Open gRPC stream
 	stream, err := h.client.Connect(ctx)
 	if err != nil {
 		logger.Log.Error("failed to connect to grpc stream", zap.Error(err))
@@ -47,7 +49,9 @@ func (h *ChannelHandler) WsHandler(conn *websocket.Conn) {
 	}
 	defer stream.CloseSend()
 
-	// ---------------- WS -> GRPC ----------------
+	// -------------------------------------------------------------------------
+	// WS → GRPC
+	// -------------------------------------------------------------------------
 	go func() {
 		defer cancel()
 
@@ -65,72 +69,57 @@ func (h *ChannelHandler) WsHandler(conn *websocket.Conn) {
 				return
 			}
 
-			var m struct {
-				Type      string                 `json:"type"`
-				UserID    string                 `json:"userId"`
-				ChannelID string                 `json:"channelId"`
-				Content   string                 `json:"content"`
-				File      map[string]interface{} `json:"file"`
-			}
-
+			var m WSMessage
 			if err := json.Unmarshal(raw, &m); err != nil {
-				_ = conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"invalid message format"}`))
+				_ = conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"invalid json"}`))
 				continue
 			}
 
+			// Inherit userID from query if missing
 			if m.UserID == "" {
 				m.UserID = userID
 			}
 
-			req := &channelpb.StreamRequest{}
+			var req *channelpb.StreamRequest = &channelpb.StreamRequest{}
 
-			// ---------------- JOIN ----------------
-			if m.Type == "JOIN" {
-				req.Payload = &channelpb.StreamRequest_Join{
-					Join: &channelpb.JoinPayload{
+			switch m.Type {
+
+			// -----------------------------------------------------------------
+			// JOIN → StreamConnect
+			// -----------------------------------------------------------------
+			case "JOIN":
+				req.Payload = &channelpb.StreamRequest_Connect{
+					Connect: &channelpb.StreamConnect{
 						UserId:    m.UserID,
 						ChannelId: m.ChannelID,
 					},
 				}
-			}
 
-			// ---------------- MESSAGE ----------------
-			if m.Type == "MESSAGE" {
-				msg := &channelpb.MessagePayload{
-					UserId:    m.UserID,
-					ChannelId: m.ChannelID,
-				}
-
-				// TEXT MESSAGE
-				if m.Content != "" {
-					msg.Body = &channelpb.MessagePayload_Content{
+			// -----------------------------------------------------------------
+			// MESSAGE → StreamSendMessage
+			// -----------------------------------------------------------------
+			case "MESSAGE":
+				req.Payload = &channelpb.StreamRequest_Message{
+					Message: &channelpb.StreamSendMessage{
 						Content: m.Content,
-					}
+					},
 				}
 
-				// FILE MESSAGE
-				if m.File != nil {
-					msg.Body = &channelpb.MessagePayload_File{
-						File: &channelpb.FileAttachment{
-							FileId:   m.File["fileId"].(string),
-							MimeType: m.File["mimeType"].(string),
-							Size:     int64(m.File["size"].(float64)),
-							Url:      "", // No URL stored in DB, minio signs on download
-						},
-					}
-				}
-
-				req.Payload = &channelpb.StreamRequest_Message{Message: msg}
+			default:
+				_ = conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"unknown type"}`))
+				continue
 			}
 
 			if err := stream.Send(req); err != nil {
-				logger.Log.Error("failed to send to grpc stream", zap.Error(err))
+				logger.Log.Error("grpc stream send error", zap.Error(err))
 				return
 			}
 		}
 	}()
 
-	// ---------------- PING KEEPALIVE ----------------
+	// -------------------------------------------------------------------------
+	// PING KEEPALIVE
+	// -------------------------------------------------------------------------
 	ticker := time.NewTicker(pingPeriod)
 	defer ticker.Stop()
 
@@ -148,7 +137,9 @@ func (h *ChannelHandler) WsHandler(conn *websocket.Conn) {
 		}
 	}()
 
-	// ---------------- GRPC -> WS ----------------
+	// -------------------------------------------------------------------------
+	// GRPC → WS
+	// -------------------------------------------------------------------------
 	for {
 		res, err := stream.Recv()
 		if err != nil {

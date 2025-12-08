@@ -45,6 +45,8 @@ func main() {
 	// jwt manager
 	tokenExpiry := 10 * time.Minute
 	jwtMan := jwt.NewJWTManager(cfg.JWT.Secret, tokenExpiry, tokenExpiry)
+	seeder.AdminSeeder(context.Background(), pgDB.Pool)
+	seeder.UsersSeeder(context.Background(), pgDB.Pool)
 
 	// Redis
 	rAddr := cfg.Redis.Host + ":" + cfg.Redis.Port
@@ -53,13 +55,13 @@ func main() {
 
 	otpStore := otpredis.NewOTPStore(rClient, 10*time.Minute)
 
-	cloudCli, _ := authcloudinary.NewCloudinaryUploader("dersnukrf", "388271549966182", "XQ3QVF6q78P0bhl6rR-eIoTQWO8")
+	cloudCli, _ := authcloudinary.NewCloudinaryUploader(cfg.Cloudinary.CloudName, cfg.Cloudinary.APIKey, cfg.Cloudinary.APISecret)
 	seeder.UsersSeeder(context.Background(), pgDB.Pool)
 
 	// repo -> service -> server
 	repo := postgres.NewUserRepository(pgDB.Pool)
 	service := app.NewAuthService(repo, jwtMan, cfg, otpStore, cloudCli)
-	server := authgrpc.NewAuthServer(service)
+	server := authgrpc.NewServer(service)
 
 	addr := ":" + cfg.Services.Auth.Port
 	lis, err := net.Listen("tcp", addr)
