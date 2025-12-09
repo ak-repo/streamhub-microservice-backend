@@ -20,6 +20,7 @@ type ChannelRepository interface {
 	GetChannel(ctx context.Context, channelID string) (*domain.Channel, error)
 	DeleteChannel(ctx context.Context, channelID string) error
 	ListUserChannels(ctx context.Context, userID string) ([]*domain.Channel, error)
+	SearchChannels(ctx context.Context, filter string, limit, offset int32) ([]*domain.Channel, error)
 
 	// -------------------------------------------------------------------------
 	// Membership
@@ -33,12 +34,12 @@ type ChannelRepository interface {
 	// Requests (Join Requests, Invites)
 	// -------------------------------------------------------------------------
 	CreateRequest(ctx context.Context, req *domain.Request) error
-	UpdateRequestStatus(ctx context.Context, requestID, status string) error
+	UpdateRequestStatus(ctx context.Context, requestID, status string) (*domain.Request, error)
 	ListPendingRequests(ctx context.Context, userID, channelID string) ([]*domain.Request, error)
 
 	// -------------------------------------------------------------------------
 	// Admin / Governance
 	// -------------------------------------------------------------------------
-	AdminListChannels(ctx context.Context, limit, offset int) ([]*domain.Channel, error)
+	AdminListChannels(ctx context.Context, limit, offset int32) ([]*domain.Channel, error)
 	FreezeChannel(ctx context.Context, channelID string, freeze bool) error
 }

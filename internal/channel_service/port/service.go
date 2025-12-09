@@ -25,6 +25,7 @@ type ChannelService interface {
 	GetChannel(ctx context.Context, channelID string) (*domain.Channel, error)
 	ListUserChannels(ctx context.Context, userID string) ([]*domain.Channel, error)
 	DeleteChannel(ctx context.Context, channelID, requesterID string) error
+	SearchChannels(ctx context.Context, filter string, limit, offset int32) ([]*domain.Channel, error)
 
 	// =========================================================================
 	// Membership Management
@@ -47,7 +48,7 @@ type ChannelService interface {
 	// =========================================================================
 	// Administration (System Level)
 	// =========================================================================
-	AdminListChannels(ctx context.Context, limit, offset int) ([]*domain.Channel, error)
+	AdminListChannels(ctx context.Context, limit, offset int32) ([]*domain.Channel, error)
 	AdminFreezeChannel(ctx context.Context, channelID string, freeze bool, reason string) error
 	AdminDeleteChannel(ctx context.Context, channelID string) error
 }

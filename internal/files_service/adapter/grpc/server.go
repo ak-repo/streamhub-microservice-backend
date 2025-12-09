@@ -45,10 +45,11 @@ func (s *Server) CreateUploadUrl(ctx context.Context, req *filespb.CreateUploadU
 }
 
 func (s *Server) CompleteUpload(ctx context.Context, req *filespb.CompleteUploadRequest) (*filespb.CompleteUploadResponse, error) {
-	if !req.Success {
-		logger.Log.Info("client reported upload failure", zap.String("file_id", req.FileId))
-		return &filespb.CompleteUploadResponse{}, nil
-	}
+	// TODO success handling
+	// if !req.Success {
+	// 	logger.Log.Info("client reported upload failure", zap.String("file_id", req.FileId))
+	// 	return &filespb.CompleteUploadResponse{},
+	// }
 
 	f, err := s.service.ConfirmUpload(ctx, req.FileId)
 	if err != nil {

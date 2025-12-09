@@ -107,7 +107,7 @@ func userRoutes(api fiber.Router, cfg *config.Config, clients *clients.Clients) 
 	fileR.Post("/confirm", file.CompleteUpload)          // tested
 	fileR.Get("/download-url", file.GenerateDownloadURL) // tested
 	fileR.Get("/", file.ListFiles)                       // tested
-	fileR.Delete("/delete", file.DeleteFile)             // tested
+	fileR.Delete("/:file_id", file.DeleteFile)           // tested
 
 	// --------------------------
 	// CHANNEL HANDLER (WebSockets and Authenticated)
@@ -121,11 +121,11 @@ func userRoutes(api fiber.Router, cfg *config.Config, clients *clients.Clients) 
 	ch.Use(middleware.AuthMiddleware(jwtMan))
 
 	// Channel CRUD and Listing
-	ch.Get("/", channel.ListChannels)           // tested
-	ch.Post("/create", channel.CreateChannel)   // tested
-	ch.Post("/leave", channel.LeaveChannel)     // tested
-	ch.Delete("/delete", channel.DeleteChannel) // tested
-
+	ch.Get("", channel.ListChannels)                      // tested
+	ch.Post("/create", channel.CreateChannel)             // tested
+	ch.Delete("/leave/:channel_id", channel.LeaveChannel) // tested
+	ch.Delete("/:channel_id", channel.DeleteChannel)      // tested
+	ch.Get("/search", channel.SearchChannels)
 	// Channel Details and History
 	ch.Get("/channel/:channelId", channel.GetChannel)   // tested
 	ch.Get("/members/:channelId", channel.ListMembers)  // tested

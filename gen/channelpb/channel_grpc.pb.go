@@ -31,6 +31,7 @@ const (
 	ChannelService_SendInvite_FullMethodName          = "/channel.ChannelService/SendInvite"
 	ChannelService_SendJoin_FullMethodName            = "/channel.ChannelService/SendJoin"
 	ChannelService_UpdateRequestStatus_FullMethodName = "/channel.ChannelService/UpdateRequestStatus"
+	ChannelService_SearchChannels_FullMethodName      = "/channel.ChannelService/SearchChannels"
 	ChannelService_ListUserInvites_FullMethodName     = "/channel.ChannelService/ListUserInvites"
 	ChannelService_ListChannelJoins_FullMethodName    = "/channel.ChannelService/ListChannelJoins"
 )
@@ -51,6 +52,7 @@ type ChannelServiceClient interface {
 	SendInvite(ctx context.Context, in *SendInviteRequest, opts ...grpc.CallOption) (*SendInviteResponse, error)
 	SendJoin(ctx context.Context, in *SendJoinRequest, opts ...grpc.CallOption) (*SendJoinResponse, error)
 	UpdateRequestStatus(ctx context.Context, in *UpdateRequestStatusRequest, opts ...grpc.CallOption) (*UpdateRequestStatusResponse, error)
+	SearchChannels(ctx context.Context, in *SearchChannelRequest, opts ...grpc.CallOption) (*SearchChannelResponse, error)
 	ListUserInvites(ctx context.Context, in *ListUserInvitesRequest, opts ...grpc.CallOption) (*ListUserInvitesResponse, error)
 	ListChannelJoins(ctx context.Context, in *ListChannelJoinsRequest, opts ...grpc.CallOption) (*ListChannelJoinsResponse, error)
 }
@@ -186,6 +188,16 @@ func (c *channelServiceClient) UpdateRequestStatus(ctx context.Context, in *Upda
 	return out, nil
 }
 
+func (c *channelServiceClient) SearchChannels(ctx context.Context, in *SearchChannelRequest, opts ...grpc.CallOption) (*SearchChannelResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SearchChannelResponse)
+	err := c.cc.Invoke(ctx, ChannelService_SearchChannels_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *channelServiceClient) ListUserInvites(ctx context.Context, in *ListUserInvitesRequest, opts ...grpc.CallOption) (*ListUserInvitesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListUserInvitesResponse)
@@ -222,6 +234,7 @@ type ChannelServiceServer interface {
 	SendInvite(context.Context, *SendInviteRequest) (*SendInviteResponse, error)
 	SendJoin(context.Context, *SendJoinRequest) (*SendJoinResponse, error)
 	UpdateRequestStatus(context.Context, *UpdateRequestStatusRequest) (*UpdateRequestStatusResponse, error)
+	SearchChannels(context.Context, *SearchChannelRequest) (*SearchChannelResponse, error)
 	ListUserInvites(context.Context, *ListUserInvitesRequest) (*ListUserInvitesResponse, error)
 	ListChannelJoins(context.Context, *ListChannelJoinsRequest) (*ListChannelJoinsResponse, error)
 	mustEmbedUnimplementedChannelServiceServer()
@@ -269,6 +282,9 @@ func (UnimplementedChannelServiceServer) SendJoin(context.Context, *SendJoinRequ
 }
 func (UnimplementedChannelServiceServer) UpdateRequestStatus(context.Context, *UpdateRequestStatusRequest) (*UpdateRequestStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateRequestStatus not implemented")
+}
+func (UnimplementedChannelServiceServer) SearchChannels(context.Context, *SearchChannelRequest) (*SearchChannelResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchChannels not implemented")
 }
 func (UnimplementedChannelServiceServer) ListUserInvites(context.Context, *ListUserInvitesRequest) (*ListUserInvitesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListUserInvites not implemented")
@@ -502,6 +518,24 @@ func _ChannelService_UpdateRequestStatus_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChannelService_SearchChannels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchChannelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChannelServiceServer).SearchChannels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChannelService_SearchChannels_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChannelServiceServer).SearchChannels(ctx, req.(*SearchChannelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ChannelService_ListUserInvites_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListUserInvitesRequest)
 	if err := dec(in); err != nil {
@@ -588,6 +622,10 @@ var ChannelService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateRequestStatus",
 			Handler:    _ChannelService_UpdateRequestStatus_Handler,
+		},
+		{
+			MethodName: "SearchChannels",
+			Handler:    _ChannelService_SearchChannels_Handler,
 		},
 		{
 			MethodName: "ListUserInvites",

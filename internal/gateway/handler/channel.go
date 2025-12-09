@@ -2,7 +2,7 @@ package handler
 
 import (
 	"fmt"
-	"strconv"
+	"log"
 
 	"github.com/ak-repo/stream-hub/gen/channelpb"
 	"github.com/ak-repo/stream-hub/pkg/errors"
@@ -22,9 +22,8 @@ func NewChannelHandler(client channelpb.ChannelServiceClient) *ChannelHandler {
 // -------------------- Leave Channel --------------------
 func (h *ChannelHandler) LeaveChannel(c *fiber.Ctx) error {
 	req := new(channelpb.RemoveMemberRequest)
-	if err := c.BodyParser(req); err != nil {
-		return response.InvalidReqBody(c)
-	}
+	req.ChannelId = c.Params("channel_id")
+	log.Println("ch:", req.ChannelId)
 
 	uid, ok := c.Locals("userID").(string)
 	if !ok || uid == "" {
@@ -50,6 +49,11 @@ func (h *ChannelHandler) CreateChannel(c *fiber.Ctx) error {
 	if err := c.BodyParser(req); err != nil {
 		return response.InvalidReqBody(c)
 	}
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+	req.CreatorId = uid
 
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
@@ -82,6 +86,25 @@ func (h *ChannelHandler) ListChannels(c *fiber.Ctx) error {
 	return response.Success(c, "channels", resp)
 }
 
+func (h *ChannelHandler) SearchChannels(c *fiber.Ctx) error {
+	req := new(channelpb.SearchChannelRequest)
+	req.Query = c.Query("query")
+	req.Pagination = &channelpb.PaginationRequest{
+		Offset: helper.StringToInt32(c.Query("offset", "0")),
+		Limit:  helper.StringToInt32(c.Query("limit", "10")),
+	}
+
+	ctx, cancel := helper.WithGRPCTimeout()
+	defer cancel()
+
+	resp, err := h.client.SearchChannels(ctx, req)
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return response.Error(c, code, body)
+	}
+	return response.Success(c, "channels", resp)
+}
+
 // -------------------- Get Channel --------------------
 func (h *ChannelHandler) GetChannel(c *fiber.Ctx) error {
 	channelID := c.Params("channelId")
@@ -104,9 +127,13 @@ func (h *ChannelHandler) GetChannel(c *fiber.Ctx) error {
 // -------------------- Delete Channel --------------------
 func (h *ChannelHandler) DeleteChannel(c *fiber.Ctx) error {
 	req := new(channelpb.DeleteChannelRequest)
-	req.ChannelId = c.Query("channel_id")
-	req.RequesterId = c.Query("requester_id")
-
+	req.ChannelId = c.Params("channel_id")
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+	log.Println("channel: ", req.ChannelId)
+	req.RequesterId = uid
 	if req.ChannelId == "" || req.RequesterId == "" {
 		return response.InvalidReqBody(c)
 	}
@@ -149,16 +176,14 @@ func (h *ChannelHandler) ListMessages(c *fiber.Ctx) error {
 		return response.InvalidReqBody(c)
 	}
 
-	limit, _ := strconv.Atoi(c.Query("limit", "50"))
-	offset, _ := strconv.Atoi(c.Query("offset", "0"))
-
+	limit := helper.StringToInt32(c.Query("limit", "50"))
+	offset := helper.StringToInt32(c.Query("offset", "0"))
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
 	resp, err := h.client.ListMessages(ctx, &channelpb.ListMessagesRequest{
-		ChannelId: channelID,
-		Limit:     int32(limit),
-		Offset:    int32(offset),
+		ChannelId:  channelID,
+		Pagination: &channelpb.PaginationRequest{Limit: limit, Offset: offset},
 	})
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
@@ -199,9 +224,14 @@ func (h *ChannelHandler) SendInvite(c *fiber.Ctx) error {
 
 func (h *ChannelHandler) SendJoin(c *fiber.Ctx) error {
 	req := new(channelpb.SendJoinRequest)
-	if err := c.BodyParser(req); err != nil || req.ChannelId == "" || req.UserId == "" {
+	if err := c.BodyParser(req); err != nil || req.ChannelId == "" {
 		return response.InvalidReqBody(c)
 	}
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+	req.UserId = uid
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
@@ -210,7 +240,7 @@ func (h *ChannelHandler) SendJoin(c *fiber.Ctx) error {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
 	}
-	return response.Success(c, "Invite sented", resp)
+	return response.Success(c, "join request sent", resp)
 }
 
 func (h *ChannelHandler) ListUserInvites(c *fiber.Ctx) error {
@@ -262,6 +292,3 @@ func (h *ChannelHandler) UpdateRequestStatus(c *fiber.Ctx) error {
 	}
 	return response.Success(c, "request updated", resp)
 }
-
-
-

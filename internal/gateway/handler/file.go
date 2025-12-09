@@ -27,6 +27,12 @@ func (h *FileHandler) CreateUploadUrl(c *fiber.Ctx) error {
 		return response.InvalidReqBody(c)
 	}
 
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+	req.OwnerId = uid
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -92,8 +98,9 @@ func (h *FileHandler) ListFiles(c *fiber.Ctx) error {
 	req := new(filespb.ListFilesRequest)
 	req.ChannelId = c.Query("channel_id")
 	req.Limit = helper.StringToInt32(c.Query("limit"))
-	req.Offset = helper.StringToInt32(c.Query(""))
+	req.Offset = helper.StringToInt32(c.Query("offset"))
 
+	log.Println("channel:", req.ChannelId)
 	uid, ok := c.Locals("userID").(string)
 	if !ok || uid == "" {
 		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
@@ -102,11 +109,10 @@ func (h *FileHandler) ListFiles(c *fiber.Ctx) error {
 
 	if req.ChannelId == "" || req.RequesterId == "" {
 		log.Println("req: ", req.RequesterId, " file:", req.ChannelId)
-
 		return response.InvalidReqBody(c)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
 	resp, err := h.client.ListFiles(ctx, req)
@@ -122,7 +128,7 @@ func (h *FileHandler) ListFiles(c *fiber.Ctx) error {
 func (h *FileHandler) DeleteFile(c *fiber.Ctx) error {
 	req := new(filespb.DeleteFileRequest)
 
-	req.FileId = c.Query("file_id")
+	req.FileId = c.Params("file_id")
 	uid, ok := c.Locals("userID").(string)
 	if !ok || uid == "" {
 		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})

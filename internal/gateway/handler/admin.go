@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"log"
+
 	"github.com/ak-repo/stream-hub/config"
 	"github.com/ak-repo/stream-hub/gen/authpb"
 	"github.com/ak-repo/stream-hub/gen/channelpb"
@@ -130,11 +132,22 @@ func (h *AdminHandler) UpdateRole(c *fiber.Ctx) error {
 
 // ----------------- channel actions ----------------------
 func (h *AdminHandler) ListChannels(c *fiber.Ctx) error {
+	req := new(channelpb.AdminListChannelsRequest)
+	req.Limit = helper.StringToInt32(c.Query("limit", "10"))
+	req.Offset = helper.StringToInt32(c.Query("offset", "0"))
 
+	log.Println("limit: ", req.Limit, " offset: ", req.Offset)
+
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+
+	req.AdminId = uid
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.AdminChannel.AdminListChannels(ctx, &channelpb.AdminListChannelsRequest{})
+	resp, err := h.clients.AdminChannel.AdminListChannels(ctx, req)
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)

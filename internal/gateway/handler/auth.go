@@ -235,8 +235,8 @@ func (h *AuthHandler) SearchUsers(c *fiber.Ctx) error {
 	req := new(authpb.SearchUsersRequest)
 	req.Query = c.Query("query")
 	req.Pagination = &authpb.PaginationRequest{
-		Offset: helper.StringToInt32(c.Query("offset")),
-		Limit:  helper.StringToInt32(c.Query("limit")),
+		Offset: helper.StringToInt32(c.Query("offset","0")),
+		Limit:  helper.StringToInt32(c.Query("limit","10")),
 	}
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()

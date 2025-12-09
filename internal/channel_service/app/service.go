@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/ak-repo/stream-hub/gen/authpb"
@@ -165,6 +166,20 @@ func (s *channelService) DeleteChannel(ctx context.Context, channelID, requester
 	return nil
 }
 
+func (s *channelService) SearchChannels(ctx context.Context, filer string, limit, offset int32) ([]*domain.Channel, error) {
+	if limit >= 0 {
+		limit = 10
+	}
+
+	channels, err := s.repo.SearchChannels(ctx, filer, limit, offset)
+	if err != nil {
+		return nil, errors.New(errors.CodeInternal, "failed to search channels", err)
+	}
+
+	log.Println("channels length:", len(channels))
+	return channels, nil
+}
+
 // =============================================================================
 // MEMBER MANAGEMENT
 // =============================================================================
@@ -259,9 +274,16 @@ func (s *channelService) SendJoin(ctx context.Context, userID, channelID string)
 }
 
 func (s *channelService) RespondToRequest(ctx context.Context, requestID, userID, status string) error {
-	if err := s.repo.UpdateRequestStatus(ctx, requestID, status); err != nil {
+	request, err := s.repo.UpdateRequestStatus(ctx, requestID, status)
+	if err != nil {
 		return errors.New(errors.CodeInternal, "update status failed", err)
 	}
+
+	if request.Status == "accepted" {
+		// member will
+		s.AddMember(ctx, request.ChannelID, request.UserID)
+	}
+
 	return nil
 }
 
@@ -277,7 +299,7 @@ func (s *channelService) ListChannelJoins(ctx context.Context, channelID string)
 // ADMIN OPERATIONS
 // =============================================================================
 
-func (s *channelService) AdminListChannels(ctx context.Context, limit, offset int) ([]*domain.Channel, error) {
+func (s *channelService) AdminListChannels(ctx context.Context, limit, offset int32) ([]*domain.Channel, error) {
 	return s.repo.AdminListChannels(ctx, limit, offset)
 }
 

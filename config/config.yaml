@@ -75,7 +75,7 @@ server:
   shutdown_timeout: 30s
 
 sendgrid:
-  api_key: key
+  api_key: key 
   magic_id: d-c9cdb816fc3143e2aad011b8a3d29d58
   otp_id: d-9f3316146d5d46e4ba3efdc8c6ba98c6
 
@@ -116,4 +116,4 @@ file_service:
 cloudinary:
   cloud_name: dersnukrf
   api_key: 388271549966182
-  api_sceret: s
+  api_sceret: key

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -92,6 +93,48 @@ func (r *channelRepo) ListUserChannels(ctx context.Context, userID string) ([]*d
 	}
 
 	return list, nil
+}
+
+func (r *channelRepo) SearchChannels(ctx context.Context, filter string, limit, offset int32) ([]*domain.Channel, error) {
+	log.Println("qu: ", filter, "limit", limit, "off:", offset)
+	query := `
+		SELECT id, name, description, visibility, created_by, created_at, is_frozen
+		FROM channels WHERE visibility = 'public'
+	`
+	var args []interface{}
+	argIndex := 1
+
+	// Optional filter
+	if filter != "" {
+		query += fmt.Sprintf(" AND name ILIKE $%d", argIndex)
+		args = append(args, "%"+filter+"%")
+		argIndex++
+	}
+
+	// Sorting
+	query += " ORDER BY created_at DESC"
+
+	// Pagination
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIndex, argIndex+1)
+	args = append(args, limit, offset)
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var channels []*domain.Channel
+	for rows.Next() {
+		ch := &domain.Channel{}
+		err := rows.Scan(&ch.ID, &ch.Name, &ch.Description, &ch.Visibility, &ch.OwnerID, &ch.CreatedAt, &ch.IsFrozen)
+		if err != nil {
+			return nil, err
+		}
+		channels = append(channels, ch)
+	}
+
+	return channels, nil
 }
 
 //
@@ -226,13 +269,34 @@ func (r *channelRepo) CreateRequest(ctx context.Context, req *domain.Request) er
 	)
 	return err
 }
-
-func (r *channelRepo) UpdateRequestStatus(ctx context.Context, requestID, status string) error {
+func (r *channelRepo) UpdateRequestStatus(ctx context.Context, requestID, status string) (*domain.Request, error) {
 	_, err := r.db.Exec(ctx,
 		`UPDATE requests SET status = $1 WHERE id = $2`,
 		status, requestID,
 	)
-	return err
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch updated request
+	row := r.db.QueryRow(ctx,
+		`SELECT id, channel_id, user_id, type, status, created_at 
+		 FROM requests 
+		 WHERE id = $1`, requestID)
+
+	var req domain.Request
+	if err := row.Scan(
+		&req.ID,
+		&req.ChannelID,
+		&req.UserID,
+		&req.Type,
+		&req.Status,
+		&req.CreatedAt,
+	); err != nil {
+		return nil, err
+	}
+
+	return &req, nil
 }
 
 func (r *channelRepo) ListPendingRequests(ctx context.Context, userID, channelID string) ([]*domain.Request, error) {
@@ -287,7 +351,7 @@ func (r *channelRepo) ListPendingRequests(ctx context.Context, userID, channelID
 // ADMIN
 //
 
-func (r *channelRepo) AdminListChannels(ctx context.Context, limit, offset int) ([]*domain.Channel, error) {
+func (r *channelRepo) AdminListChannels(ctx context.Context, limit, offset int32) ([]*domain.Channel, error) {
 	const q = `
 		SELECT id, name, description, visibility, created_by, created_at, is_frozen
 		FROM channels

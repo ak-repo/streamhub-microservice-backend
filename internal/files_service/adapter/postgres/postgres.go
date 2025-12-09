@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/ak-repo/stream-hub/internal/files_service/domain"
@@ -168,12 +169,16 @@ func (r *fileRepo) Delete(ctx context.Context, id string) error {
 // IsChannelMember checks if a user is a member of a channel.
 func (r *fileRepo) IsChannelMember(ctx context.Context, channelID, userID string) (bool, error) {
 	var exists bool
-	err := r.pool.QueryRow(ctx, `
-        SELECT EXISTS (
-            SELECT 1 FROM channel_members
-            WHERE channel_id=$1 AND user_id=$2
-        )
-    `, channelID, userID).Scan(&exists)
+	log.Println("chan: ", channelID, "us:", userID)
+	err := r.pool.QueryRow(ctx,
+		`SELECT EXISTS (
+        SELECT 1 FROM channel_members
+        WHERE channel_id=$1 AND user_id=$2
+    )`,
+		channelID,
+		userID,
+	).Scan(&exists)
+	log.Println("ex: ", exists)
 
 	if err != nil {
 		return false, fmt.Errorf("IsChannelMember: %w", err)

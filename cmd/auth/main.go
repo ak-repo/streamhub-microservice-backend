@@ -45,8 +45,6 @@ func main() {
 	// jwt manager
 	tokenExpiry := 10 * time.Minute
 	jwtMan := jwt.NewJWTManager(cfg.JWT.Secret, tokenExpiry, tokenExpiry)
-	seeder.AdminSeeder(context.Background(), pgDB.Pool)
-	seeder.UsersSeeder(context.Background(), pgDB.Pool)
 
 	// Redis
 	rAddr := cfg.Redis.Host + ":" + cfg.Redis.Port

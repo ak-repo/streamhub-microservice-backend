@@ -3,6 +3,7 @@ package channelgrpc
 import (
 	"context"
 	"io"
+	"log"
 	"time"
 
 	"github.com/ak-repo/stream-hub/gen/channelpb"
@@ -172,6 +173,20 @@ func (s *Server) DeleteChannel(ctx context.Context, req *channelpb.DeleteChannel
 	return &channelpb.DeleteChannelResponse{Success: true}, nil
 }
 
+func (s *Server) SearchChannels(ctx context.Context, req *channelpb.SearchChannelRequest) (*channelpb.SearchChannelResponse, error) {
+
+	channels, err := s.service.SearchChannels(ctx, req.Query, req.Pagination.Limit, req.Pagination.Offset)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp []*channelpb.Channel
+	for _, ch := range channels {
+		resp = append(resp, mapChannelToProto(ch))
+	}
+	return &channelpb.SearchChannelResponse{Channels: resp}, nil
+}
+
 // =============================================================================
 // 3. MEMBER MANAGEMENT
 // =============================================================================
@@ -215,7 +230,7 @@ func (s *Server) SendInvite(ctx context.Context, req *channelpb.SendInviteReques
 	if err != nil {
 		return nil, err
 	}
-	return &channelpb.SendInviteResponse{Success: true, RequestId: uuid.NewString()}, nil
+	return &channelpb.SendInviteResponse{Success: true}, nil
 }
 
 func (s *Server) SendJoin(ctx context.Context, req *channelpb.SendJoinRequest) (*channelpb.SendJoinResponse, error) {
@@ -239,6 +254,7 @@ func (s *Server) ListUserInvites(ctx context.Context, req *channelpb.ListUserInv
 	if err != nil {
 		return nil, err
 	}
+	log.Println("reqs:", requests)
 	return &channelpb.ListUserInvitesResponse{Requests: mapRequestsToProto(requests)}, nil
 }
 
@@ -255,7 +271,7 @@ func (s *Server) ListChannelJoins(ctx context.Context, req *channelpb.ListChanne
 // =============================================================================
 
 func (s *Server) ListMessages(ctx context.Context, req *channelpb.ListMessagesRequest) (*channelpb.ListMessagesResponse, error) {
-	msgs, err := s.service.GetHistory(ctx, req.ChannelId, int(req.Limit), int(req.Offset))
+	msgs, err := s.service.GetHistory(ctx, req.ChannelId, int(req.Pagination.Limit), int(req.Pagination.Offset))
 	if err != nil {
 		return nil, err
 	}
@@ -272,13 +288,11 @@ func (s *Server) ListMessages(ctx context.Context, req *channelpb.ListMessagesRe
 // =============================================================================
 
 func (s *Server) AdminListChannels(ctx context.Context, req *channelpb.AdminListChannelsRequest) (*channelpb.AdminListChannelsResponse, error) {
-	// Simple pagination mapping
-	limit := int(req.Limit)
-	if limit == 0 {
-		limit = 10
+	if req.Limit >= 0 {
+		req.Limit = 10
 	}
 
-	channels, err := s.service.AdminListChannels(ctx, limit, int(req.Offset))
+	channels, err := s.service.AdminListChannels(ctx, req.Limit, req.Offset)
 	if err != nil {
 		return nil, err
 	}
