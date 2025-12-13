@@ -53,13 +53,13 @@ func adminRoutes(api fiber.Router, clients *clients.Clients, cfg *config.Config)
 	adminR.Post("/users/unban", handler.UnbanUser)
 	adminR.Post("/users/change-role", handler.UpdateRole)
 	adminR.Post("/users/uploads-block", handler.BlockUserUpload)
-	adminR.Delete("/users/:id", handler.DeleteUser)
+	adminR.Delete("/users/:target_user_id", handler.DeleteUser)
 
 	// Channels actions (Moderation)
 	adminR.Get("/channels", handler.ListChannels)
 	adminR.Post("/channels/freeze", handler.FreezeChannel)
 	adminR.Post("/channels/unfreeze", handler.FreezeChannel) // Note: Same handler used for both
-	adminR.Delete("/channels/:id", handler.DeleteChannel)
+	adminR.Delete("/channels/:channel_id", handler.DeleteChannel)
 
 	// Files actions (Content moderation)
 	adminR.Get("/files", handler.ListAllFiles)
@@ -137,5 +137,19 @@ func userRoutes(api fiber.Router, cfg *config.Config, clients *clients.Clients) 
 	ch.Get("/invites", channel.ListUserInvites)    // tested
 	ch.Get("/joins/:id", channel.ListChannelJoins) // tested
 	ch.Post("/updatereq", channel.UpdateRequestStatus)
+
+	// TODO just testing
+	//db
+	// pgDB, err := db.NewPostgresDB(context.Background(), cfg)
+	// if err != nil {
+	// 	log.Fatal("failed to connect db:", zap.Error(err))
+	// }
+	// defer pgDB.Close()
+
+	// repo := payment.NewRepository(pgDB.Pool)
+	// paymentHandler := handler.NewPaymentHandler(repo)
+
+	// api.Post("/storage/checkout", paymentHandler.CreateCheckoutSession)
+	// api.Post("/storage/webhook", paymentHandler.HandleWebhook)
 
 }

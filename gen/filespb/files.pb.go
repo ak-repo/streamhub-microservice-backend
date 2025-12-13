@@ -33,6 +33,8 @@ type FileMetadata struct {
 	IsPublic      bool                   `protobuf:"varint,8,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`
 	CreatedAt     string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"` // ISO 8601 string recommended
 	UpdatedAt     string                 `protobuf:"bytes,10,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	OwerName      string                 `protobuf:"bytes,11,opt,name=ower_name,json=owerName,proto3" json:"ower_name,omitempty"`
+	Channelname   string                 `protobuf:"bytes,12,opt,name=channelname,proto3" json:"channelname,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -133,6 +135,20 @@ func (x *FileMetadata) GetCreatedAt() string {
 func (x *FileMetadata) GetUpdatedAt() string {
 	if x != nil {
 		return x.UpdatedAt
+	}
+	return ""
+}
+
+func (x *FileMetadata) GetOwerName() string {
+	if x != nil {
+		return x.OwerName
+	}
+	return ""
+}
+
+func (x *FileMetadata) GetChannelname() string {
+	if x != nil {
+		return x.Channelname
 	}
 	return ""
 }
@@ -1388,7 +1404,7 @@ var File_api_proto_files_proto protoreflect.FileDescriptor
 
 const file_api_proto_files_proto_rawDesc = "" +
 	"\n" +
-	"\x15api/proto/files.proto\x12\x05files\"\xae\x02\n" +
+	"\x15api/proto/files.proto\x12\x05files\"\xed\x02\n" +
 	"\fFileMetadata\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x1d\n" +
@@ -1404,7 +1420,9 @@ const file_api_proto_files_proto_rawDesc = "" +
 	"created_at\x18\t \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
 	"updated_at\x18\n" +
-	" \x01(\tR\tupdatedAt\"\xc8\x01\n" +
+	" \x01(\tR\tupdatedAt\x12\x1b\n" +
+	"\tower_name\x18\v \x01(\tR\bowerName\x12 \n" +
+	"\vchannelname\x18\f \x01(\tR\vchannelname\"\xc8\x01\n" +
 	"\fStorageStats\x12*\n" +
 	"\x11total_files_count\x18\x01 \x01(\x03R\x0ftotalFilesCount\x12.\n" +
 	"\x13total_storage_bytes\x18\x02 \x01(\x03R\x11totalStorageBytes\x12,\n" +

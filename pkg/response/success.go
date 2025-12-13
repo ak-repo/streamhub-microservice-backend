@@ -35,6 +35,7 @@ func Success(ctx *fiber.Ctx, message string, data interface{}) error {
 			// Normal struct/map → return as-is
 			resp["data"] = data
 		}
+
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(resp)

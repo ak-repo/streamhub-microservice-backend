@@ -54,7 +54,7 @@ func scanUser(row pgx.Row, u *domain.User) error {
 		&u.EmailVerified,
 		&u.IsBanned,
 		&u.UploadBlocked,
-		&u.AvatarURL, 
+		&u.AvatarURL,
 		&u.CreatedAt,
 		&u.UpdatedAt,
 	)
@@ -114,6 +114,7 @@ func (r *userRepo) Update(ctx context.Context, u *domain.User) error {
 }
 
 func (r *userRepo) UpdatePassword(ctx context.Context, email, hash string) error {
+	log.Println("email: ", email, " hashL: ", hash)
 	query := `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE email = $2`
 	result, err := r.pool.Exec(ctx, query, hash, email)
 	if err != nil {
@@ -201,11 +202,6 @@ func (r *userRepo) fetchUsers(ctx context.Context, query string, args ...any) ([
 	return users, rows.Err()
 }
 
-func (r *userRepo) ListUsers(ctx context.Context) ([]*domain.User, error) {
-	query := fmt.Sprintf("SELECT %s FROM users ORDER BY created_at DESC", commonUserColumns)
-	return r.fetchUsers(ctx, query)
-}
-
 func (r *userRepo) SearchUsers(ctx context.Context, filter string) ([]*domain.User, error) {
 	query := fmt.Sprintf("SELECT %s FROM users", commonUserColumns)
 	var args []interface{}
@@ -233,9 +229,26 @@ func (r *userRepo) ListBannedUsers(ctx context.Context) ([]*domain.User, error) 
 // ADMIN ACTIONS
 // -----------------------------------------------------------------------------
 
+// var total int
+// err := r.pool.QueryRow(ctx, "SELECT COUNT(*) FROM users").Scan(&total)
+// if err != nil {
+// 	return nil, 0, fmt.Errorf("count users: %w", err)
+// }
+
+func (r *userRepo) ListUsers(ctx context.Context, filter string, limit, offset int32) ([]*domain.User, int32, error) {
+	query := fmt.Sprintf("SELECT %s FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2", commonUserColumns)
+
+	users, err := r.fetchUsers(ctx, query, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	var total int
+	err = r.pool.QueryRow(ctx, "SELECT COUNT(*) FROM users").Scan(&total)
+	return users, int32(total), err
+}
+
 func (r *userRepo) BanUser(ctx context.Context, id, reason string) error {
-	// Note: You might want to log the 'reason' in an audit table here or in the service layer.
-	// For the repo, we just update the user state.
+
 	query := `UPDATE users SET is_banned = true, updated_at = NOW() WHERE id = $1`
 	_, err := r.pool.Exec(ctx, query, id)
 	return err
@@ -256,5 +269,14 @@ func (r *userRepo) UpdateRole(ctx context.Context, id, role string) error {
 func (r *userRepo) SetUserUploadBlocked(ctx context.Context, id string, blocked bool) error {
 	query := `UPDATE users SET upload_blocked = $1, updated_at = NOW() WHERE id = $2`
 	_, err := r.pool.Exec(ctx, query, blocked, id)
+	return err
+}
+
+func (r *userRepo) DeleteUser(ctx context.Context, id string) error {
+	c, err := r.pool.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)
+
+	if c.RowsAffected() == 0 {
+		return fmt.Errorf("no user found with this user id")
+	}
 	return err
 }

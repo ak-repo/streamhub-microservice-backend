@@ -13,7 +13,7 @@ type UserRepository interface {
 	// -------------------------------------------------------------------------
 	Create(ctx context.Context, u *domain.User) error
 	Update(ctx context.Context, u *domain.User) error
-	
+
 	FindByID(ctx context.Context, id string) (*domain.User, error)
 	FindByEmail(ctx context.Context, email string) (*domain.User, error)
 	FindByUsername(ctx context.Context, username string) (*domain.User, error)
@@ -29,9 +29,9 @@ type UserRepository interface {
 	// -------------------------------------------------------------------------
 	// SearchUsers filters users by username or email partial match.
 	SearchUsers(ctx context.Context, query string) ([]*domain.User, error)
-	
+
 	// ListUsers returns all users (typically ordered by creation date).
-	ListUsers(ctx context.Context) ([]*domain.User, error)
+	ListUsers(ctx context.Context, filer string, limit, offset int32) ([]*domain.User, int32, error)
 
 	// -------------------------------------------------------------------------
 	// Governance (Admin Actions)
@@ -40,4 +40,5 @@ type UserRepository interface {
 	BanUser(ctx context.Context, userID string, reason string) error
 	UnbanUser(ctx context.Context, userID string, reason string) error
 	SetUserUploadBlocked(ctx context.Context, userID string, blocked bool) error
+	DeleteUser(ctx context.Context, id string) error
 }

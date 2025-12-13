@@ -42,10 +42,10 @@ type AuthService interface {
 	// Administration & Governance
 	// -------------------------------------------------------------------------
 	// ListUsers returns users based on filter (active/banned/all)
-	ListUsers(ctx context.Context, filter string) ([]*domain.User, error)
-
+	ListUsers(ctx context.Context, filer string, limit, offset int32) ([]*domain.User, int32, error)
 	UpdateRole(ctx context.Context, userID, role string) error
 	BanUser(ctx context.Context, userID, reason string) error
 	UnbanUser(ctx context.Context, userID, reason string) error
 	BlockUserUpload(ctx context.Context, adminID, userID string, block bool) error
+	DeleteUser(ctx context.Context, id string) error
 }

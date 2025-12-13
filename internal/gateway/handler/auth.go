@@ -206,10 +206,13 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 }
 
 func (h *AuthHandler) ChangePassword(c *fiber.Ctx) error {
+	log.Println("caleed")
 	req := new(authpb.ChangePasswordRequest)
 	if err := c.BodyParser(req); err != nil {
 		return response.InvalidReqBody(c)
 	}
+
+	log.Println("pass: ", req.CurrentPassword, "new: ", req.NewPassword)
 
 	uid, ok := c.Locals("userID").(string)
 	if !ok || uid == "" {
@@ -235,8 +238,8 @@ func (h *AuthHandler) SearchUsers(c *fiber.Ctx) error {
 	req := new(authpb.SearchUsersRequest)
 	req.Query = c.Query("query")
 	req.Pagination = &authpb.PaginationRequest{
-		Offset: helper.StringToInt32(c.Query("offset","0")),
-		Limit:  helper.StringToInt32(c.Query("limit","10")),
+		Offset: helper.StringToInt32(c.Query("offset", "0")),
+		Limit:  helper.StringToInt32(c.Query("limit", "10")),
 	}
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()

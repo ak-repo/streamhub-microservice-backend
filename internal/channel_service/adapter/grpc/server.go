@@ -297,11 +297,18 @@ func (s *Server) AdminListChannels(ctx context.Context, req *channelpb.AdminList
 		return nil, err
 	}
 
-	var pbChannels []*channelpb.Channel
+	var resp []*channelpb.ChannelWithMembers
 	for _, c := range channels {
-		pbChannels = append(pbChannels, mapChannelToProto(c))
+
+		ch := &channelpb.ChannelWithMembers{
+			Channel: mapChannelToProto(c.Channel),
+		}
+		for _, m := range c.Members {
+			ch.Members = append(ch.Members, mapMemberToProto(m))
+		}
+		resp = append(resp, ch)
 	}
-	return &channelpb.AdminListChannelsResponse{Channels: pbChannels}, nil
+	return &channelpb.AdminListChannelsResponse{Channels: resp}, nil
 }
 
 func (s *Server) AdminFreezeChannel(ctx context.Context, req *channelpb.AdminFreezeChannelRequest) (*channelpb.AdminFreezeChannelResponse, error) {
@@ -313,9 +320,7 @@ func (s *Server) AdminFreezeChannel(ctx context.Context, req *channelpb.AdminFre
 }
 
 func (s *Server) AdminDeleteChannel(ctx context.Context, req *channelpb.AdminDeleteChannelRequest) (*channelpb.AdminDeleteChannelResponse, error) {
-	// Reusing the service delete method.
-	// Note: Real admin delete might bypass "owner check" inside the service.
-	// You might need a specific AdminDelete in the service layer if logic differs.
+
 	err := s.service.AdminDeleteChannel(ctx, req.ChannelId)
 	if err != nil {
 		return nil, err

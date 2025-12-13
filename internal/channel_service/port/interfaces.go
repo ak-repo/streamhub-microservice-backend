@@ -11,3 +11,6 @@ type PubSub interface {
 	Publish(ctx context.Context, channelID string, msg *domain.Message) error
 	Subscribe(ctx context.Context, channelID string) (<-chan *domain.Message, error)
 }
+
+
+var arr [4]int

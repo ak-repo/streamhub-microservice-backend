@@ -225,6 +225,10 @@ message ListMessagesResponse {
 // ADMIN MESSAGES
 // =============================================================================
 
+message ChannelWithMembers{
+  Channel channel = 1;
+  repeated ChannelMember members = 2;
+}
 message AdminListChannelsRequest {
   string admin_id = 1;
   int32 limit = 2;
@@ -232,7 +236,7 @@ message AdminListChannelsRequest {
 }
 
 message AdminListChannelsResponse {
-  repeated Channel channels = 1;
+  repeated ChannelWithMembers channels = 1;
 }
 
 message AdminFreezeChannelRequest {

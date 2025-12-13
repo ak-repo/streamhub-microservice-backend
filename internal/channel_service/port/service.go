@@ -45,10 +45,11 @@ type ChannelService interface {
 	ListUserInvites(ctx context.Context, userID string) ([]*domain.Request, error)
 	ListChannelJoins(ctx context.Context, channelID string) ([]*domain.Request, error)
 
+	NotifyAdminUserJoined(ctx context.Context, channelID, newUserID string) error
 	// =========================================================================
 	// Administration (System Level)
 	// =========================================================================
-	AdminListChannels(ctx context.Context, limit, offset int32) ([]*domain.Channel, error)
+	AdminListChannels(ctx context.Context, limit, offset int32) ([]*domain.ChannelWithMembers, error)
 	AdminFreezeChannel(ctx context.Context, channelID string, freeze bool, reason string) error
 	AdminDeleteChannel(ctx context.Context, channelID string) error
 }

@@ -1587,6 +1587,7 @@ func (x *AdminListUsersRequest) GetPagination() *PaginationRequest {
 type AdminListUsersResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Users         []*User                `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	TotalCount    int32                  `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1626,6 +1627,13 @@ func (x *AdminListUsersResponse) GetUsers() []*User {
 		return x.Users
 	}
 	return nil
+}
+
+func (x *AdminListUsersResponse) GetTotalCount() int32 {
+	if x != nil {
+		return x.TotalCount
+	}
+	return 0
 }
 
 type AdminUpdateRoleRequest struct {
@@ -2149,10 +2157,12 @@ const file_api_proto_auth_proto_rawDesc = "" +
 	"\ffilter_query\x18\x02 \x01(\tR\vfilterQuery\x127\n" +
 	"\n" +
 	"pagination\x18\x03 \x01(\v2\x17.auth.PaginationRequestR\n" +
-	"pagination\":\n" +
+	"pagination\"[\n" +
 	"\x16AdminListUsersResponse\x12 \n" +
 	"\x05users\x18\x01 \x03(\v2\n" +
-	".auth.UserR\x05users\"t\n" +
+	".auth.UserR\x05users\x12\x1f\n" +
+	"\vtotal_count\x18\x02 \x01(\x05R\n" +
+	"totalCount\"t\n" +
 	"\x16AdminUpdateRoleRequest\x12$\n" +
 	"\x0etarget_user_id\x18\x01 \x01(\tR\ftargetUserId\x12\x19\n" +
 	"\bnew_role\x18\x02 \x01(\tR\anewRole\x12\x19\n" +

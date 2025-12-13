@@ -187,6 +187,7 @@ message AdminListUsersRequest {
 
 message AdminListUsersResponse {
   repeated User users = 1;
+  int32 total_count = 2;
 }
 
 message AdminUpdateRoleRequest {

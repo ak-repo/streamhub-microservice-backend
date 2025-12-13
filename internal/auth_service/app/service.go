@@ -73,7 +73,7 @@ func (s *authService) Register(ctx context.Context, email, username, password st
 		Username:      username,
 		PasswordHash:  hashed,
 		Role:          "user",
-		AvatarURL:     "https://res.cloudinary.com/dersnukrf/image/upload/v1764929207/avatars/avatars/profile.jpg.webp",
+		AvatarURL:     "https://res.cloudinary.com/dersnukrf/image/upload/v1765461300/avatars/avatars/b304408f6711cd1fa4fa119eacde9a6b.jpg",
 		CreatedAt:     time.Now(),
 		EmailVerified: false,
 		IsBanned:      false,
@@ -122,7 +122,7 @@ func (s *authService) SendMagicLink(email string) (string, string, error) {
 	)
 
 	// Prepare SendGrid Email
-	from := mail.NewEmail("StreamHub", "ak506lap@gmail.com")
+	from := mail.NewEmail("StreamHub", "ak001mob@gmail.com")
 	to := mail.NewEmail("", email)
 
 	message := mail.NewV3Mail()
@@ -139,8 +139,10 @@ func (s *authService) SendMagicLink(email string) (string, string, error) {
 	response, err := client.Send(message)
 
 	if err != nil || response.StatusCode >= 300 {
+		log.Println("errrr: ", response.StatusCode)
 		return "", "", errors.New(errors.CodeInternal, "failed to send verify link email", err)
 	}
+	log.Println("email: ", email, " status: ", response.StatusCode)
 
 	return magicLink, helper.TimeToString(exp), nil
 }
@@ -262,7 +264,7 @@ func (s *authService) PasswordReset(ctx context.Context, email string) error {
 	}
 
 	// Send Email
-	from := mail.NewEmail("StreamHub", "ak506lap@gmail.com")
+	from := mail.NewEmail("StreamHub", "ak001mob@gmail.com")
 	to := mail.NewEmail("", email)
 
 	message := mail.NewV3Mail()
@@ -279,6 +281,7 @@ func (s *authService) PasswordReset(ctx context.Context, email string) error {
 
 	client := sendgrid.NewSendClient(s.cfg.SendGrid.Key)
 	resp, err := client.Send(message)
+	
 
 	if err != nil || resp.StatusCode >= 300 {
 		return errors.New(errors.CodeInternal, "failed to send otp email", err)
@@ -335,20 +338,13 @@ func (s *authService) ChangePassword(ctx context.Context, userID, oldPassword, n
 // ADMIN / GOVERNANCE
 // =============================================================================
 
-func (s *authService) ListUsers(ctx context.Context, filter string) ([]*domain.User, error) {
-	// Note: We are using a simpler approach here based on the Repo implementation
-	// If you want specialized lists (active vs banned), ensure those methods exist in the interface.
-	// Assuming the Repo `ListUsers` returns all sorted by date.
-	// You may need to cast `repo` to struct if methods aren't in interface, or add them to interface.
+func (s *authService) ListUsers(ctx context.Context, filter string, limit, offset int32) ([]*domain.User, int32, error) {
 
-	// Since we defined specific methods in previous steps for repo but maybe not interface:
-	// Let's assume the interface has been updated to include ListUsers, BanUser, etc.
-
-	users, err := s.repo.ListUsers(ctx)
+	users, total, err := s.repo.ListUsers(ctx, filter, limit, offset)
 	if err != nil {
-		return nil, errors.New(errors.CodeInternal, "failed to list users", err)
+		return nil, 0, errors.New(errors.CodeInternal, "failed to list users", err)
 	}
-	return users, nil
+	return users, total, nil
 }
 
 func (s *authService) BanUser(ctx context.Context, userID, reason string) error {
@@ -376,6 +372,15 @@ func (s *authService) BlockUserUpload(ctx context.Context, adminID, userID strin
 	// In a real app, verify adminID has permissions here
 	if err := s.repo.SetUserUploadBlocked(ctx, userID, block); err != nil {
 		return errors.New(errors.CodeInternal, "failed to update user upload status", err)
+	}
+	return nil
+}
+
+func (s *authService) DeleteUser(ctx context.Context, id string) error {
+
+	err := s.repo.DeleteUser(ctx, id)
+	if err != nil {
+		return errors.New(errors.CodeNotFound, "failed to delete user", err)
 	}
 	return nil
 }

@@ -96,7 +96,7 @@ func (r *channelRepo) ListUserChannels(ctx context.Context, userID string) ([]*d
 }
 
 func (r *channelRepo) SearchChannels(ctx context.Context, filter string, limit, offset int32) ([]*domain.Channel, error) {
-	log.Println("qu: ", filter, "limit", limit, "off:", offset)
+	log.Println("qu: ", filter, "limit", limit, "off:", offset) // TODO remove
 	query := `
 		SELECT id, name, description, visibility, created_by, created_at, is_frozen
 		FROM channels WHERE visibility = 'public'
@@ -269,6 +269,47 @@ func (r *channelRepo) CreateRequest(ctx context.Context, req *domain.Request) er
 	)
 	return err
 }
+
+// func (r *channelRepo) CheckExistingRequest(ctx context.Context, userID, channelID, reqType string) bool {
+// const q = `
+// 	SELECT 1
+// 	FROM requests
+// 	WHERE user_id = $1 AND channel_id = $2 AND type = $3
+// 	LIMIT 1
+// `
+
+// 	var dummy int
+// 	err := r.db.QueryRow(ctx, q, userID, channelID, reqType).Scan(&dummy)
+// 	if err != nil {
+// 		if errors.Is(err, pgx.ErrNoRows) {
+// 			return false // no existing request
+// 		}
+// 		// optional: log unexpected DB errors
+// 		return false
+// 	}
+
+// 	return true
+// }
+
+func (r *channelRepo) CheckExistingRequest(ctx context.Context, userID, channelID, reqType string) bool {
+	const q = `
+		SELECT 1
+		FROM requests
+		WHERE user_id = $1 AND channel_id = $2 AND type = $3
+		LIMIT 1
+	`
+	var dummy int
+	err := r.db.QueryRow(ctx, q, userID, channelID, reqType).Scan(&dummy)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false // no existing request
+		}
+		return false
+	}
+
+	return true
+}
+
 func (r *channelRepo) UpdateRequestStatus(ctx context.Context, requestID, status string) (*domain.Request, error) {
 	_, err := r.db.Exec(ctx,
 		`UPDATE requests SET status = $1 WHERE id = $2`,
@@ -347,11 +388,14 @@ func (r *channelRepo) ListPendingRequests(ctx context.Context, userID, channelID
 	return list, nil
 }
 
-//
 // ADMIN
 //
+//	type ChannelWithMembers struct {
+//		Channel *Channel
+//		Members []*ChannelMember
+//	}
+func (r *channelRepo) AdminListChannels(ctx context.Context, limit, offset int32) ([]*domain.ChannelWithMembers, error) {
 
-func (r *channelRepo) AdminListChannels(ctx context.Context, limit, offset int32) ([]*domain.Channel, error) {
 	const q = `
 		SELECT id, name, description, visibility, created_by, created_at, is_frozen
 		FROM channels
@@ -365,19 +409,90 @@ func (r *channelRepo) AdminListChannels(ctx context.Context, limit, offset int32
 	}
 	defer rows.Close()
 
-	var list []*domain.Channel
+	var channels []*domain.Channel
+	var channelIDs []string
+
 	for rows.Next() {
-		c := new(domain.Channel)
+		ch := &domain.Channel{}
 		if err := rows.Scan(
-			&c.ID, &c.Name, &c.Description, &c.Visibility,
-			&c.OwnerID, &c.CreatedAt, &c.IsFrozen,
+			&ch.ID,
+			&ch.Name,
+			&ch.Description,
+			&ch.Visibility,
+			&ch.OwnerID,
+			&ch.CreatedAt,
+			&ch.IsFrozen,
 		); err != nil {
 			return nil, err
 		}
-		list = append(list, c)
+
+		channels = append(channels, ch)
+		channelIDs = append(channelIDs, ch.ID)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
 	}
 
-	return list, nil
+	if len(channelIDs) == 0 {
+		return []*domain.ChannelWithMembers{}, nil
+	}
+	// ---- Fetch members for all channels in a single query ----
+	const xx = `
+    SELECT cm.channel_id, cm.user_id, u.username, cm.role, cm.joined_at
+    FROM channel_members cm
+    JOIN users u ON u.id = cm.user_id
+    WHERE cm.channel_id = ANY($1)
+    ORDER BY cm.joined_at ASC
+`
+
+	// const qm = `
+	// 	SELECT channel_id, user_id, role, joined_at
+	// 	FROM channel_members
+	// 	WHERE channel_id = ANY($1)
+	// `
+
+	mRows, err := r.db.Query(ctx, xx, channelIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer mRows.Close()
+
+	membersByChannel := make(map[string][]*domain.ChannelMember)
+
+	for mRows.Next() {
+		m := &domain.ChannelMember{}
+		var cid string
+
+		if err := mRows.Scan(
+			&cid,
+			&m.UserID,
+			&m.Username,
+			&m.Role,
+			&m.JoinedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		membersByChannel[cid] = append(membersByChannel[cid], m)
+	}
+
+	if err := mRows.Err(); err != nil {
+		return nil, err
+	}
+
+	// ---- Build final response ----
+
+	result := make([]*domain.ChannelWithMembers, 0, len(channels))
+
+	for _, ch := range channels {
+		result = append(result, &domain.ChannelWithMembers{
+			Channel: ch,
+			Members: membersByChannel[ch.ID],
+		})
+	}
+
+	return result, nil
+
 }
 
 func (r *channelRepo) FreezeChannel(ctx context.Context, channelID string, freeze bool) error {

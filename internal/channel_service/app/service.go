@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/ak-repo/stream-hub/config"
 	"github.com/ak-repo/stream-hub/gen/authpb"
 	"github.com/ak-repo/stream-hub/internal/channel_service/domain"
 	"github.com/ak-repo/stream-hub/internal/channel_service/port"
@@ -12,6 +13,8 @@ import (
 	"github.com/ak-repo/stream-hub/pkg/grpc/clients"
 	"github.com/ak-repo/stream-hub/pkg/logger"
 	"github.com/google/uuid"
+	"github.com/sendgrid/sendgrid-go"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"go.uber.org/zap"
 )
 
@@ -19,14 +22,17 @@ type channelService struct {
 	repo    port.ChannelRepository
 	pubsub  port.PubSub
 	clients *clients.Clients
+	cfg     *config.Config
 }
 
 func NewChannelService(
 	repo port.ChannelRepository,
 	pubsub port.PubSub,
 	clients *clients.Clients,
+	cfg *config.Config,
 ) port.ChannelService {
 	return &channelService{
+		cfg:     cfg,
 		repo:    repo,
 		pubsub:  pubsub,
 		clients: clients,
@@ -200,6 +206,10 @@ func (s *channelService) AddMember(ctx context.Context, channelID, userID string
 	if err := s.repo.AddMember(ctx, m); err != nil {
 		return nil, errors.New(errors.CodeInternal, "failed to add member", err)
 	}
+
+	log.Println("insode add memeber")
+
+	s.NotifyAdminUserJoined(ctx, channelID, userID)
 	return m, nil
 }
 
@@ -234,11 +244,17 @@ func (s *channelService) CheckMembership(ctx context.Context, channelID, userID 
 // =============================================================================
 
 func (s *channelService) SendInvite(ctx context.Context, targetUserID, channelID, senderID string) error {
+	if exists := s.repo.CheckExistingRequest(ctx, targetUserID, channelID, "join"); exists {
+		return errors.New(errors.CodeForbidden, "request already exists", nil)
+	}
 
-	//TODO check same request exists
 	isMember, _ := s.repo.IsUserMember(ctx, channelID, senderID)
 	if !isMember {
 		return errors.New(errors.CodeForbidden, "must be member to invite", nil)
+	}
+	isMember, _ = s.repo.IsUserMember(ctx, channelID, targetUserID)
+	if isMember {
+		return errors.New(errors.CodeForbidden, "already a member", nil)
 	}
 
 	req := &domain.Request{
@@ -258,6 +274,15 @@ func (s *channelService) SendInvite(ctx context.Context, targetUserID, channelID
 
 func (s *channelService) SendJoin(ctx context.Context, userID, channelID string) error {
 	//TODO check same request exists
+
+	if exists := s.repo.CheckExistingRequest(ctx, userID, channelID, "join"); exists {
+		return errors.New(errors.CodeForbidden, "request already exists", nil)
+	}
+	isMember, _ := s.repo.IsUserMember(ctx, channelID, userID)
+	if isMember {
+		return errors.New(errors.CodeForbidden, "already a member", nil)
+	}
+
 	req := &domain.Request{
 		ID:        uuid.New().String(),
 		UserID:    userID,
@@ -279,8 +304,10 @@ func (s *channelService) RespondToRequest(ctx context.Context, requestID, userID
 		return errors.New(errors.CodeInternal, "update status failed", err)
 	}
 
+	log.Println("status: ", status)
 	if request.Status == "accepted" {
 		// member will
+		log.Println("insode if")
 		s.AddMember(ctx, request.ChannelID, request.UserID)
 	}
 
@@ -299,7 +326,7 @@ func (s *channelService) ListChannelJoins(ctx context.Context, channelID string)
 // ADMIN OPERATIONS
 // =============================================================================
 
-func (s *channelService) AdminListChannels(ctx context.Context, limit, offset int32) ([]*domain.Channel, error) {
+func (s *channelService) AdminListChannels(ctx context.Context, limit, offset int32) ([]*domain.ChannelWithMembers, error) {
 	return s.repo.AdminListChannels(ctx, limit, offset)
 }
 
@@ -317,8 +344,64 @@ func (s *channelService) AdminFreezeChannel(ctx context.Context, channelID strin
 }
 
 func (s *channelService) AdminDeleteChannel(ctx context.Context, channelID string) error {
+
 	if err := s.repo.DeleteChannel(ctx, channelID); err != nil {
 		return errors.New(errors.CodeInternal, "admin delete failed", err)
 	}
+	return nil
+}
+
+func (s *channelService) NotifyAdminUserJoined(ctx context.Context, channelID, newUserID string) error {
+	// 1. Load Channel
+	channel, err := s.repo.GetChannel(ctx, channelID)
+	if err != nil || channel == nil {
+		return errors.New(errors.CodeNotFound, "channel not found", err)
+	}
+
+	// 2. Load New User
+	user, err := s.clients.Auth.GetUser(ctx, &authpb.GetUserRequest{Query: &authpb.GetUserRequest_UserId{newUserID}})
+	if err != nil || user == nil {
+		return errors.New(errors.CodeNotFound, "user not found", err)
+	}
+
+	// 3. Load Channel Admin
+	admin, err := s.clients.Auth.GetUser(ctx, &authpb.GetUserRequest{Query: &authpb.GetUserRequest_UserId{channel.OwnerID}})
+	if err != nil || admin == nil {
+		return errors.New(errors.CodeNotFound, "admin not found", err)
+	}
+
+	log.Println("insode notify")
+
+	// 4. Prepare Email
+	from := mail.NewEmail("StreamHub", "ak001mob@gmail.com")
+	to := mail.NewEmail(admin.User.Username, admin.User.Email)
+
+	message := mail.NewV3Mail()
+	message.SetFrom(from)
+	message.Subject = "New Member Joined Your Channel"
+	message.SetTemplateID(s.cfg.SendGrid.AdminInfo) // Template ID from SendGrid
+
+	p := mail.NewPersonalization()
+	p.AddTos(to)
+
+	p.SetDynamicTemplateData("admin_name", admin.User.Username)
+	p.SetDynamicTemplateData("new_user_name", user.User.Username)
+	p.SetDynamicTemplateData("channel_name", channel.Name)
+	p.SetDynamicTemplateData("joined_at", time.Now().Format("02 Jan 2006 15:04"))
+	p.SetDynamicTemplateData("support_email", "support@streamhub.com")
+
+	message.AddPersonalizations(p)
+
+	client := sendgrid.NewSendClient(s.cfg.SendGrid.Key)
+	resp, err := client.Send(message)
+
+	if err != nil || resp.StatusCode >= 300 {
+		return errors.New(errors.CodeInternal, "failed to send new member email", err)
+	}
+
+	logger.Log.Info("user joined informed to admin" + admin.User.Email)
+
+	log.Println("insode notify")
+
 	return nil
 }

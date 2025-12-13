@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/ak-repo/stream-hub/internal/files_service/domain"
@@ -158,22 +159,18 @@ func (s *fileService) DeleteFile(ctx context.Context, fileID, requesterID string
 
 	// Check if requester is owner OR admin
 	isOwner := f.OwnerID == requesterID
-	// isAdmin := false
+	isAdmin, _ := s.repo.IsChannelAdmin(ctx, f.ChannelID, requesterID)
 
-	// if !isOwner {
+	if isOwner || isAdmin {
+		// Delete from Object Storage
+		if err := s.store.DeleteObject(f); err != nil {
+			return errors.New(errors.CodeInternal, "failed to delete from storage", err)
+		}
 
-	// }
-
-	if !isOwner {
-		return errors.New(errors.CodeForbidden, "permission denied", nil)
+		return s.repo.Delete(ctx, fileID)
 	}
+	return errors.New(errors.CodeForbidden, "permission denied", nil)
 
-	// Delete from Object Storage
-	if err := s.store.DeleteObject(f); err != nil {
-		return errors.New(errors.CodeInternal, "failed to delete from storage", err)
-	}
-
-	return s.repo.Delete(ctx, fileID)
 }
 
 // for channel
@@ -186,11 +183,24 @@ func (s *fileService) GetStorageUsage(ctx context.Context, channelID string) (in
 // =============================================================================
 
 func (s *fileService) AdminListFiles(ctx context.Context, limit, offset int32) ([]*domain.File, error) {
+	log.Println("list files: ", limit, "off: ", offset)
+	if limit >= 0 {
+		limit = 10
+	}
 	return s.repo.ListAllFiles(ctx, limit, offset)
 }
 
 func (s *fileService) AdminDeleteFile(ctx context.Context, fileID, adminID string, force bool) error {
-	return s.DeleteFile(ctx, fileID, adminID)
+	f, err := s.repo.GetByID(ctx, fileID)
+	if err != nil {
+		return errors.New(errors.CodeNotFound, "file not found", err)
+	}
+
+	// Delete from Object Storage
+	if err := s.store.DeleteObject(f); err != nil {
+		return errors.New(errors.CodeInternal, "failed to delete from storage", err)
+	}
+	return s.repo.Delete(ctx, fileID)
 }
 
 func (s *fileService) AdminSetStorageLimit(ctx context.Context, channelID string, maxBytes int64) (int64, error) {

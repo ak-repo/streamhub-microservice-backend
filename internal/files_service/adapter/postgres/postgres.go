@@ -4,48 +4,54 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/ak-repo/stream-hub/internal/files_service/domain"
 	"github.com/ak-repo/stream-hub/internal/files_service/port"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype" // Use pgtype for robust null handling
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// SQL column list for simple file selects (excluding joins)
-const fileColumns = `
+// NOTE:
+//   - fileColumnsSelect is used in SELECT queries and includes the table alias `f.`
+//     to avoid ambiguous column references when joining other tables.
+//   - fileColumnsInsert is used in INSERT statements (no alias).
+const fileColumnsSelect = `
+    f.id, f.owner_id, f.channel_id, f.filename, f.size, f.mime_type,
+    f.storage_path, f.is_public, f.created_at
+`
+
+const fileColumnsInsert = `
     id, owner_id, channel_id, filename, size, mime_type,
     storage_path, is_public, created_at
 `
 
-// fileRepo implements the port.FileRepository interface.
 type fileRepo struct {
 	pool *pgxpool.Pool
 }
 
-// NewFileRepository is the constructor for the repository.
 func NewFileRepository(pool *pgxpool.Pool) port.FileRepository {
 	return &fileRepo{pool: pool}
 }
 
-// --- Repository Methods ---
 
-// ListAllFiles retrieves all files metadata, including owner and channel names.
 func (r *fileRepo) ListAllFiles(ctx context.Context, limit int32, offset int32) ([]*domain.File, error) {
-	rows, err := r.pool.Query(ctx, fmt.Sprintf(`
+	query := fmt.Sprintf(`
 		SELECT 
-			f.%s, 
+			%s,
 			u.username,
 			c.name
 		FROM files f
 		JOIN users u ON f.owner_id = u.id
-		LEFT JOIN channels c ON f.channel_id = c.id -- Use LEFT JOIN since channel_id can be NULL
-	`, fileColumns))
+		LEFT JOIN channels c ON f.channel_id = c.id
+		ORDER BY f.created_at DESC
+		LIMIT $1 OFFSET $2
+	`, fileColumnsSelect)
 
+	rows, err := r.pool.Query(ctx, query, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("ListAllFiles: %w", err)
+		return nil, fmt.Errorf("ListAllFiles: query: %w", err)
 	}
 	defer rows.Close()
 
@@ -57,19 +63,26 @@ func (r *fileRepo) ListAllFiles(ctx context.Context, limit int32, offset int32) 
 		}
 		files = append(files, f)
 	}
-	return files, rows.Err()
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("ListAllFiles: rows: %w", err)
+	}
+
+	return files, nil
 }
 
-// Save File Metadata
+// Save inserts a new file row. If CreatedAt is zero, set to now UTC.
 func (r *fileRepo) Save(ctx context.Context, f *domain.File) error {
 	if f.CreatedAt.IsZero() {
 		f.CreatedAt = time.Now().UTC()
 	}
 
-	_, err := r.pool.Exec(ctx, fmt.Sprintf(`
+	query := fmt.Sprintf(`
 		INSERT INTO files (%s)
-		VALUES ($1,$2,$3, $4,$5,$6,$7,$8,$9)
-	`, fileColumns),
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+	`, fileColumnsInsert)
+
+	_, err := r.pool.Exec(ctx, query,
 		f.ID,
 		f.OwnerID,
 		f.ChannelID,
@@ -81,19 +94,24 @@ func (r *fileRepo) Save(ctx context.Context, f *domain.File) error {
 		f.CreatedAt,
 	)
 
-	return err
+	if err != nil {
+		return fmt.Errorf("Save: exec: %w", err)
+	}
+	return nil
 }
 
 // GetByOwner lists files uploaded BY the user (personal uploads).
 func (r *fileRepo) GetByOwner(ctx context.Context, ownerID string) ([]*domain.File, error) {
-	rows, err := r.pool.Query(ctx, fmt.Sprintf(`
+	query := fmt.Sprintf(`
 		SELECT %s
-		FROM files 
+		FROM files
 		WHERE owner_id = $1
 		ORDER BY created_at DESC
-	`, fileColumns), ownerID)
+	`, fileColumnsInsert)
+
+	rows, err := r.pool.Query(ctx, query, ownerID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetByOwner: query: %w", err)
 	}
 	defer rows.Close()
 
@@ -101,14 +119,16 @@ func (r *fileRepo) GetByOwner(ctx context.Context, ownerID string) ([]*domain.Fi
 }
 
 func (r *fileRepo) GetByChannel(ctx context.Context, channelID string) ([]*domain.File, error) {
-	rows, err := r.pool.Query(ctx, fmt.Sprintf(`
+	query := fmt.Sprintf(`
 		SELECT %s
-		FROM files 
+		FROM files
 		WHERE channel_id = $1
 		ORDER BY created_at DESC
-	`, fileColumns), channelID)
+	`, fileColumnsInsert)
+
+	rows, err := r.pool.Query(ctx, query, channelID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetByChannel: query: %w", err)
 	}
 	defer rows.Close()
 
@@ -117,18 +137,20 @@ func (r *fileRepo) GetByChannel(ctx context.Context, channelID string) ([]*domai
 
 // GetByID fetches a single file by its ID.
 func (r *fileRepo) GetByID(ctx context.Context, id string) (*domain.File, error) {
-	row := r.pool.QueryRow(ctx, fmt.Sprintf(`
+	query := fmt.Sprintf(`
 		SELECT %s
-		FROM files 
+		FROM files
 		WHERE id = $1
-	`, fileColumns), id)
+	`, fileColumnsInsert)
+
+	row := r.pool.QueryRow(ctx, query, id)
 
 	f := new(domain.File)
 	if err := scanFileSimple(row, f); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("no file found") // Custom error for domain layer
+			return nil, fmt.Errorf("no file found")
 		}
-		return nil, err
+		return nil, fmt.Errorf("GetByID: scan: %w", err)
 	}
 
 	return f, nil
@@ -136,19 +158,20 @@ func (r *fileRepo) GetByID(ctx context.Context, id string) (*domain.File, error)
 
 // GetUserAccessibleFiles lists all files a user can access (personal + public + channel member).
 func (r *fileRepo) GetUserAccessibleFiles(ctx context.Context, userID string) ([]*domain.File, error) {
-	rows, err := r.pool.Query(ctx, fmt.Sprintf(`
+	query := fmt.Sprintf(`
 		SELECT f.%s
 		FROM files f
 		LEFT JOIN channel_members cm ON f.channel_id = cm.channel_id
 		WHERE 
-			f.owner_id = $1         -- user uploaded the file
-			OR f.is_public = TRUE   -- public file
-			OR cm.user_id = $1      -- channel member (via LEFT JOIN)
+			f.owner_id = $1
+			OR f.is_public = TRUE
+			OR cm.user_id = $1
 		ORDER BY f.created_at DESC
-	`, fileColumns), userID)
+	`, fileColumnsSelect)
 
+	rows, err := r.pool.Query(ctx, query, userID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetUserAccessibleFiles: query: %w", err)
 	}
 	defer rows.Close()
 
@@ -158,10 +181,10 @@ func (r *fileRepo) GetUserAccessibleFiles(ctx context.Context, userID string) ([
 func (r *fileRepo) Delete(ctx context.Context, id string) error {
 	cmdTag, err := r.pool.Exec(ctx, `DELETE FROM files WHERE id=$1`, id)
 	if err != nil {
-		return err
+		return fmt.Errorf("Delete: exec: %w", err)
 	}
 	if cmdTag.RowsAffected() == 0 {
-		return fmt.Errorf("no file found") // Indicate that no row was deleted
+		return fmt.Errorf("no file found")
 	}
 	return nil
 }
@@ -169,87 +192,92 @@ func (r *fileRepo) Delete(ctx context.Context, id string) error {
 // IsChannelMember checks if a user is a member of a channel.
 func (r *fileRepo) IsChannelMember(ctx context.Context, channelID, userID string) (bool, error) {
 	var exists bool
-	log.Println("chan: ", channelID, "us:", userID)
-	err := r.pool.QueryRow(ctx,
-		`SELECT EXISTS (
-        SELECT 1 FROM channel_members
-        WHERE channel_id=$1 AND user_id=$2
-    )`,
-		channelID,
-		userID,
-	).Scan(&exists)
-	log.Println("ex: ", exists)
+	err := r.pool.QueryRow(ctx, `
+        SELECT EXISTS (
+            SELECT 1 FROM channel_members
+            WHERE channel_id=$1 AND user_id=$2
+        )
+    `, channelID, userID).Scan(&exists)
 
 	if err != nil {
 		return false, fmt.Errorf("IsChannelMember: %w", err)
 	}
-
 	return exists, nil
 }
 
+// IsChannelAdmin checks if a user has the admin role in the channel.
+// Assumes channel_members.role contains values like 'admin' / 'member'.
 func (r *fileRepo) IsChannelAdmin(ctx context.Context, channelID, userID string) (bool, error) {
-	var isAdmin bool
+	var role pgtype.Text
 	err := r.pool.QueryRow(ctx, `
-        SELECT created_by FROM channel_members
+        SELECT role FROM channel_members
         WHERE channel_id=$1 AND user_id=$2
-    `, channelID, userID).Scan(&isAdmin)
+    `, channelID, userID).Scan(&role)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return false, nil // Not a member/admin
+		return false, nil
 	}
 	if err != nil {
 		return false, fmt.Errorf("IsChannelAdmin: %w", err)
 	}
-	return isAdmin, nil
+
+	// role can be NULL; handle it safely
+
+	return role.String == "admin", nil
 }
 
-// Helper to handle repetitive row iteration and scanning.
+// Helper to scan multiple files (rows -> []*domain.File)
 func (r *fileRepo) scanMultipleFiles(rows pgx.Rows) ([]*domain.File, error) {
 	var files []*domain.File
 	for rows.Next() {
 		f := new(domain.File)
 		if err := scanFileSimple(rows, f); err != nil {
-			return nil, fmt.Errorf("scanFileSimple: %w", err)
+			return nil, fmt.Errorf("scanMultipleFiles: %w", err)
 		}
 		files = append(files, f)
 	}
-	return files, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("scanMultipleFiles: rows: %w", err)
+	}
+	return files, nil
 }
 
-// --- Scanning Functions (Reduced Duplication) ---
-
-// scanFileJoined scans rows that include owner username and channel name (used by ListAllFiles).
+// scanFileJoined scans rows that include owner username and channel name (ListAllFiles).
+// Expected SELECT order:
+//
+//	f.id, f.owner_id, f.channel_id, f.filename, f.size, f.mime_type, f.storage_path, f.is_public, f.created_at,
+//	u.username, c.name
 func scanFileJoined(row pgx.Row, f *domain.File) error {
-	// Use pgtype.Text for nullable columns like ChannelID and ChannelName
 	var channelID pgtype.Text
 	var channelName pgtype.Text
+	// Owner username is plain text (non-nullable in users table assumption)
+	var ownerName pgtype.Text
 
 	err := row.Scan(
 		&f.ID,
 		&f.OwnerID,
-		&channelID, // Scan into pgtype.Text
+		&channelID,
 		&f.Filename,
 		&f.Size,
 		&f.MimeType,
 		&f.StoragePath,
 		&f.IsPublic,
 		&f.CreatedAt,
-		&f.OwnerName,
-		&channelName, // Scan into pgtype.Text
+		&ownerName,
+		&channelName,
 	)
-
 	if err != nil {
 		return err
 	}
-
-	// Convert pgtype.Text back to string, handling NULLs
 	f.ChannelID = channelID.String
 	f.ChannelName = channelName.String
+	f.OwnerName = ownerName.String
 
 	return nil
 }
 
 // scanFileSimple scans rows that ONLY select columns from the 'files' table.
+// Expected SELECT order: id, owner_id, channel_id, filename, size, mime_type, storage_path, is_public, created_at
 func scanFileSimple(row pgx.Row, f *domain.File) error {
 	var channelID pgtype.Text
 
@@ -264,33 +292,37 @@ func scanFileSimple(row pgx.Row, f *domain.File) error {
 		&f.IsPublic,
 		&f.CreatedAt,
 	)
-
 	if err != nil {
 		return err
 	}
 	f.ChannelID = channelID.String
-	// Note: f.OwnerName and f.ChannelName are intentionally left as zero values ("")
+	// OwnerName and ChannelName remain empty unless joined query used
 
 	return nil
 }
 
+// Stubbed helpers (implement per your domain needs).
 func (r *fileRepo) GetStorageUsage(ctx context.Context, channelID string) (used int64, limit int64, err error) {
+	// TODO: implement actual calculation
 	return int64(7), int64(0), nil
 }
 
 func (r *fileRepo) IsUserBlocked(ctx context.Context, userID string) (bool, error) {
+	// TODO: implement block check
 	return false, nil
 }
 
 func (r *fileRepo) SetUserBlocked(ctx context.Context, userID string, block bool) error {
+	// TODO: implement
 	return nil
 }
 
 func (r *fileRepo) SetStorageLimit(ctx context.Context, ownerID string, limit int64) error {
+	// TODO: implement
 	return nil
 }
 
 func (r *fileRepo) GetGlobalStats(ctx context.Context) (*domain.StorageStats, error) {
-
+	// TODO: implement real stats
 	return &domain.StorageStats{}, nil
 }

@@ -19,6 +19,8 @@ message FileMetadata {
   bool is_public = 8;
   string created_at = 9; // ISO 8601 string recommended
   string updated_at = 10;
+  string ower_name = 11;
+  string channelname = 12;
 }
 
 message StorageStats {

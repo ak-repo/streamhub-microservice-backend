@@ -57,7 +57,7 @@ func main() {
 	// 4. Initialize Clean Architecture layers
 	repo := postgres.NewChannelRepo(pgDB.Pool)
 	ps := chatredis.NewRedisPubSub(rClient)
-	svc := app.NewChannelService(repo, ps, clientContainer)
+	svc := app.NewChannelService(repo, ps, clientContainer, cfg)
 	grpcHandler := channelgrpc.NewServer(svc)
 
 	// 5. Start gRPC server

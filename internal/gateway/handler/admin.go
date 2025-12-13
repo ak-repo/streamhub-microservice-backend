@@ -26,35 +26,51 @@ func NewAdminHandler(clients *clients.Clients,
 
 // ---------------------- Users action-------------------
 func (h *AdminHandler) ListUsers(c *fiber.Ctx) error {
-	filterBy := c.Params("filter", "all")
+
+	req := new(authpb.AdminListUsersRequest)
+	req.Pagination = &authpb.PaginationRequest{
+		Limit:  helper.StringToInt32(c.Query("limit", "10")),
+		Offset: helper.StringToInt32(c.Query("offset", "0")),
+	}
+	req.FilterQuery = c.Query("filter")
+
+	log.Println("limit: ", req.Pagination.Limit, "off:", req.Pagination.Offset)
+
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+
+	req.AdminId = uid
 
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
-	resp, err := h.clients.AdminAuth.AdminListUsers(ctx, &authpb.AdminListUsersRequest{FilterQuery: filterBy})
+	resp, err := h.clients.AdminAuth.AdminListUsers(ctx, req)
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
 	}
-	return response.Success(c, "list of all users", resp)
+	return response.Success(c, "listing users", resp)
 }
 
 func (h *AdminHandler) BanUser(c *fiber.Ctx) error {
-	var req struct {
-		UserID string `json:"userId"`
-		Reason string `json:"reason"`
-	}
+	req := new(authpb.AdminBanUserRequest)
 
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.BodyParser(req); err != nil {
 		return response.InvalidReqBody(c)
 	}
+
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+
+	req.AdminId = uid
 
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.AdminAuth.AdminBanUser(ctx, &authpb.AdminBanUserRequest{
-		TargetUserId: req.UserID,
-		Reason:       req.Reason,
-	})
+	resp, err := h.clients.AdminAuth.AdminBanUser(ctx, req)
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
@@ -65,62 +81,70 @@ func (h *AdminHandler) BanUser(c *fiber.Ctx) error {
 }
 
 func (h *AdminHandler) UnbanUser(c *fiber.Ctx) error {
-	var req struct {
-		UserID string `json:"userId"`
-		Reason string `json:"reason"`
-	}
+	req := new(authpb.AdminUnbanUserRequest)
 
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.BodyParser(req); err != nil {
 		return response.InvalidReqBody(c)
 	}
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+
+	req.AdminId = uid
 
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.AdminAuth.AdminUnbanUser(ctx, &authpb.AdminUnbanUserRequest{
-		TargetUserId: req.UserID,
-		Reason:       req.Reason,
-	})
+	resp, err := h.clients.AdminAuth.AdminUnbanUser(ctx, req)
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
 	}
 
-	return response.Success(c, "channel created", resp)
+	return response.Success(c, "user banned", resp)
 }
 
 func (h *AdminHandler) DeleteUser(c *fiber.Ctx) error {
+	req := new(authpb.AdminDeleteUserRequest)
+	req.TargetUserId = c.Params("target_user_id")
 
-	// ctx, cancel := helper.WithGRPCTimeout()
-	// defer cancel()
-
-	// resp, err := h.clients.Admin.
-
-	// if err != nil {
-	// 	code, body := errors.GRPCToFiber(err)
-	// 	return response.Error(c, code, body)
-	// }
-	return response.Success(c, "user deleted", nil)
-}
-
-func (h *AdminHandler) UpdateRole(c *fiber.Ctx) error {
-	var req struct {
-		UserID string `json:"userId"`
-		Role   string `json:"role"`
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
 	}
 
-	if err := c.BodyParser(&req); err != nil {
-		return response.InvalidReqBody(c)
-	}
+	req.AdminId = uid
 
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.AdminAuth.AdminUpdateRole(ctx, &authpb.AdminUpdateRoleRequest{
-		TargetUserId: req.UserID,
-		NewRole:      req.Role,
-	})
+	resp, err := h.clients.AdminAuth.AdminDeleteUser(ctx, req)
+
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return response.Error(c, code, body)
+	}
+	return response.Success(c, "user deleted", resp)
+}
+
+func (h *AdminHandler) UpdateRole(c *fiber.Ctx) error {
+	req := new(authpb.AdminUpdateRoleRequest)
+	if err := c.BodyParser(req); err != nil {
+		return response.InvalidReqBody(c)
+	}
+
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+
+	req.AdminId = uid
+	ctx, cancel := helper.WithGRPCTimeout()
+	defer cancel()
+
+	resp, err := h.clients.AdminAuth.AdminUpdateRole(ctx, req)
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
@@ -135,8 +159,6 @@ func (h *AdminHandler) ListChannels(c *fiber.Ctx) error {
 	req := new(channelpb.AdminListChannelsRequest)
 	req.Limit = helper.StringToInt32(c.Query("limit", "10"))
 	req.Offset = helper.StringToInt32(c.Query("offset", "0"))
-
-	log.Println("limit: ", req.Limit, " offset: ", req.Offset)
 
 	uid, ok := c.Locals("userID").(string)
 	if !ok || uid == "" {
@@ -157,54 +179,67 @@ func (h *AdminHandler) ListChannels(c *fiber.Ctx) error {
 }
 
 func (h *AdminHandler) FreezeChannel(c *fiber.Ctx) error {
-	var req struct {
-		ChannelID string `json:"channelId"`
-		Reason    string `json:"reason"`
-	}
-
-	if err := c.BodyParser(&req); err != nil {
+	req := new(channelpb.AdminFreezeChannelRequest)
+	if err := c.BodyParser(req); err != nil {
 		return response.InvalidReqBody(c)
 	}
 
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.AdminChannel.AdminFreezeChannel(ctx, &channelpb.AdminFreezeChannelRequest{ChannelId: req.ChannelID, Reason: req.Reason})
+	resp, err := h.clients.AdminChannel.AdminFreezeChannel(ctx, req)
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
 	}
 
-	return response.Success(c, "channel freezed, id: "+req.ChannelID, resp)
+	return response.Success(c, "channel freezed", resp)
 
 }
 
 func (h *AdminHandler) DeleteChannel(c *fiber.Ctx) error {
-	channelID := c.Params("id")
-	adminID := c.Locals("userID").(string)
+	req := new(channelpb.AdminDeleteChannelRequest)
+	req.ChannelId = c.Params("channel_id")
+
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+	req.AdminId = uid
 
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.AdminChannel.AdminDeleteChannel(ctx, &channelpb.AdminDeleteChannelRequest{ChannelId: channelID, AdminId: adminID})
+	resp, err := h.clients.AdminChannel.AdminDeleteChannel(ctx, req)
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
 		return response.Error(c, code, body)
 	}
 
-	return response.Success(c, "channel deleted, id: "+channelID, resp)
+	return response.Success(c, "channel deleted", resp)
 
 }
 
+// ------------------------------------- Files ---------------------
 func (h *AdminHandler) ListAllFiles(c *fiber.Ctx) error {
 
-	adminID := c.Locals("userID").(string)
+	req := new(filespb.AdminListFilesRequest)
+	req.Limit = helper.StringToInt32(c.Query("limit", "10"))
+	req.Offset = helper.StringToInt32(c.Query("offset", "0"))
+
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+	log.Println("offff:ss ", req.Limit)
+
+	req.AdminId = uid
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.AdminFile.AdminListFiles(ctx, &filespb.AdminListFilesRequest{AdminId: adminID})
+	resp, err := h.clients.AdminFile.AdminListFiles(ctx, req)
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
@@ -216,13 +251,19 @@ func (h *AdminHandler) ListAllFiles(c *fiber.Ctx) error {
 }
 
 func (h *AdminHandler) DeleteFile(c *fiber.Ctx) error {
-	fileID := c.Params("id")
-	adminID := c.Locals("userID").(string)
+	req := new(filespb.AdminDeleteFileRequest)
+	req.FileId = c.Params("id")
 
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+
+	req.AdminId = uid
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.AdminFile.AdminDeleteFile(ctx, &filespb.AdminDeleteFileRequest{FileId: fileID, AdminId: adminID})
+	resp, err := h.clients.AdminFile.AdminDeleteFile(ctx, req)
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)
@@ -234,20 +275,21 @@ func (h *AdminHandler) DeleteFile(c *fiber.Ctx) error {
 }
 
 func (h *AdminHandler) BlockUserUpload(c *fiber.Ctx) error {
-	var req struct {
-		UserID string `json:"userId"`
-		Block  bool   `json:"block"`
-	}
+	req := new(filespb.AdminBlockUploadsRequest)
 
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.BodyParser(req); err != nil {
 		return response.InvalidReqBody(c)
 	}
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
 
-	adminID := c.Locals("userId").(string)
+	req.AdminId = uid
 	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
-	resp, err := h.clients.AdminFile.AdminBlockUploads(ctx, &filespb.AdminBlockUploadsRequest{AdminId: adminID, Block: req.Block, TargetUserId: req.UserID})
+	resp, err := h.clients.AdminFile.AdminBlockUploads(ctx, req)
 
 	if err != nil {
 		code, body := errors.GRPCToFiber(err)

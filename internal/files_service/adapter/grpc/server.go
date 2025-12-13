@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/ak-repo/stream-hub/gen/filespb"
@@ -120,7 +121,7 @@ func (s *Server) AdminListFiles(ctx context.Context, req *filespb.AdminListFiles
 	if err != nil {
 		return nil, err
 	}
-
+	log.Println("files: ", files)
 	var pbFiles []*filespb.FileMetadata
 	for _, f := range files {
 		pbFiles = append(pbFiles, mapFileToProto(f))
@@ -181,7 +182,8 @@ func mapFileToProto(f *domain.File) *filespb.FileMetadata {
 		StoragePath: f.StoragePath,
 		IsPublic:    f.IsPublic,
 		CreatedAt:   f.CreatedAt.Format(time.RFC3339),
-		// UpdatedAt:   f.UpdatedAt.Format(time.RFC3339),
+		OwerName:    f.OwnerName,
+		Channelname: f.ChannelName,
 	}
 }
 

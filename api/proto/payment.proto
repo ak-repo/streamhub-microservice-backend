@@ -1,0 +1,53 @@
+// payment.proto
+syntax = "proto3";
+
+package payment;
+
+// Replace with your project structure
+option go_package = "./gen/paymentpb;paymentpb";
+
+
+
+message StoragePlan {
+  string plan_id = 1;         // Internal ID (e.g., "extra_100gb")
+  string name = 2;
+  string description = 3;
+  int64 storage_increase_bytes = 4; // Storage to add (in bytes)
+  string currency = 5;
+  int32 price_cents = 6;
+  string stripe_price_id = 7; // CRITICAL: The ID of the price in Stripe's system
+}
+
+// =============================================================================
+// USER SERVICE MESSAGES
+// =============================================================================
+
+message ListStoragePlansRequest {}
+
+message ListStoragePlansResponse {
+  repeated StoragePlan plans = 1;
+}
+
+message CreateCheckoutSessionRequest {
+  string user_id = 1;
+  string plan_id = 2;
+  // URLs for Stripe to redirect the user's browser after payment
+  string success_url = 3; 
+  string cancel_url = 4;
+}
+
+message CreateCheckoutSessionResponse {
+  string checkout_url = 1; // The URL the client redirects the user to
+  string session_id = 2;
+}
+
+// =============================================================================
+// SERVICE DEFINITION
+// =============================================================================
+
+service PaymentService {
+  rpc ListStoragePlans(ListStoragePlansRequest) returns (ListStoragePlansResponse);
+  
+  // Initiates the external payment flow
+  rpc CreateCheckoutSession(CreateCheckoutSessionRequest) returns (CreateCheckoutSessionResponse);
+}

@@ -19,6 +19,13 @@ type Config struct {
 	Redis       RedisConfig      `mapstructure:"redis"`
 	FileService FileServiceConf  `mapstructure:"file_service"`
 	Cloudinary  CloudinaryConfig `mapstructure:"cloudinary"`
+	Stripe      StripeConfig     `mapstructure:"stripe"`
+}
+
+type StripeConfig struct {
+	SecretKey      string `mapstructure:"secret_key"`
+	PublishableKey string `mapstructure:"publishable_key"`
+	WebhookSecret  string `mapstructure:"webhook_secret"`
 }
 
 type CloudinaryConfig struct {
@@ -107,6 +114,7 @@ type SendGrid struct {
 	Key           string `mapstructure:"api_key"`
 	MagicTemplate string `mapstructure:"magic_id"`
 	OTPTemplate   string `mapstructure:"otp_id"`
+	AdminInfo     string `mapstructure:"admin_info"`
 }
 
 // REDIS (NEW)

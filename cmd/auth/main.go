@@ -53,8 +53,11 @@ func main() {
 
 	otpStore := otpredis.NewOTPStore(rClient, 10*time.Minute)
 
-	cloudCli, _ := authcloudinary.NewCloudinaryUploader(cfg.Cloudinary.CloudName, cfg.Cloudinary.APIKey, cfg.Cloudinary.APISecret)
+	cloudCli, err := authcloudinary.NewCloudinaryUploader(cfg.Cloudinary.CloudName, cfg.Cloudinary.APIKey, cfg.Cloudinary.APISecret)
 	seeder.UsersSeeder(context.Background(), pgDB.Pool)
+	if err != nil {
+		log.Fatal("cloudinary staring failed, ", err.Error())
+	}
 
 	// repo -> service -> server
 	repo := postgres.NewUserRepository(pgDB.Pool)
@@ -71,6 +74,7 @@ func main() {
 		grpc.ChainUnaryInterceptor(interceptors.AppErrorInterceptor(), interceptors.UnaryLoggingInterceptor()))
 
 	authpb.RegisterAuthServiceServer(grpcServer, server)
+	authpb.RegisterAdminAuthServiceServer(grpcServer, server)
 
 	log.Println("auth-service started at:", cfg.Services.Auth.Host+addr)
 	if err := grpcServer.Serve(lis); err != nil {

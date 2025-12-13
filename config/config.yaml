@@ -25,23 +25,14 @@ jwt:
   expiry: 24h
   issuer: stream-hub
 
-# # MinIO Configuration
-# minio:
-#   endpoint: minio:9001
-#   access_key: minioadmin
-#   secret_key: minioadmin
-#   bucket: files
-#   use_ssl: false
-#   region: us-east-1
-
 # Service Ports
 services:
   auth:
     port: 50051
     host: auth-service
   file:
-    port: 50052
-    v: file-service
+    port: 50059
+    host: file-service
   chat:
     port: 50053
     host: chat-service
@@ -75,11 +66,12 @@ server:
   shutdown_timeout: 30s
 
 sendgrid:
-  api_key: key 
-  magic_id: d-c9cdb816fc3143e2aad011b8a3d29d58
-  otp_id: d-9f3316146d5d46e4ba3efdc8c6ba98c6
+  api_key: 
+  magic_id: d-2fcd69e42e22485db945d8963229763d
+  otp_id: d-3018e88c52f34cb1ad5d227d5ad0bef9
+  admin_info: d-393e85b9727a4e48bba8e96b5c82a78c
 
-# Redis (NEW)
+# Redis
 redis:
   host: localhost
   port: 6379
@@ -89,7 +81,7 @@ redis:
     upload_session: 10m
     presign: 5m
 
-# MinIO / S3 (ALREADY EXISTS — but add these if missing)
+# MinIO / S3
 minio:
   endpoint: localhost:9000
   access_key: minioadmin
@@ -98,7 +90,7 @@ minio:
   region: us-east-1
   use_ssl: false
 
-# File Service (NEW)
+# File Service
 file_service:
   upload_url_expiry: 15m
   download_url_expiry: 30m
@@ -116,4 +108,9 @@ file_service:
 cloudinary:
   cloud_name: dersnukrf
   api_key: 388271549966182
-  api_sceret: key
+  api_secret: 
+
+#  test mode 
+razorpay:
+  secret_key:
+  publishable_key: rzp_test_RqwWzgHgoIe4Eu

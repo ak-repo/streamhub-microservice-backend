@@ -36,10 +36,11 @@ type ChannelRepository interface {
 	CreateRequest(ctx context.Context, req *domain.Request) error
 	UpdateRequestStatus(ctx context.Context, requestID, status string) (*domain.Request, error)
 	ListPendingRequests(ctx context.Context, userID, channelID string) ([]*domain.Request, error)
+	CheckExistingRequest(ctx context.Context, userID, channelID, reqType string) bool
 
 	// -------------------------------------------------------------------------
 	// Admin / Governance
 	// -------------------------------------------------------------------------
-	AdminListChannels(ctx context.Context, limit, offset int32) ([]*domain.Channel, error)
+	AdminListChannels(ctx context.Context, limit, offset int32) ([]*domain.ChannelWithMembers, error)
 	FreezeChannel(ctx context.Context, channelID string, freeze bool) error
 }

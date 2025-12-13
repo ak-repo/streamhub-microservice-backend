@@ -2067,6 +2067,58 @@ func (x *ListMessagesResponse) GetMessages() []*ChatMessage {
 	return nil
 }
 
+type ChannelWithMembers struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Channel       *Channel               `protobuf:"bytes,1,opt,name=channel,proto3" json:"channel,omitempty"`
+	Members       []*ChannelMember       `protobuf:"bytes,2,rep,name=members,proto3" json:"members,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChannelWithMembers) Reset() {
+	*x = ChannelWithMembers{}
+	mi := &file_api_proto_channel_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChannelWithMembers) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChannelWithMembers) ProtoMessage() {}
+
+func (x *ChannelWithMembers) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChannelWithMembers.ProtoReflect.Descriptor instead.
+func (*ChannelWithMembers) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *ChannelWithMembers) GetChannel() *Channel {
+	if x != nil {
+		return x.Channel
+	}
+	return nil
+}
+
+func (x *ChannelWithMembers) GetMembers() []*ChannelMember {
+	if x != nil {
+		return x.Members
+	}
+	return nil
+}
+
 type AdminListChannelsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AdminId       string                 `protobuf:"bytes,1,opt,name=admin_id,json=adminId,proto3" json:"admin_id,omitempty"`
@@ -2078,7 +2130,7 @@ type AdminListChannelsRequest struct {
 
 func (x *AdminListChannelsRequest) Reset() {
 	*x = AdminListChannelsRequest{}
-	mi := &file_api_proto_channel_proto_msgTypes[37]
+	mi := &file_api_proto_channel_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2090,7 +2142,7 @@ func (x *AdminListChannelsRequest) String() string {
 func (*AdminListChannelsRequest) ProtoMessage() {}
 
 func (x *AdminListChannelsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_channel_proto_msgTypes[37]
+	mi := &file_api_proto_channel_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2103,7 +2155,7 @@ func (x *AdminListChannelsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdminListChannelsRequest.ProtoReflect.Descriptor instead.
 func (*AdminListChannelsRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_channel_proto_rawDescGZIP(), []int{37}
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *AdminListChannelsRequest) GetAdminId() string {
@@ -2129,14 +2181,14 @@ func (x *AdminListChannelsRequest) GetOffset() int32 {
 
 type AdminListChannelsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Channels      []*Channel             `protobuf:"bytes,1,rep,name=channels,proto3" json:"channels,omitempty"`
+	Channels      []*ChannelWithMembers  `protobuf:"bytes,1,rep,name=channels,proto3" json:"channels,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AdminListChannelsResponse) Reset() {
 	*x = AdminListChannelsResponse{}
-	mi := &file_api_proto_channel_proto_msgTypes[38]
+	mi := &file_api_proto_channel_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2148,7 +2200,7 @@ func (x *AdminListChannelsResponse) String() string {
 func (*AdminListChannelsResponse) ProtoMessage() {}
 
 func (x *AdminListChannelsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_channel_proto_msgTypes[38]
+	mi := &file_api_proto_channel_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2161,10 +2213,10 @@ func (x *AdminListChannelsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdminListChannelsResponse.ProtoReflect.Descriptor instead.
 func (*AdminListChannelsResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_channel_proto_rawDescGZIP(), []int{38}
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{39}
 }
 
-func (x *AdminListChannelsResponse) GetChannels() []*Channel {
+func (x *AdminListChannelsResponse) GetChannels() []*ChannelWithMembers {
 	if x != nil {
 		return x.Channels
 	}
@@ -2183,7 +2235,7 @@ type AdminFreezeChannelRequest struct {
 
 func (x *AdminFreezeChannelRequest) Reset() {
 	*x = AdminFreezeChannelRequest{}
-	mi := &file_api_proto_channel_proto_msgTypes[39]
+	mi := &file_api_proto_channel_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2195,7 +2247,7 @@ func (x *AdminFreezeChannelRequest) String() string {
 func (*AdminFreezeChannelRequest) ProtoMessage() {}
 
 func (x *AdminFreezeChannelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_channel_proto_msgTypes[39]
+	mi := &file_api_proto_channel_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2208,7 +2260,7 @@ func (x *AdminFreezeChannelRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdminFreezeChannelRequest.ProtoReflect.Descriptor instead.
 func (*AdminFreezeChannelRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_channel_proto_rawDescGZIP(), []int{39}
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *AdminFreezeChannelRequest) GetChannelId() string {
@@ -2248,7 +2300,7 @@ type AdminFreezeChannelResponse struct {
 
 func (x *AdminFreezeChannelResponse) Reset() {
 	*x = AdminFreezeChannelResponse{}
-	mi := &file_api_proto_channel_proto_msgTypes[40]
+	mi := &file_api_proto_channel_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2260,7 +2312,7 @@ func (x *AdminFreezeChannelResponse) String() string {
 func (*AdminFreezeChannelResponse) ProtoMessage() {}
 
 func (x *AdminFreezeChannelResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_channel_proto_msgTypes[40]
+	mi := &file_api_proto_channel_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2273,7 +2325,7 @@ func (x *AdminFreezeChannelResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdminFreezeChannelResponse.ProtoReflect.Descriptor instead.
 func (*AdminFreezeChannelResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_channel_proto_rawDescGZIP(), []int{40}
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *AdminFreezeChannelResponse) GetSuccess() bool {
@@ -2293,7 +2345,7 @@ type AdminDeleteChannelRequest struct {
 
 func (x *AdminDeleteChannelRequest) Reset() {
 	*x = AdminDeleteChannelRequest{}
-	mi := &file_api_proto_channel_proto_msgTypes[41]
+	mi := &file_api_proto_channel_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2305,7 +2357,7 @@ func (x *AdminDeleteChannelRequest) String() string {
 func (*AdminDeleteChannelRequest) ProtoMessage() {}
 
 func (x *AdminDeleteChannelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_channel_proto_msgTypes[41]
+	mi := &file_api_proto_channel_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2318,7 +2370,7 @@ func (x *AdminDeleteChannelRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdminDeleteChannelRequest.ProtoReflect.Descriptor instead.
 func (*AdminDeleteChannelRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_channel_proto_rawDescGZIP(), []int{41}
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *AdminDeleteChannelRequest) GetChannelId() string {
@@ -2344,7 +2396,7 @@ type AdminDeleteChannelResponse struct {
 
 func (x *AdminDeleteChannelResponse) Reset() {
 	*x = AdminDeleteChannelResponse{}
-	mi := &file_api_proto_channel_proto_msgTypes[42]
+	mi := &file_api_proto_channel_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2356,7 +2408,7 @@ func (x *AdminDeleteChannelResponse) String() string {
 func (*AdminDeleteChannelResponse) ProtoMessage() {}
 
 func (x *AdminDeleteChannelResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_channel_proto_msgTypes[42]
+	mi := &file_api_proto_channel_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2369,7 +2421,7 @@ func (x *AdminDeleteChannelResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdminDeleteChannelResponse.ProtoReflect.Descriptor instead.
 func (*AdminDeleteChannelResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_channel_proto_rawDescGZIP(), []int{42}
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *AdminDeleteChannelResponse) GetSuccess() bool {
@@ -2536,13 +2588,16 @@ const file_api_proto_channel_proto_rawDesc = "" +
 	"pagination\x18\x02 \x01(\v2\x1a.channel.PaginationRequestR\n" +
 	"pagination\"H\n" +
 	"\x14ListMessagesResponse\x120\n" +
-	"\bmessages\x18\x01 \x03(\v2\x14.channel.ChatMessageR\bmessages\"c\n" +
+	"\bmessages\x18\x01 \x03(\v2\x14.channel.ChatMessageR\bmessages\"r\n" +
+	"\x12ChannelWithMembers\x12*\n" +
+	"\achannel\x18\x01 \x01(\v2\x10.channel.ChannelR\achannel\x120\n" +
+	"\amembers\x18\x02 \x03(\v2\x16.channel.ChannelMemberR\amembers\"c\n" +
 	"\x18AdminListChannelsRequest\x12\x19\n" +
 	"\badmin_id\x18\x01 \x01(\tR\aadminId\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x16\n" +
-	"\x06offset\x18\x03 \x01(\x05R\x06offset\"I\n" +
-	"\x19AdminListChannelsResponse\x12,\n" +
-	"\bchannels\x18\x01 \x03(\v2\x10.channel.ChannelR\bchannels\"\x85\x01\n" +
+	"\x06offset\x18\x03 \x01(\x05R\x06offset\"T\n" +
+	"\x19AdminListChannelsResponse\x127\n" +
+	"\bchannels\x18\x01 \x03(\v2\x1b.channel.ChannelWithMembersR\bchannels\"\x85\x01\n" +
 	"\x19AdminFreezeChannelRequest\x12\x1d\n" +
 	"\n" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x19\n" +
@@ -2592,7 +2647,7 @@ func file_api_proto_channel_proto_rawDescGZIP() []byte {
 	return file_api_proto_channel_proto_rawDescData
 }
 
-var file_api_proto_channel_proto_msgTypes = make([]protoimpl.MessageInfo, 43)
+var file_api_proto_channel_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
 var file_api_proto_channel_proto_goTypes = []any{
 	(*Channel)(nil),                     // 0: channel.Channel
 	(*ChannelMember)(nil),               // 1: channel.ChannelMember
@@ -2631,12 +2686,13 @@ var file_api_proto_channel_proto_goTypes = []any{
 	(*ListChannelJoinsResponse)(nil),    // 34: channel.ListChannelJoinsResponse
 	(*ListMessagesRequest)(nil),         // 35: channel.ListMessagesRequest
 	(*ListMessagesResponse)(nil),        // 36: channel.ListMessagesResponse
-	(*AdminListChannelsRequest)(nil),    // 37: channel.AdminListChannelsRequest
-	(*AdminListChannelsResponse)(nil),   // 38: channel.AdminListChannelsResponse
-	(*AdminFreezeChannelRequest)(nil),   // 39: channel.AdminFreezeChannelRequest
-	(*AdminFreezeChannelResponse)(nil),  // 40: channel.AdminFreezeChannelResponse
-	(*AdminDeleteChannelRequest)(nil),   // 41: channel.AdminDeleteChannelRequest
-	(*AdminDeleteChannelResponse)(nil),  // 42: channel.AdminDeleteChannelResponse
+	(*ChannelWithMembers)(nil),          // 37: channel.ChannelWithMembers
+	(*AdminListChannelsRequest)(nil),    // 38: channel.AdminListChannelsRequest
+	(*AdminListChannelsResponse)(nil),   // 39: channel.AdminListChannelsResponse
+	(*AdminFreezeChannelRequest)(nil),   // 40: channel.AdminFreezeChannelRequest
+	(*AdminFreezeChannelResponse)(nil),  // 41: channel.AdminFreezeChannelResponse
+	(*AdminDeleteChannelRequest)(nil),   // 42: channel.AdminDeleteChannelRequest
+	(*AdminDeleteChannelResponse)(nil),  // 43: channel.AdminDeleteChannelResponse
 }
 var file_api_proto_channel_proto_depIdxs = []int32{
 	5,  // 0: channel.StreamRequest.connect:type_name -> channel.StreamConnect
@@ -2653,48 +2709,50 @@ var file_api_proto_channel_proto_depIdxs = []int32{
 	2,  // 11: channel.ListChannelJoinsResponse.requests:type_name -> channel.MembershipRequest
 	22, // 12: channel.ListMessagesRequest.pagination:type_name -> channel.PaginationRequest
 	3,  // 13: channel.ListMessagesResponse.messages:type_name -> channel.ChatMessage
-	0,  // 14: channel.AdminListChannelsResponse.channels:type_name -> channel.Channel
-	4,  // 15: channel.ChannelService.Connect:input_type -> channel.StreamRequest
-	35, // 16: channel.ChannelService.ListMessages:input_type -> channel.ListMessagesRequest
-	8,  // 17: channel.ChannelService.CreateChannel:input_type -> channel.CreateChannelRequest
-	12, // 18: channel.ChannelService.ListUserChannels:input_type -> channel.ListUserChannelsRequest
-	10, // 19: channel.ChannelService.GetChannel:input_type -> channel.GetChannelRequest
-	14, // 20: channel.ChannelService.DeleteChannel:input_type -> channel.DeleteChannelRequest
-	16, // 21: channel.ChannelService.AddMember:input_type -> channel.AddMemberRequest
-	18, // 22: channel.ChannelService.RemoveMember:input_type -> channel.RemoveMemberRequest
-	20, // 23: channel.ChannelService.ListMembers:input_type -> channel.ListMembersRequest
-	25, // 24: channel.ChannelService.SendInvite:input_type -> channel.SendInviteRequest
-	27, // 25: channel.ChannelService.SendJoin:input_type -> channel.SendJoinRequest
-	29, // 26: channel.ChannelService.UpdateRequestStatus:input_type -> channel.UpdateRequestStatusRequest
-	23, // 27: channel.ChannelService.SearchChannels:input_type -> channel.SearchChannelRequest
-	31, // 28: channel.ChannelService.ListUserInvites:input_type -> channel.ListUserInvitesRequest
-	33, // 29: channel.ChannelService.ListChannelJoins:input_type -> channel.ListChannelJoinsRequest
-	37, // 30: channel.AdminChannelService.AdminListChannels:input_type -> channel.AdminListChannelsRequest
-	39, // 31: channel.AdminChannelService.AdminFreezeChannel:input_type -> channel.AdminFreezeChannelRequest
-	41, // 32: channel.AdminChannelService.AdminDeleteChannel:input_type -> channel.AdminDeleteChannelRequest
-	7,  // 33: channel.ChannelService.Connect:output_type -> channel.StreamResponse
-	36, // 34: channel.ChannelService.ListMessages:output_type -> channel.ListMessagesResponse
-	9,  // 35: channel.ChannelService.CreateChannel:output_type -> channel.CreateChannelResponse
-	13, // 36: channel.ChannelService.ListUserChannels:output_type -> channel.ListUserChannelsResponse
-	11, // 37: channel.ChannelService.GetChannel:output_type -> channel.GetChannelResponse
-	15, // 38: channel.ChannelService.DeleteChannel:output_type -> channel.DeleteChannelResponse
-	17, // 39: channel.ChannelService.AddMember:output_type -> channel.AddMemberResponse
-	19, // 40: channel.ChannelService.RemoveMember:output_type -> channel.RemoveMemberResponse
-	21, // 41: channel.ChannelService.ListMembers:output_type -> channel.ListMembersResponse
-	26, // 42: channel.ChannelService.SendInvite:output_type -> channel.SendInviteResponse
-	28, // 43: channel.ChannelService.SendJoin:output_type -> channel.SendJoinResponse
-	30, // 44: channel.ChannelService.UpdateRequestStatus:output_type -> channel.UpdateRequestStatusResponse
-	24, // 45: channel.ChannelService.SearchChannels:output_type -> channel.SearchChannelResponse
-	32, // 46: channel.ChannelService.ListUserInvites:output_type -> channel.ListUserInvitesResponse
-	34, // 47: channel.ChannelService.ListChannelJoins:output_type -> channel.ListChannelJoinsResponse
-	38, // 48: channel.AdminChannelService.AdminListChannels:output_type -> channel.AdminListChannelsResponse
-	40, // 49: channel.AdminChannelService.AdminFreezeChannel:output_type -> channel.AdminFreezeChannelResponse
-	42, // 50: channel.AdminChannelService.AdminDeleteChannel:output_type -> channel.AdminDeleteChannelResponse
-	33, // [33:51] is the sub-list for method output_type
-	15, // [15:33] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	0,  // 14: channel.ChannelWithMembers.channel:type_name -> channel.Channel
+	1,  // 15: channel.ChannelWithMembers.members:type_name -> channel.ChannelMember
+	37, // 16: channel.AdminListChannelsResponse.channels:type_name -> channel.ChannelWithMembers
+	4,  // 17: channel.ChannelService.Connect:input_type -> channel.StreamRequest
+	35, // 18: channel.ChannelService.ListMessages:input_type -> channel.ListMessagesRequest
+	8,  // 19: channel.ChannelService.CreateChannel:input_type -> channel.CreateChannelRequest
+	12, // 20: channel.ChannelService.ListUserChannels:input_type -> channel.ListUserChannelsRequest
+	10, // 21: channel.ChannelService.GetChannel:input_type -> channel.GetChannelRequest
+	14, // 22: channel.ChannelService.DeleteChannel:input_type -> channel.DeleteChannelRequest
+	16, // 23: channel.ChannelService.AddMember:input_type -> channel.AddMemberRequest
+	18, // 24: channel.ChannelService.RemoveMember:input_type -> channel.RemoveMemberRequest
+	20, // 25: channel.ChannelService.ListMembers:input_type -> channel.ListMembersRequest
+	25, // 26: channel.ChannelService.SendInvite:input_type -> channel.SendInviteRequest
+	27, // 27: channel.ChannelService.SendJoin:input_type -> channel.SendJoinRequest
+	29, // 28: channel.ChannelService.UpdateRequestStatus:input_type -> channel.UpdateRequestStatusRequest
+	23, // 29: channel.ChannelService.SearchChannels:input_type -> channel.SearchChannelRequest
+	31, // 30: channel.ChannelService.ListUserInvites:input_type -> channel.ListUserInvitesRequest
+	33, // 31: channel.ChannelService.ListChannelJoins:input_type -> channel.ListChannelJoinsRequest
+	38, // 32: channel.AdminChannelService.AdminListChannels:input_type -> channel.AdminListChannelsRequest
+	40, // 33: channel.AdminChannelService.AdminFreezeChannel:input_type -> channel.AdminFreezeChannelRequest
+	42, // 34: channel.AdminChannelService.AdminDeleteChannel:input_type -> channel.AdminDeleteChannelRequest
+	7,  // 35: channel.ChannelService.Connect:output_type -> channel.StreamResponse
+	36, // 36: channel.ChannelService.ListMessages:output_type -> channel.ListMessagesResponse
+	9,  // 37: channel.ChannelService.CreateChannel:output_type -> channel.CreateChannelResponse
+	13, // 38: channel.ChannelService.ListUserChannels:output_type -> channel.ListUserChannelsResponse
+	11, // 39: channel.ChannelService.GetChannel:output_type -> channel.GetChannelResponse
+	15, // 40: channel.ChannelService.DeleteChannel:output_type -> channel.DeleteChannelResponse
+	17, // 41: channel.ChannelService.AddMember:output_type -> channel.AddMemberResponse
+	19, // 42: channel.ChannelService.RemoveMember:output_type -> channel.RemoveMemberResponse
+	21, // 43: channel.ChannelService.ListMembers:output_type -> channel.ListMembersResponse
+	26, // 44: channel.ChannelService.SendInvite:output_type -> channel.SendInviteResponse
+	28, // 45: channel.ChannelService.SendJoin:output_type -> channel.SendJoinResponse
+	30, // 46: channel.ChannelService.UpdateRequestStatus:output_type -> channel.UpdateRequestStatusResponse
+	24, // 47: channel.ChannelService.SearchChannels:output_type -> channel.SearchChannelResponse
+	32, // 48: channel.ChannelService.ListUserInvites:output_type -> channel.ListUserInvitesResponse
+	34, // 49: channel.ChannelService.ListChannelJoins:output_type -> channel.ListChannelJoinsResponse
+	39, // 50: channel.AdminChannelService.AdminListChannels:output_type -> channel.AdminListChannelsResponse
+	41, // 51: channel.AdminChannelService.AdminFreezeChannel:output_type -> channel.AdminFreezeChannelResponse
+	43, // 52: channel.AdminChannelService.AdminDeleteChannel:output_type -> channel.AdminDeleteChannelResponse
+	35, // [35:53] is the sub-list for method output_type
+	17, // [17:35] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_api_proto_channel_proto_init() }
@@ -2715,7 +2773,7 @@ func file_api_proto_channel_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_channel_proto_rawDesc), len(file_api_proto_channel_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   43,
+			NumMessages:   44,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

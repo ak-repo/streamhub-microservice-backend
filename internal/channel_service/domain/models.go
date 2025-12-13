@@ -27,7 +27,10 @@ type ChannelMember struct {
 	JoinedAt  time.Time // When the user joined the channel
 }
 
-
+type ChannelWithMembers struct {
+	Channel *Channel
+	Members []*ChannelMember
+}
 
 // Message represents a persisted chat message in a group/channel.
 type Message struct {

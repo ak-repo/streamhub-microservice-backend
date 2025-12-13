@@ -2,11 +2,13 @@ package authgrpc
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/ak-repo/stream-hub/gen/authpb"
 	"github.com/ak-repo/stream-hub/internal/auth_service/domain"
 	"github.com/ak-repo/stream-hub/internal/auth_service/port"
 	"github.com/ak-repo/stream-hub/pkg/helper"
+	"github.com/ak-repo/stream-hub/pkg/logger"
 )
 
 // =============================================================================
@@ -181,7 +183,7 @@ func (s *AuthServer) SearchUsers(ctx context.Context, req *authpb.SearchUsersReq
 // =============================================================================
 
 func (s *AuthServer) AdminListUsers(ctx context.Context, req *authpb.AdminListUsersRequest) (*authpb.AdminListUsersResponse, error) {
-	users, err := s.service.ListUsers(ctx, req.FilterQuery)
+	users, total, err := s.service.ListUsers(ctx, req.FilterQuery, req.Pagination.Limit, req.Pagination.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +193,7 @@ func (s *AuthServer) AdminListUsers(ctx context.Context, req *authpb.AdminListUs
 		respUsers = append(respUsers, mapUserToProto(u))
 	}
 
-	return &authpb.AdminListUsersResponse{Users: respUsers}, nil
+	return &authpb.AdminListUsersResponse{Users: respUsers, TotalCount: total}, nil
 }
 
 func (s *AuthServer) AdminUpdateRole(ctx context.Context, req *authpb.AdminUpdateRoleRequest) (*authpb.AdminUpdateRoleResponse, error) {
@@ -216,10 +218,10 @@ func (s *AuthServer) AdminUnbanUser(ctx context.Context, req *authpb.AdminUnbanU
 }
 
 func (s *AuthServer) AdminDeleteUser(ctx context.Context, req *authpb.AdminDeleteUserRequest) (*authpb.AdminDeleteUserResponse, error) {
-	// Note: Verify if Delete is implemented in Service/Port.
-	// If not, you need to add `DeleteUser` to the interface.
-	// Assuming it exists for now based on Admin requirements.
-	// if err := s.service.DeleteUser(ctx, req.TargetUserId); err != nil { ... }
+	logger.Log.Info(fmt.Sprintf("user deleted by %s", req.AdminId))
+	if err := s.service.DeleteUser(ctx, req.TargetUserId); err != nil {
+		return nil, err
+	}
 
 	return &authpb.AdminDeleteUserResponse{Success: true}, nil
 }

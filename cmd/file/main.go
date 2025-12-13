@@ -73,6 +73,7 @@ func main() {
 		grpc.ChainUnaryInterceptor(interceptors.AppErrorInterceptor(), interceptors.UnaryLoggingInterceptor()))
 
 	filespb.RegisterFileServiceServer(grpcServer, server)
+	filespb.RegisterAdminFileServiceServer(grpcServer,server)
 
 	log.Println("file-service started at:", cfg.Services.Auth.Host+addr)
 	if err := grpcServer.Serve(lis); err != nil {
