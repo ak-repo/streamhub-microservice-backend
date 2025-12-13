@@ -23,8 +23,11 @@ type FileRepository interface {
 	IsChannelMember(ctx context.Context, channelID, userID string) (bool, error)
 	IsChannelAdmin(ctx context.Context, channelID, userID string) (bool, error)
 
-	// --- Admin / Storage Logic ---
-	GetStorageUsage(ctx context.Context, channelID string) (used int64, limit int64, err error)
+	GetStorageUsage(
+		ctx context.Context,
+		channelID string,
+	) (usedMB int64, limitMB int64, err error)
+	
 
 	// SetStorageLimit configures the maximum storage allowed for a user.
 	SetStorageLimit(ctx context.Context, channelID string, limit int64) error
@@ -66,6 +69,7 @@ type FileService interface {
 	ListFiles(ctx context.Context, requesterID, channelID string) ([]*domain.File, error)
 	DeleteFile(ctx context.Context, fileID, requesterID string) error
 	GetStorageUsage(ctx context.Context, channelI string) (used int64, limit int64, err error)
+	
 
 	// Admin Operations (AdminFileService gRPC)
 	AdminListFiles(ctx context.Context, limit, offset int32) ([]*domain.File, error)

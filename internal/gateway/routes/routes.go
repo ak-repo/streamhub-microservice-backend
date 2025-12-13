@@ -108,6 +108,7 @@ func userRoutes(api fiber.Router, cfg *config.Config, clients *clients.Clients) 
 	fileR.Get("/download-url", file.GenerateDownloadURL) // tested
 	fileR.Get("/", file.ListFiles)                       // tested
 	fileR.Delete("/:file_id", file.DeleteFile)           // tested
+	fileR.Get("/storage/:channel_id", file.GetStorageUsage)
 
 	// --------------------------
 	// CHANNEL HANDLER (WebSockets and Authenticated)
@@ -147,5 +148,7 @@ func userRoutes(api fiber.Router, cfg *config.Config, clients *clients.Clients) 
 
 	pay.Post("/session", payHandler.CreatePaymentSession)
 	pay.Post("/verify", payHandler.VerifyPayment)
+
+	pay.Get("/subscription/:channel_id", payHandler.SubscriptionPlans)
 
 }

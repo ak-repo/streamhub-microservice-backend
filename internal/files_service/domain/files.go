@@ -17,8 +17,10 @@ type File struct {
 }
 
 type StorageStats struct {
-    TotalFilesCount   int64
-    TotalStorageBytes int64
-    PublicFilesCount  int64
-    PrivateFilesCount int64
+	TotalFilesCount   int64
+	TotalStorageBytes int64
+	PublicFilesCount  int64
+	PrivateFilesCount int64
 }
+
+

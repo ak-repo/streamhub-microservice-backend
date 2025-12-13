@@ -34,7 +34,7 @@ func (g *RazorpayGateway) CreateOrder(
 ) (string, error) {
 
 	data := map[string]interface{}{
-		"amount":   amountPaise,
+		"amount":   amountPaise*100,
 		"currency": "INR",
 		"receipt":  fmt.Sprintf("receipt_%d", amountPaise),
 	}

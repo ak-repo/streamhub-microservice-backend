@@ -285,6 +285,7 @@ service ChannelService {
 
   rpc ListUserInvites(ListUserInvitesRequest) returns (ListUserInvitesResponse);
   rpc ListChannelJoins(ListChannelJoinsRequest) returns (ListChannelJoinsResponse);
+
 }
 
 service AdminChannelService {

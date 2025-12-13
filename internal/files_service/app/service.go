@@ -53,6 +53,7 @@ func (s *fileService) GenerateUploadURL(ctx context.Context, ownerID, channelID,
 
 	// 2. Check storage limits
 	used, limit, err := s.repo.GetStorageUsage(ctx, ownerID)
+	log.Println("limi: ",limit," used: ",used)
 	if err != nil {
 		return "", "", "", errors.New(errors.CodeInternal, "failed to check storage usage", err)
 	}
@@ -177,6 +178,7 @@ func (s *fileService) DeleteFile(ctx context.Context, fileID, requesterID string
 func (s *fileService) GetStorageUsage(ctx context.Context, channelID string) (int64, int64, error) {
 	return s.repo.GetStorageUsage(ctx, channelID)
 }
+
 
 // =============================================================================
 // ADMIN OPERATIONS

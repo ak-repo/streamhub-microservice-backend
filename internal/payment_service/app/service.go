@@ -25,7 +25,13 @@ func NewPaymentService(repo port.Repository, pg port.PaymentGateway, redis port.
 }
 
 func (s *paymentService) CreatePaymentSession(ctx context.Context, session *domain.PaymentSession) (string, error) {
-	orderID, err := s.pg.CreateOrder(ctx, int64(session.AmountCents))
+
+	plan, err := s.repo.PlanByID(ctx, session.PlanID)
+	if err != nil {
+		return "", errors.New(errors.CodeNotFound, "failed to find plan", err)
+	}
+
+	orderID, err := s.pg.CreateOrder(ctx, int64(plan.PriceINR))
 	if err != nil {
 		return "", errors.New(errors.CodeInternal, "failed to create order id", err)
 	}
@@ -55,8 +61,8 @@ func (s *paymentService) VerifyPaymentAndAddStorage(ctx context.Context, razorpa
 		PurchaserUserID:   session.PurchaserUserID,
 		RazorpayPaymentID: razorpayPaymentID,
 		RazorpayOrderID:   razorpayOrderID,
-		AmountPaidCents:   session.AmountCents,
-		StorageAddedBytes: session.StorageBytes,
+		PlanID:            session.PlanID,
+		AmountPaidINR:     session.AmountINR,
 		CreatedAt:         time.Now().UTC(),
 	}
 
@@ -67,9 +73,16 @@ func (s *paymentService) VerifyPaymentAndAddStorage(ctx context.Context, razorpa
 		return errors.New(errors.CodeInternal, "payment verification sucessfull, but failed to save in DB", err)
 	}
 
+	// TODO update channels plans in channels table
+
 	return nil
 }
 
 func (s *paymentService) GetHistoryByChannel(ctx context.Context, channelID uuid.UUID) ([]*domain.PaymentHistory, error) {
 	return s.repo.GetHistoryByChannel(ctx, channelID)
+}
+
+func (s *paymentService) GetSubscriptionPlans(ctx context.Context, requesterID, channelID string) ([]*domain.SubscriptionPlan, error) {
+	// TODO verify the channelID and user are valid
+	return s.repo.GetSubscriptionPlans(ctx)
 }

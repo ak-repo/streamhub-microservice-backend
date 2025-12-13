@@ -35,7 +35,6 @@ func NewFileRepository(pool *pgxpool.Pool) port.FileRepository {
 	return &fileRepo{pool: pool}
 }
 
-
 func (r *fileRepo) ListAllFiles(ctx context.Context, limit int32, offset int32) ([]*domain.File, error) {
 	query := fmt.Sprintf(`
 		SELECT 
@@ -242,15 +241,10 @@ func (r *fileRepo) scanMultipleFiles(rows pgx.Rows) ([]*domain.File, error) {
 	return files, nil
 }
 
-// scanFileJoined scans rows that include owner username and channel name (ListAllFiles).
-// Expected SELECT order:
-//
-//	f.id, f.owner_id, f.channel_id, f.filename, f.size, f.mime_type, f.storage_path, f.is_public, f.created_at,
-//	u.username, c.name
 func scanFileJoined(row pgx.Row, f *domain.File) error {
 	var channelID pgtype.Text
 	var channelName pgtype.Text
-	// Owner username is plain text (non-nullable in users table assumption)
+
 	var ownerName pgtype.Text
 
 	err := row.Scan(
@@ -276,8 +270,6 @@ func scanFileJoined(row pgx.Row, f *domain.File) error {
 	return nil
 }
 
-// scanFileSimple scans rows that ONLY select columns from the 'files' table.
-// Expected SELECT order: id, owner_id, channel_id, filename, size, mime_type, storage_path, is_public, created_at
 func scanFileSimple(row pgx.Row, f *domain.File) error {
 	var channelID pgtype.Text
 
@@ -301,11 +293,30 @@ func scanFileSimple(row pgx.Row, f *domain.File) error {
 	return nil
 }
 
-// Stubbed helpers (implement per your domain needs).
-func (r *fileRepo) GetStorageUsage(ctx context.Context, channelID string) (used int64, limit int64, err error) {
-	// TODO: implement actual calculation
-	return int64(7), int64(0), nil
+func (r *fileRepo) GetStorageUsage(
+	ctx context.Context,
+	channelID string,
+) (usedMB int64, limitMB int64, err error) {
+
+	const query = `
+        SELECT storage_used_mb, storage_limit_mb
+        FROM channels
+        WHERE id = $1
+    `
+
+	row := r.pool.QueryRow(ctx, query, channelID)
+
+	if err = row.Scan(&usedMB, &limitMB); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, 0, fmt.Errorf("no channels found")
+		}
+		return 0, 0, err
+	}
+
+	return usedMB, limitMB, nil
 }
+
+
 
 func (r *fileRepo) IsUserBlocked(ctx context.Context, userID string) (bool, error) {
 	// TODO: implement block check

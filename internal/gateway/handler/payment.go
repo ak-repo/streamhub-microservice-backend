@@ -6,6 +6,7 @@ import (
 
 	"github.com/ak-repo/stream-hub/gen/paymentpb"
 	"github.com/ak-repo/stream-hub/pkg/errors"
+	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/response"
 	"github.com/gofiber/fiber/v2"
 )
@@ -30,7 +31,7 @@ func (h *PaymentHandler) CreatePaymentSession(c *fiber.Ctx) error {
 	}
 	req.PurchaserUserId = uid // Set the payer's ID
 
-	if req.ChannelId == "" || req.AmountPaidCents <= 0 || req.StorageAddedBytes <= 0 {
+	if req.ChannelId == "" || req.PlanId == "" {
 		return response.InvalidReqBody(c)
 	}
 
@@ -65,4 +66,30 @@ func (h *PaymentHandler) VerifyPayment(c *fiber.Ctx) error {
 	}
 
 	return response.Success(c, "payment successfully processed and storage added", resp)
+}
+
+func (h *PaymentHandler) SubscriptionPlans(c *fiber.Ctx) error {
+	req := new(paymentpb.SubscriptionPlanRequest)
+	req.ChannelId = c.Params("channel_id")
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+	req.RequesterId = uid
+
+	if req.ChannelId == "" || req.RequesterId == "" {
+		return response.InvalidReqBody(c)
+	}
+
+	ctx, cancel := helper.WithGRPCTimeout()
+	defer cancel()
+
+	resp, err := h.client.ListSubscriptionPlans(ctx, req)
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return response.Error(c, code, body)
+	}
+
+	return response.Success(c, "plans", resp)
+
 }

@@ -24,8 +24,7 @@ func (s *Server) CreatePaymentSession(ctx context.Context, req *paymentpb.Create
 	session := &domain.PaymentSession{
 		ChannelID:       req.ChannelId,
 		PurchaserUserID: req.PurchaserUserId,
-		AmountCents:     req.GetAmountPaidCents(),
-		StorageBytes:    req.GetStorageAddedBytes(),
+		PlanID:          req.PlanId,
 		CreatedAt:       time.Now().UTC(),
 		Status:          "pending",
 	}
@@ -51,4 +50,26 @@ func (s *Server) VerifyPayment(ctx context.Context, req *paymentpb.VerifyPayment
 		return nil, err
 	}
 	return &paymentpb.VerifyPaymentResponse{}, nil
+}
+
+func (s *Server) ListSubscriptionPlans(ctx context.Context, req *paymentpb.SubscriptionPlanRequest) (*paymentpb.SubscriptionPlanResponse, error) {
+
+	plans, err := s.appService.GetSubscriptionPlans(ctx, req.RequesterId, req.ChannelId)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp []*paymentpb.SubscriptionPlan
+	for _, v := range plans {
+		resp = append(resp, &paymentpb.SubscriptionPlan{
+			Id:             v.ID,
+			Name:           v.Name,
+			DurationDays:   v.DurationDays,
+			StorageLimitMb: v.StorageLimitMB,
+			PriceInr:       v.PriceINR,
+		})
+	}
+
+	return &paymentpb.SubscriptionPlanResponse{Plans: resp}, nil
+
 }

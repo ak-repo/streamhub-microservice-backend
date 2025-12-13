@@ -139,7 +139,7 @@ func (h *FileHandler) DeleteFile(c *fiber.Ctx) error {
 		return response.InvalidReqBody(c)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := helper.WithGRPCTimeout()
 	defer cancel()
 
 	resp, err := h.client.DeleteFile(ctx, req)
@@ -150,3 +150,32 @@ func (h *FileHandler) DeleteFile(c *fiber.Ctx) error {
 
 	return response.Success(c, "file deleted successfully", resp)
 }
+
+func (h *FileHandler) GetStorageUsage(c *fiber.Ctx) error {
+	req := new(filespb.GetStorageUsageRequest)
+
+	req.ChannelId = c.Params("channel_id")
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+	req.RequesterId = uid
+
+	if req.ChannelId == "" || req.RequesterId == "" {
+		return response.InvalidReqBody(c)
+	}
+
+	ctx, cancel := helper.WithGRPCTimeout()
+	defer cancel()
+
+	resp, err := h.client.GetStorageUsage(ctx, req)
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return response.Error(c, code, body)
+	}
+
+	return response.Success(c, "storage usage", resp)
+
+}
+
+

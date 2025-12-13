@@ -47,7 +47,7 @@ func main() {
 	}
 	defer pgDB.Close()
 
-	repo := postgres.NewPgxRepository(pgDB.Pool)
+	repo := postgres.NewPaymentRepo(pgDB.Pool)
 	pay := pay.NewRazorpayGateway(cfg)
 	// Redis
 	rAddr := cfg.Redis.Host + ":" + cfg.Redis.Port

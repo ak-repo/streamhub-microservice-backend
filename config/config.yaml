@@ -66,7 +66,6 @@ server:
   shutdown_timeout: 30s
 
 sendgrid:
-  api_key: 
   magic_id: d-2fcd69e42e22485db945d8963229763d
   otp_id: d-3018e88c52f34cb1ad5d227d5ad0bef9
   admin_info: d-393e85b9727a4e48bba8e96b5c82a78c
@@ -108,8 +107,7 @@ file_service:
 cloudinary:
   cloud_name: dersnukrf
   api_key: 388271549966182
-  api_secret: 
+
 #  test mode
 razorpay:
-  secret_key: 
   publishable_key: rzp_test_RqwWzgHgoIe4Eu

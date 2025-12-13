@@ -32,7 +32,7 @@ func (r *channelRepo) CreateChannel(ctx context.Context, c *domain.Channel) erro
 	`
 	_, err := r.db.Exec(ctx, q,
 		c.ID, c.Name, c.Description, c.Visibility,
-		c.OwnerID, c.CreatedAt, c.IsFrozen,
+		c.CreatedBy, c.CreatedAt, c.IsFrozen,
 	)
 	return err
 }
@@ -47,7 +47,7 @@ func (r *channelRepo) GetChannel(ctx context.Context, channelID string) (*domain
 	ch := &domain.Channel{}
 	err := r.db.QueryRow(ctx, q, channelID).Scan(
 		&ch.ID, &ch.Name, &ch.Description, &ch.Visibility,
-		&ch.OwnerID, &ch.CreatedAt, &ch.IsFrozen,
+		&ch.CreatedBy, &ch.CreatedAt, &ch.IsFrozen,
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -85,7 +85,7 @@ func (r *channelRepo) ListUserChannels(ctx context.Context, userID string) ([]*d
 		ch := new(domain.Channel)
 		if err := rows.Scan(
 			&ch.ID, &ch.Name, &ch.Description, &ch.Visibility,
-			&ch.OwnerID, &ch.CreatedAt, &ch.IsFrozen,
+			&ch.CreatedBy, &ch.CreatedAt, &ch.IsFrozen,
 		); err != nil {
 			return nil, err
 		}
@@ -127,7 +127,7 @@ func (r *channelRepo) SearchChannels(ctx context.Context, filter string, limit, 
 	var channels []*domain.Channel
 	for rows.Next() {
 		ch := &domain.Channel{}
-		err := rows.Scan(&ch.ID, &ch.Name, &ch.Description, &ch.Visibility, &ch.OwnerID, &ch.CreatedAt, &ch.IsFrozen)
+		err := rows.Scan(&ch.ID, &ch.Name, &ch.Description, &ch.Visibility, &ch.CreatedBy, &ch.CreatedAt, &ch.IsFrozen)
 		if err != nil {
 			return nil, err
 		}
@@ -270,26 +270,7 @@ func (r *channelRepo) CreateRequest(ctx context.Context, req *domain.Request) er
 	return err
 }
 
-// func (r *channelRepo) CheckExistingRequest(ctx context.Context, userID, channelID, reqType string) bool {
-// const q = `
-// 	SELECT 1
-// 	FROM requests
-// 	WHERE user_id = $1 AND channel_id = $2 AND type = $3
-// 	LIMIT 1
-// `
 
-// 	var dummy int
-// 	err := r.db.QueryRow(ctx, q, userID, channelID, reqType).Scan(&dummy)
-// 	if err != nil {
-// 		if errors.Is(err, pgx.ErrNoRows) {
-// 			return false // no existing request
-// 		}
-// 		// optional: log unexpected DB errors
-// 		return false
-// 	}
-
-// 	return true
-// }
 
 func (r *channelRepo) CheckExistingRequest(ctx context.Context, userID, channelID, reqType string) bool {
 	const q = `
@@ -390,10 +371,7 @@ func (r *channelRepo) ListPendingRequests(ctx context.Context, userID, channelID
 
 // ADMIN
 //
-//	type ChannelWithMembers struct {
-//		Channel *Channel
-//		Members []*ChannelMember
-//	}
+
 func (r *channelRepo) AdminListChannels(ctx context.Context, limit, offset int32) ([]*domain.ChannelWithMembers, error) {
 
 	const q = `
@@ -419,7 +397,7 @@ func (r *channelRepo) AdminListChannels(ctx context.Context, limit, offset int32
 			&ch.Name,
 			&ch.Description,
 			&ch.Visibility,
-			&ch.OwnerID,
+			&ch.CreatedBy,
 			&ch.CreatedAt,
 			&ch.IsFrozen,
 		); err != nil {

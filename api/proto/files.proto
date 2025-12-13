@@ -30,6 +30,8 @@ message StorageStats {
   int64 private_files_count = 4;
 }
 
+
+
 // =============================================================================
 // USER SERVICE MESSAGES
 // =============================================================================
@@ -94,12 +96,16 @@ message DeleteFileResponse {
 
 message GetStorageUsageRequest {
   string channel_id = 1; // User or Channel ID
+  string requester_id = 2;
+
 }
 
 message GetStorageUsageResponse {
   int64 used_bytes = 1;
   int64 limit_bytes = 2;
 }
+
+
 
 // =============================================================================
 // ADMIN SERVICE MESSAGES
@@ -172,6 +178,7 @@ service FileService {
   rpc ListFiles (ListFilesRequest) returns (ListFilesResponse);
   rpc DeleteFile (DeleteFileRequest) returns (DeleteFileResponse);
   rpc GetStorageUsage (GetStorageUsageRequest) returns (GetStorageUsageResponse);
+
 }
 
 // Dedicated service for administrative operations

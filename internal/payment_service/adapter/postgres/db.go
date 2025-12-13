@@ -10,41 +10,37 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type PgxRepository struct {
+type paymentRepo struct {
 	pool *pgxpool.Pool
 }
 
-func NewPgxRepository(pool *pgxpool.Pool) port.Repository {
-	return &PgxRepository{pool: pool}
+func NewPaymentRepo(pool *pgxpool.Pool) port.Repository {
+	return &paymentRepo{pool: pool}
 }
 
-func (r *PgxRepository) RecordPaymentHistory(
+func (r *paymentRepo) RecordPaymentHistory(
 	ctx context.Context,
 	history *domain.PaymentHistory,
 ) error {
 
 	query := `
-		INSERT INTO payment_history (
+		INSERT INTO channel_subscriptions (
 			id,
 			channel_id,
-			purchaser_user_id,
+			plan_id,
 			razorpay_order_id,
 			razorpay_payment_id,
-			amount_paid_cents,
-			storage_added_bytes,
 			created_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7,$8)
+		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
 	_, err := r.pool.Exec(ctx, query,
 		history.ID,
 		history.ChannelID,
-		history.PurchaserUserID,
+		history.PlanID,
 		history.RazorpayOrderID,
 		history.RazorpayPaymentID,
-		history.AmountPaidCents,
-		history.StorageAddedBytes,
 		history.CreatedAt,
 	)
 
@@ -55,10 +51,12 @@ func (r *PgxRepository) RecordPaymentHistory(
 	return nil
 }
 
-func (r *PgxRepository) GetHistoryByChannel(
+func (r *paymentRepo) GetHistoryByChannel(
 	ctx context.Context,
 	channelID uuid.UUID,
 ) ([]*domain.PaymentHistory, error) {
+
+	// TODO errors
 
 	query := `
 		SELECT
@@ -92,8 +90,7 @@ func (r *PgxRepository) GetHistoryByChannel(
 			&h.PurchaserUserID,
 			&h.RazorpayOrderID,
 			&h.RazorpayPaymentID,
-			&h.AmountPaidCents,
-			&h.StorageAddedBytes,
+
 			&h.CreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan payment history: %w", err)
@@ -107,4 +104,38 @@ func (r *PgxRepository) GetHistoryByChannel(
 	}
 
 	return histories, nil
+}
+
+func (r *paymentRepo) GetSubscriptionPlans(ctx context.Context) ([]*domain.SubscriptionPlan, error) {
+
+	raws, err := r.pool.Query(ctx, `SELECT id, name, storage_limit_mb, price_inr,  duration_days FROM  channel_storage_plans`)
+	if err != nil {
+		return nil, err
+	}
+	defer raws.Close()
+
+	var plans []*domain.SubscriptionPlan
+
+	for raws.Next() {
+		p := &domain.SubscriptionPlan{}
+		if err := raws.Scan(&p.ID, &p.Name, &p.StorageLimitMB, &p.PriceINR, &p.DurationDays); err != nil {
+			return nil, err
+		}
+
+		plans = append(plans, p)
+
+	}
+	return plans, raws.Err()
+}
+
+func (r *paymentRepo) PlanByID(ctx context.Context, planID string) (*domain.SubscriptionPlan, error) {
+	raw := r.pool.QueryRow(ctx, `SELECT id, name, storage_limit_mb, price_inr,  duration_days FROM  channel_storage_plans WHERE id = $1`, planID)
+
+	plan := &domain.SubscriptionPlan{}
+	if err := raw.Scan(&plan.ID, &plan.Name, &plan.StorageLimitMB, &plan.PriceINR, &plan.DurationDays); err != nil {
+		return nil, err
+	}
+
+	return plan, nil
+
 }

@@ -6,16 +6,30 @@ import (
 
 // Channel represents a chat group where users can exchange messages.
 type Channel struct {
-	ID           string    // Unique channel identifier (UUID)
-	Name         string    // Human-readable channel name (e.g., "general", "random")
-	OwnerID      string    // User ID of the channel creator
-	CreatedAt    time.Time // When the channel was created
-	Description  string
-	Visibility   string // public / private
-	IsFrozen     bool
-	OwnerName    string `json:"owner_name"`
-	MembersCount int32
+	ID        string    `json:"id"`          // Channel UUID
+	Name      string    `json:"name"`        // Channel name
+	CreatedBy string    `json:"created_by"`  // Owner user ID
+
+	Description string `json:"description"`
+
+	Visibility string `json:"visibility"` // public / private / hidden
+	IsFrozen   bool   `json:"is_frozen"`
+	IsArchived bool   `json:"is_archived"`
+
+	// PLAN & STORAGE (IMPORTANT)
+	ActivePlanID   string `json:"active_plan_id"`   // FK → channel_storage_plans.id
+	StorageLimitMB int64  `json:"storage_limit_mb"` // Total allowed storage
+	StorageUsedMB  int64  `json:"storage_used_mb"`  // Used storage
+
+	// METADATA
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// READ-ONLY / JOINED FIELDS (NOT STORED IN channels TABLE)
+	OwnerName    string `json:"owner_name,omitempty"`
+	MembersCount int32  `json:"members_count,omitempty"`
 }
+
 
 // ChannelMember represents a user's membership in a channel.
 type ChannelMember struct {

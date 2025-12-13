@@ -5,30 +5,70 @@ package payment;
 option go_package = "./gen/paymentpb";
 
 
-
-// Service contract defined by the Application Service Port
-service PaymentService {
-  rpc CreatePaymentSession(CreatePaymentSessionRequest) returns (CreatePaymentSessionResponse);
-  rpc VerifyPayment(VerifyPaymentRequest) returns (VerifyPaymentResponse); // Empty success response
+// =======================
+// SUBSCRIPTION PLAN
+// =======================
+message SubscriptionPlan {
+  string id = 1;                 // plan UUID
+  string name = 2;               // basic / pro / enterprise
+  int64 storage_limit_mb = 3;    // MB (NOT string)
+  int32 price_inr = 4;           // INR
+  int32 duration_days = 5;
 }
 
+
+// =======================
+// LIST PLANS
+// =======================
+message SubscriptionPlanRequest {
+  string channel_id = 1;
+  string requester_id = 2;
+}
+
+message SubscriptionPlanResponse {
+  repeated SubscriptionPlan plans = 1;
+  string current_plan_id = 2;   // IMPORTANT
+}
+
+
+// =======================
+// CREATE PAYMENT
+// =======================
 message CreatePaymentSessionRequest {
-  string channel_id = 1;         // UUID string
-  string purchaser_user_id = 2;  // UUID string
-  int32 amount_paid_cents = 3;
-  int64 storage_added_bytes = 4;
+  string channel_id = 1;
+  string purchaser_user_id = 2;
+  string plan_id = 3;           // which plan user is buying
 }
 
 message CreatePaymentSessionResponse {
   string razorpay_order_id = 1;
 }
 
+
+// =======================
+// VERIFY PAYMENT
+// =======================
 message VerifyPaymentRequest {
   string razorpay_order_id = 1;
-  string razorpay_payment_id = 2; // This is what you record as razorpay_session_id
+  string razorpay_payment_id = 2;
   string razorpay_signature = 3;
 }
 
-message VerifyPaymentResponse{
+message VerifyPaymentResponse {
   bool success = 1;
+}
+
+
+// =======================
+// PAYMENT SERVICE
+// =======================
+service PaymentService {
+  rpc ListSubscriptionPlans(SubscriptionPlanRequest)
+      returns (SubscriptionPlanResponse);
+
+  rpc CreatePaymentSession(CreatePaymentSessionRequest)
+      returns (CreatePaymentSessionResponse);
+
+  rpc VerifyPayment(VerifyPaymentRequest)
+      returns (VerifyPaymentResponse);
 }

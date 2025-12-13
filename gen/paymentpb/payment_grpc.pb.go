@@ -19,16 +19,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PaymentService_CreatePaymentSession_FullMethodName = "/payment.PaymentService/CreatePaymentSession"
-	PaymentService_VerifyPayment_FullMethodName        = "/payment.PaymentService/VerifyPayment"
+	PaymentService_ListSubscriptionPlans_FullMethodName = "/payment.PaymentService/ListSubscriptionPlans"
+	PaymentService_CreatePaymentSession_FullMethodName  = "/payment.PaymentService/CreatePaymentSession"
+	PaymentService_VerifyPayment_FullMethodName         = "/payment.PaymentService/VerifyPayment"
 )
 
 // PaymentServiceClient is the client API for PaymentService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// Service contract defined by the Application Service Port
+// =======================
+// PAYMENT SERVICE
+// =======================
 type PaymentServiceClient interface {
+	ListSubscriptionPlans(ctx context.Context, in *SubscriptionPlanRequest, opts ...grpc.CallOption) (*SubscriptionPlanResponse, error)
 	CreatePaymentSession(ctx context.Context, in *CreatePaymentSessionRequest, opts ...grpc.CallOption) (*CreatePaymentSessionResponse, error)
 	VerifyPayment(ctx context.Context, in *VerifyPaymentRequest, opts ...grpc.CallOption) (*VerifyPaymentResponse, error)
 }
@@ -39,6 +43,16 @@ type paymentServiceClient struct {
 
 func NewPaymentServiceClient(cc grpc.ClientConnInterface) PaymentServiceClient {
 	return &paymentServiceClient{cc}
+}
+
+func (c *paymentServiceClient) ListSubscriptionPlans(ctx context.Context, in *SubscriptionPlanRequest, opts ...grpc.CallOption) (*SubscriptionPlanResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubscriptionPlanResponse)
+	err := c.cc.Invoke(ctx, PaymentService_ListSubscriptionPlans_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *paymentServiceClient) CreatePaymentSession(ctx context.Context, in *CreatePaymentSessionRequest, opts ...grpc.CallOption) (*CreatePaymentSessionResponse, error) {
@@ -65,8 +79,11 @@ func (c *paymentServiceClient) VerifyPayment(ctx context.Context, in *VerifyPaym
 // All implementations must embed UnimplementedPaymentServiceServer
 // for forward compatibility.
 //
-// Service contract defined by the Application Service Port
+// =======================
+// PAYMENT SERVICE
+// =======================
 type PaymentServiceServer interface {
+	ListSubscriptionPlans(context.Context, *SubscriptionPlanRequest) (*SubscriptionPlanResponse, error)
 	CreatePaymentSession(context.Context, *CreatePaymentSessionRequest) (*CreatePaymentSessionResponse, error)
 	VerifyPayment(context.Context, *VerifyPaymentRequest) (*VerifyPaymentResponse, error)
 	mustEmbedUnimplementedPaymentServiceServer()
@@ -79,6 +96,9 @@ type PaymentServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedPaymentServiceServer struct{}
 
+func (UnimplementedPaymentServiceServer) ListSubscriptionPlans(context.Context, *SubscriptionPlanRequest) (*SubscriptionPlanResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListSubscriptionPlans not implemented")
+}
 func (UnimplementedPaymentServiceServer) CreatePaymentSession(context.Context, *CreatePaymentSessionRequest) (*CreatePaymentSessionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePaymentSession not implemented")
 }
@@ -104,6 +124,24 @@ func RegisterPaymentServiceServer(s grpc.ServiceRegistrar, srv PaymentServiceSer
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&PaymentService_ServiceDesc, srv)
+}
+
+func _PaymentService_ListSubscriptionPlans_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubscriptionPlanRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentServiceServer).ListSubscriptionPlans(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentService_ListSubscriptionPlans_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentServiceServer).ListSubscriptionPlans(ctx, req.(*SubscriptionPlanRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _PaymentService_CreatePaymentSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -149,6 +187,10 @@ var PaymentService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "payment.PaymentService",
 	HandlerType: (*PaymentServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListSubscriptionPlans",
+			Handler:    _PaymentService_ListSubscriptionPlans_Handler,
+		},
 		{
 			MethodName: "CreatePaymentSession",
 			Handler:    _PaymentService_CreatePaymentSession_Handler,

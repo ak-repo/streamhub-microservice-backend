@@ -341,7 +341,7 @@ func mapChannelToProto(c *domain.Channel) *channelpb.Channel {
 		Name:        c.Name,
 		Description: c.Description,
 		Visibility:  c.Visibility,
-		OwnerId:     c.OwnerID,
+		OwnerId:     c.CreatedBy,
 		CreatedAt:   c.CreatedAt.UnixMilli(),
 		IsFrozen:    c.IsFrozen,
 		OwnerName:   c.OwnerName,

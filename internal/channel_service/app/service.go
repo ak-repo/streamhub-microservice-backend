@@ -106,7 +106,7 @@ func (s *channelService) CreateChannel(ctx context.Context, name, description, v
 		Name:        name,
 		Description: description,
 		Visibility:  visibility,
-		OwnerID:     creatorID,
+		CreatedBy:     creatorID,
 		CreatedAt:   time.Now().UTC(),
 		IsFrozen:    false,
 	}
@@ -162,7 +162,7 @@ func (s *channelService) DeleteChannel(ctx context.Context, channelID, requester
 		return errors.New(errors.CodeNotFound, "channel not found", err)
 	}
 
-	if ch.OwnerID != requesterID {
+	if ch.CreatedBy != requesterID {
 		return errors.New(errors.CodeForbidden, "only owner can delete channel", nil)
 	}
 
@@ -365,7 +365,7 @@ func (s *channelService) NotifyAdminUserJoined(ctx context.Context, channelID, n
 	}
 
 	// 3. Load Channel Admin
-	admin, err := s.clients.Auth.GetUser(ctx, &authpb.GetUserRequest{Query: &authpb.GetUserRequest_UserId{channel.OwnerID}})
+	admin, err := s.clients.Auth.GetUser(ctx, &authpb.GetUserRequest{Query: &authpb.GetUserRequest_UserId{channel.CreatedBy}})
 	if err != nil || admin == nil {
 		return errors.New(errors.CodeNotFound, "admin not found", err)
 	}

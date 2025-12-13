@@ -106,11 +106,14 @@ func (s *Server) GetStorageUsage(ctx context.Context, req *filespb.GetStorageUsa
 	if err != nil {
 		return nil, err
 	}
+
 	return &filespb.GetStorageUsageResponse{
 		UsedBytes:  used,
 		LimitBytes: limit,
 	}, nil
 }
+
+
 
 // =============================================================================
 // ADMIN FILE SERVICE

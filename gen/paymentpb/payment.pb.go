@@ -21,19 +21,207 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// =======================
+// SUBSCRIPTION PLAN
+// =======================
+type SubscriptionPlan struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                                  // plan UUID
+	Name           string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                              // basic / pro / enterprise
+	StorageLimitMb int64                  `protobuf:"varint,3,opt,name=storage_limit_mb,json=storageLimitMb,proto3" json:"storage_limit_mb,omitempty"` // MB (NOT string)
+	PriceInr       int32                  `protobuf:"varint,4,opt,name=price_inr,json=priceInr,proto3" json:"price_inr,omitempty"`                     // INR
+	DurationDays   int32                  `protobuf:"varint,5,opt,name=duration_days,json=durationDays,proto3" json:"duration_days,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *SubscriptionPlan) Reset() {
+	*x = SubscriptionPlan{}
+	mi := &file_api_proto_payment_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubscriptionPlan) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubscriptionPlan) ProtoMessage() {}
+
+func (x *SubscriptionPlan) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_payment_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubscriptionPlan.ProtoReflect.Descriptor instead.
+func (*SubscriptionPlan) Descriptor() ([]byte, []int) {
+	return file_api_proto_payment_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *SubscriptionPlan) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SubscriptionPlan) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SubscriptionPlan) GetStorageLimitMb() int64 {
+	if x != nil {
+		return x.StorageLimitMb
+	}
+	return 0
+}
+
+func (x *SubscriptionPlan) GetPriceInr() int32 {
+	if x != nil {
+		return x.PriceInr
+	}
+	return 0
+}
+
+func (x *SubscriptionPlan) GetDurationDays() int32 {
+	if x != nil {
+		return x.DurationDays
+	}
+	return 0
+}
+
+// =======================
+// LIST PLANS
+// =======================
+type SubscriptionPlanRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChannelId     string                 `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	RequesterId   string                 `protobuf:"bytes,2,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SubscriptionPlanRequest) Reset() {
+	*x = SubscriptionPlanRequest{}
+	mi := &file_api_proto_payment_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubscriptionPlanRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubscriptionPlanRequest) ProtoMessage() {}
+
+func (x *SubscriptionPlanRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_payment_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubscriptionPlanRequest.ProtoReflect.Descriptor instead.
+func (*SubscriptionPlanRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_payment_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *SubscriptionPlanRequest) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
+func (x *SubscriptionPlanRequest) GetRequesterId() string {
+	if x != nil {
+		return x.RequesterId
+	}
+	return ""
+}
+
+type SubscriptionPlanResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Plans         []*SubscriptionPlan    `protobuf:"bytes,1,rep,name=plans,proto3" json:"plans,omitempty"`
+	CurrentPlanId string                 `protobuf:"bytes,2,opt,name=current_plan_id,json=currentPlanId,proto3" json:"current_plan_id,omitempty"` // IMPORTANT
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SubscriptionPlanResponse) Reset() {
+	*x = SubscriptionPlanResponse{}
+	mi := &file_api_proto_payment_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubscriptionPlanResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubscriptionPlanResponse) ProtoMessage() {}
+
+func (x *SubscriptionPlanResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_payment_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubscriptionPlanResponse.ProtoReflect.Descriptor instead.
+func (*SubscriptionPlanResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_payment_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SubscriptionPlanResponse) GetPlans() []*SubscriptionPlan {
+	if x != nil {
+		return x.Plans
+	}
+	return nil
+}
+
+func (x *SubscriptionPlanResponse) GetCurrentPlanId() string {
+	if x != nil {
+		return x.CurrentPlanId
+	}
+	return ""
+}
+
+// =======================
+// CREATE PAYMENT
+// =======================
 type CreatePaymentSessionRequest struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	ChannelId         string                 `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`                     // UUID string
-	PurchaserUserId   string                 `protobuf:"bytes,2,opt,name=purchaser_user_id,json=purchaserUserId,proto3" json:"purchaser_user_id,omitempty"` // UUID string
-	AmountPaidCents   int32                  `protobuf:"varint,3,opt,name=amount_paid_cents,json=amountPaidCents,proto3" json:"amount_paid_cents,omitempty"`
-	StorageAddedBytes int64                  `protobuf:"varint,4,opt,name=storage_added_bytes,json=storageAddedBytes,proto3" json:"storage_added_bytes,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ChannelId       string                 `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	PurchaserUserId string                 `protobuf:"bytes,2,opt,name=purchaser_user_id,json=purchaserUserId,proto3" json:"purchaser_user_id,omitempty"`
+	PlanId          string                 `protobuf:"bytes,3,opt,name=plan_id,json=planId,proto3" json:"plan_id,omitempty"` // which plan user is buying
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CreatePaymentSessionRequest) Reset() {
 	*x = CreatePaymentSessionRequest{}
-	mi := &file_api_proto_payment_proto_msgTypes[0]
+	mi := &file_api_proto_payment_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +233,7 @@ func (x *CreatePaymentSessionRequest) String() string {
 func (*CreatePaymentSessionRequest) ProtoMessage() {}
 
 func (x *CreatePaymentSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_payment_proto_msgTypes[0]
+	mi := &file_api_proto_payment_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +246,7 @@ func (x *CreatePaymentSessionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePaymentSessionRequest.ProtoReflect.Descriptor instead.
 func (*CreatePaymentSessionRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_payment_proto_rawDescGZIP(), []int{0}
+	return file_api_proto_payment_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CreatePaymentSessionRequest) GetChannelId() string {
@@ -75,18 +263,11 @@ func (x *CreatePaymentSessionRequest) GetPurchaserUserId() string {
 	return ""
 }
 
-func (x *CreatePaymentSessionRequest) GetAmountPaidCents() int32 {
+func (x *CreatePaymentSessionRequest) GetPlanId() string {
 	if x != nil {
-		return x.AmountPaidCents
+		return x.PlanId
 	}
-	return 0
-}
-
-func (x *CreatePaymentSessionRequest) GetStorageAddedBytes() int64 {
-	if x != nil {
-		return x.StorageAddedBytes
-	}
-	return 0
+	return ""
 }
 
 type CreatePaymentSessionResponse struct {
@@ -98,7 +279,7 @@ type CreatePaymentSessionResponse struct {
 
 func (x *CreatePaymentSessionResponse) Reset() {
 	*x = CreatePaymentSessionResponse{}
-	mi := &file_api_proto_payment_proto_msgTypes[1]
+	mi := &file_api_proto_payment_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -110,7 +291,7 @@ func (x *CreatePaymentSessionResponse) String() string {
 func (*CreatePaymentSessionResponse) ProtoMessage() {}
 
 func (x *CreatePaymentSessionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_payment_proto_msgTypes[1]
+	mi := &file_api_proto_payment_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -123,7 +304,7 @@ func (x *CreatePaymentSessionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePaymentSessionResponse.ProtoReflect.Descriptor instead.
 func (*CreatePaymentSessionResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_payment_proto_rawDescGZIP(), []int{1}
+	return file_api_proto_payment_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CreatePaymentSessionResponse) GetRazorpayOrderId() string {
@@ -133,10 +314,13 @@ func (x *CreatePaymentSessionResponse) GetRazorpayOrderId() string {
 	return ""
 }
 
+// =======================
+// VERIFY PAYMENT
+// =======================
 type VerifyPaymentRequest struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	RazorpayOrderId   string                 `protobuf:"bytes,1,opt,name=razorpay_order_id,json=razorpayOrderId,proto3" json:"razorpay_order_id,omitempty"`
-	RazorpayPaymentId string                 `protobuf:"bytes,2,opt,name=razorpay_payment_id,json=razorpayPaymentId,proto3" json:"razorpay_payment_id,omitempty"` // This is what you record as razorpay_session_id
+	RazorpayPaymentId string                 `protobuf:"bytes,2,opt,name=razorpay_payment_id,json=razorpayPaymentId,proto3" json:"razorpay_payment_id,omitempty"`
 	RazorpaySignature string                 `protobuf:"bytes,3,opt,name=razorpay_signature,json=razorpaySignature,proto3" json:"razorpay_signature,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
@@ -144,7 +328,7 @@ type VerifyPaymentRequest struct {
 
 func (x *VerifyPaymentRequest) Reset() {
 	*x = VerifyPaymentRequest{}
-	mi := &file_api_proto_payment_proto_msgTypes[2]
+	mi := &file_api_proto_payment_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -156,7 +340,7 @@ func (x *VerifyPaymentRequest) String() string {
 func (*VerifyPaymentRequest) ProtoMessage() {}
 
 func (x *VerifyPaymentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_payment_proto_msgTypes[2]
+	mi := &file_api_proto_payment_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -169,7 +353,7 @@ func (x *VerifyPaymentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyPaymentRequest.ProtoReflect.Descriptor instead.
 func (*VerifyPaymentRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_payment_proto_rawDescGZIP(), []int{2}
+	return file_api_proto_payment_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *VerifyPaymentRequest) GetRazorpayOrderId() string {
@@ -202,7 +386,7 @@ type VerifyPaymentResponse struct {
 
 func (x *VerifyPaymentResponse) Reset() {
 	*x = VerifyPaymentResponse{}
-	mi := &file_api_proto_payment_proto_msgTypes[3]
+	mi := &file_api_proto_payment_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -214,7 +398,7 @@ func (x *VerifyPaymentResponse) String() string {
 func (*VerifyPaymentResponse) ProtoMessage() {}
 
 func (x *VerifyPaymentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_payment_proto_msgTypes[3]
+	mi := &file_api_proto_payment_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -227,7 +411,7 @@ func (x *VerifyPaymentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyPaymentResponse.ProtoReflect.Descriptor instead.
 func (*VerifyPaymentResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_payment_proto_rawDescGZIP(), []int{3}
+	return file_api_proto_payment_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *VerifyPaymentResponse) GetSuccess() bool {
@@ -241,13 +425,25 @@ var File_api_proto_payment_proto protoreflect.FileDescriptor
 
 const file_api_proto_payment_proto_rawDesc = "" +
 	"\n" +
-	"\x17api/proto/payment.proto\x12\apayment\"\xc4\x01\n" +
+	"\x17api/proto/payment.proto\x12\apayment\"\xa2\x01\n" +
+	"\x10SubscriptionPlan\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12(\n" +
+	"\x10storage_limit_mb\x18\x03 \x01(\x03R\x0estorageLimitMb\x12\x1b\n" +
+	"\tprice_inr\x18\x04 \x01(\x05R\bpriceInr\x12#\n" +
+	"\rduration_days\x18\x05 \x01(\x05R\fdurationDays\"[\n" +
+	"\x17SubscriptionPlanRequest\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x01 \x01(\tR\tchannelId\x12!\n" +
+	"\frequester_id\x18\x02 \x01(\tR\vrequesterId\"s\n" +
+	"\x18SubscriptionPlanResponse\x12/\n" +
+	"\x05plans\x18\x01 \x03(\v2\x19.payment.SubscriptionPlanR\x05plans\x12&\n" +
+	"\x0fcurrent_plan_id\x18\x02 \x01(\tR\rcurrentPlanId\"\x81\x01\n" +
 	"\x1bCreatePaymentSessionRequest\x12\x1d\n" +
 	"\n" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12*\n" +
-	"\x11purchaser_user_id\x18\x02 \x01(\tR\x0fpurchaserUserId\x12*\n" +
-	"\x11amount_paid_cents\x18\x03 \x01(\x05R\x0famountPaidCents\x12.\n" +
-	"\x13storage_added_bytes\x18\x04 \x01(\x03R\x11storageAddedBytes\"J\n" +
+	"\x11purchaser_user_id\x18\x02 \x01(\tR\x0fpurchaserUserId\x12\x17\n" +
+	"\aplan_id\x18\x03 \x01(\tR\x06planId\"J\n" +
 	"\x1cCreatePaymentSessionResponse\x12*\n" +
 	"\x11razorpay_order_id\x18\x01 \x01(\tR\x0frazorpayOrderId\"\xa1\x01\n" +
 	"\x14VerifyPaymentRequest\x12*\n" +
@@ -255,8 +451,9 @@ const file_api_proto_payment_proto_rawDesc = "" +
 	"\x13razorpay_payment_id\x18\x02 \x01(\tR\x11razorpayPaymentId\x12-\n" +
 	"\x12razorpay_signature\x18\x03 \x01(\tR\x11razorpaySignature\"1\n" +
 	"\x15VerifyPaymentResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess2\xc5\x01\n" +
-	"\x0ePaymentService\x12c\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess2\xa3\x02\n" +
+	"\x0ePaymentService\x12\\\n" +
+	"\x15ListSubscriptionPlans\x12 .payment.SubscriptionPlanRequest\x1a!.payment.SubscriptionPlanResponse\x12c\n" +
 	"\x14CreatePaymentSession\x12$.payment.CreatePaymentSessionRequest\x1a%.payment.CreatePaymentSessionResponse\x12N\n" +
 	"\rVerifyPayment\x12\x1d.payment.VerifyPaymentRequest\x1a\x1e.payment.VerifyPaymentResponseB\x11Z\x0f./gen/paymentpbb\x06proto3"
 
@@ -272,23 +469,29 @@ func file_api_proto_payment_proto_rawDescGZIP() []byte {
 	return file_api_proto_payment_proto_rawDescData
 }
 
-var file_api_proto_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_api_proto_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_api_proto_payment_proto_goTypes = []any{
-	(*CreatePaymentSessionRequest)(nil),  // 0: payment.CreatePaymentSessionRequest
-	(*CreatePaymentSessionResponse)(nil), // 1: payment.CreatePaymentSessionResponse
-	(*VerifyPaymentRequest)(nil),         // 2: payment.VerifyPaymentRequest
-	(*VerifyPaymentResponse)(nil),        // 3: payment.VerifyPaymentResponse
+	(*SubscriptionPlan)(nil),             // 0: payment.SubscriptionPlan
+	(*SubscriptionPlanRequest)(nil),      // 1: payment.SubscriptionPlanRequest
+	(*SubscriptionPlanResponse)(nil),     // 2: payment.SubscriptionPlanResponse
+	(*CreatePaymentSessionRequest)(nil),  // 3: payment.CreatePaymentSessionRequest
+	(*CreatePaymentSessionResponse)(nil), // 4: payment.CreatePaymentSessionResponse
+	(*VerifyPaymentRequest)(nil),         // 5: payment.VerifyPaymentRequest
+	(*VerifyPaymentResponse)(nil),        // 6: payment.VerifyPaymentResponse
 }
 var file_api_proto_payment_proto_depIdxs = []int32{
-	0, // 0: payment.PaymentService.CreatePaymentSession:input_type -> payment.CreatePaymentSessionRequest
-	2, // 1: payment.PaymentService.VerifyPayment:input_type -> payment.VerifyPaymentRequest
-	1, // 2: payment.PaymentService.CreatePaymentSession:output_type -> payment.CreatePaymentSessionResponse
-	3, // 3: payment.PaymentService.VerifyPayment:output_type -> payment.VerifyPaymentResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: payment.SubscriptionPlanResponse.plans:type_name -> payment.SubscriptionPlan
+	1, // 1: payment.PaymentService.ListSubscriptionPlans:input_type -> payment.SubscriptionPlanRequest
+	3, // 2: payment.PaymentService.CreatePaymentSession:input_type -> payment.CreatePaymentSessionRequest
+	5, // 3: payment.PaymentService.VerifyPayment:input_type -> payment.VerifyPaymentRequest
+	2, // 4: payment.PaymentService.ListSubscriptionPlans:output_type -> payment.SubscriptionPlanResponse
+	4, // 5: payment.PaymentService.CreatePaymentSession:output_type -> payment.CreatePaymentSessionResponse
+	6, // 6: payment.PaymentService.VerifyPayment:output_type -> payment.VerifyPaymentResponse
+	4, // [4:7] is the sub-list for method output_type
+	1, // [1:4] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_api_proto_payment_proto_init() }
@@ -302,7 +505,7 @@ func file_api_proto_payment_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_payment_proto_rawDesc), len(file_api_proto_payment_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

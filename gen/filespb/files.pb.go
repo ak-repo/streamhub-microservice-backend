@@ -787,6 +787,7 @@ func (x *DeleteFileResponse) GetSuccess() bool {
 type GetStorageUsageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ChannelId     string                 `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"` // User or Channel ID
+	RequesterId   string                 `protobuf:"bytes,2,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -824,6 +825,13 @@ func (*GetStorageUsageRequest) Descriptor() ([]byte, []int) {
 func (x *GetStorageUsageRequest) GetChannelId() string {
 	if x != nil {
 		return x.ChannelId
+	}
+	return ""
+}
+
+func (x *GetStorageUsageRequest) GetRequesterId() string {
+	if x != nil {
+		return x.RequesterId
 	}
 	return ""
 }
@@ -1466,10 +1474,11 @@ const file_api_proto_files_proto_rawDesc = "" +
 	"\afile_id\x18\x01 \x01(\tR\x06fileId\x12!\n" +
 	"\frequester_id\x18\x02 \x01(\tR\vrequesterId\".\n" +
 	"\x12DeleteFileResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"7\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"Z\n" +
 	"\x16GetStorageUsageRequest\x12\x1d\n" +
 	"\n" +
-	"channel_id\x18\x01 \x01(\tR\tchannelId\"Y\n" +
+	"channel_id\x18\x01 \x01(\tR\tchannelId\x12!\n" +
+	"\frequester_id\x18\x02 \x01(\tR\vrequesterId\"Y\n" +
 	"\x17GetStorageUsageResponse\x12\x1d\n" +
 	"\n" +
 	"used_bytes\x18\x01 \x01(\x03R\tusedBytes\x12\x1f\n" +
