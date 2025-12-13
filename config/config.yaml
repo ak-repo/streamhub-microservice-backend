@@ -36,9 +36,9 @@ services:
   chat:
     port: 50053
     host: chat-service
-  notification:
-    port: 50054
-    host: notification-service
+  payment:
+    port: 50060
+    host: payment-service
   users:
     port: 50055
     host: users-service
@@ -109,8 +109,7 @@ cloudinary:
   cloud_name: dersnukrf
   api_key: 388271549966182
   api_secret: 
-
-#  test mode 
+#  test mode
 razorpay:
-  secret_key:
+  secret_key: 
   publishable_key: rzp_test_RqwWzgHgoIe4Eu

@@ -1,113 +1,68 @@
 package handler
 
-// import (
-// 	"encoding/json"
-// 	"fmt"
-// 	"os"
+import (
+	"context"
+	"time"
 
-// 	"github.com/gofiber/fiber/v2"
-// 	"github.com/stripe/stripe-go/v78"
-// 	"github.com/stripe/stripe-go/v78/checkout/session"
-// 	"github.com/stripe/stripe-go/v78/webhook"
-// )
+	"github.com/ak-repo/stream-hub/gen/paymentpb"
+	"github.com/ak-repo/stream-hub/pkg/errors"
+	"github.com/ak-repo/stream-hub/pkg/response"
+	"github.com/gofiber/fiber/v2"
+)
 
-// type Handler struct {
-// 	ChannelRepo *payment.Repository
-// }
+type PaymentHandler struct {
+	client paymentpb.PaymentServiceClient
+}
 
-// func NewPaymentHandler(repo *payment.Repository) *Handler {
-// 	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
-// 	return &Handler{ChannelRepo: repo}
-// }
+func NewPaymentHandler(cli paymentpb.PaymentServiceClient) *PaymentHandler {
+	return &PaymentHandler{client: cli}
+}
 
-// // CreateCheckoutSession: Admin clicks "Buy Storage for Channel"
-// func (h *Handler) CreateCheckoutSession(c *fiber.Ctx) error {
-// 	type Request struct {
-// 		PlanID    string `json:"plan_id"`
-// 		ChannelID string `json:"channel_id"` // <--- NEW: The channel getting the storage
-// 		UserID    string `json:"user_id"`    // The admin buying it
-// 	}
-// 	var req Request
-// 	if err := c.BodyParser(&req); err != nil {
-// 		return c.Status(400).SendString("Invalid Input")
-// 	}
+func (h *PaymentHandler) CreatePaymentSession(c *fiber.Ctx) error {
+	req := new(paymentpb.CreatePaymentSessionRequest)
+	if err := c.BodyParser(req); err != nil {
+		return response.InvalidReqBody(c)
+	}
 
-// 	// TODO: You should add a check here to ensure req.UserID is actually an Admin of req.ChannelID
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+	req.PurchaserUserId = uid // Set the payer's ID
 
-// 	// Hardcoded plans (Example)
-// 	var priceID string
-// 	var bytesToAdd int64
-// 	switch req.PlanID {
-// 	case "channel_boost_100gb":
-// 		priceID = "price_1P..." // Replace with real Stripe Price ID
-// 		bytesToAdd = 100 * 1024 * 1024 * 1024
-// 	default:
-// 		return c.Status(400).SendString("Invalid Plan ID")
-// 	}
+	if req.ChannelId == "" || req.AmountPaidCents <= 0 || req.StorageAddedBytes <= 0 {
+		return response.InvalidReqBody(c)
+	}
 
-// 	params := &stripe.CheckoutSessionParams{
-// 		Mode: stripe.String(string(stripe.CheckoutSessionModePayment)),
-// 		LineItems: []*stripe.CheckoutSessionLineItemParams{
-// 			{
-// 				Price:    stripe.String(priceID),
-// 				Quantity: stripe.Int64(1),
-// 			},
-// 		},
-// 		SuccessURL: stripe.String(os.Getenv("SERVER_URL") + "/payment/success"),
-// 		CancelURL:  stripe.String(os.Getenv("SERVER_URL") + "/payment/cancel"),
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-// 		// CRITICAL CHANGE: We now attach ChannelID in metadata
-// 		Metadata: map[string]string{
-// 			"channel_id":   req.ChannelID,
-// 			"user_id":      req.UserID, // We still track who paid
-// 			"bytes_to_add": fmt.Sprintf("%d", bytesToAdd),
-// 			"plan_id":      req.PlanID,
-// 		},
-// 	}
+	resp, err := h.client.CreatePaymentSession(ctx, req)
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return response.Error(c, code, body)
+	}
+	return response.Success(c, "payment session created, proceed to checkout", resp)
+}
 
-// 	sess, err := session.New(params)
-// 	if err != nil {
-// 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-// 	}
+func (h *PaymentHandler) VerifyPayment(c *fiber.Ctx) error {
+	req := new(paymentpb.VerifyPaymentRequest)
+	if err := c.BodyParser(req); err != nil {
+		return response.InvalidReqBody(c)
+	}
 
-// 	return c.JSON(fiber.Map{"url": sess.URL})
-// }
+	if req.RazorpayOrderId == "" || req.RazorpayPaymentId == "" || req.RazorpaySignature == "" {
+		return response.InvalidReqBody(c)
+	}
 
-// // HandleWebhook: Updates the Channel table
-// func (h *Handler) HandleWebhook(c *fiber.Ctx) error {
-// 	webhookSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
-// 	payload := c.Body()
-// 	sigHeader := c.Get("Stripe-Signature")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-// 	event, err := webhook.ConstructEvent(payload, sigHeader, webhookSecret)
-// 	if err != nil {
-// 		return c.Status(400).SendString("Webhook Error")
-// 	}
+	resp, err := h.client.VerifyPayment(ctx, req)
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return response.Error(c, code, body)
+	}
 
-// 	if event.Type == "checkout.session.completed" {
-// 		var sess stripe.CheckoutSession
-// 		if err := json.Unmarshal(event.Data.Raw, &sess); err != nil {
-// 			return c.Status(400).SendString("Error parsing session")
-// 		}
-
-// 		// Retrieve Metadata
-// 		channelID := sess.Metadata["channel_id"] // <--- Get Channel ID
-// 		userID := sess.Metadata["user_id"]       // <--- Get Purchaser ID
-
-// 		// (In real code, parse bytes_to_add from string to int64)
-// 		var bytesToAdd int64 = 100 * 1024 * 1024 * 1024
-
-// 		fmt.Printf("💰 Admin %s bought storage for Channel %s\n", userID, channelID)
-
-// 		// UPDATE CHANNEL IN DB
-// 		err = h.ChannelRepo.AddChannelStorage(c.Context(), channelID, userID, bytesToAdd, sess.ID, int(sess.AmountTotal))
-// 		if err != nil {
-// 			fmt.Printf("❌ Failed to update channel storage: %v\n", err)
-// 			return c.Status(500).SendString("Database Error")
-// 		}
-
-// 		fmt.Println("✅ Channel storage updated successfully!")
-// 	}
-
-// 	return c.SendStatus(200)
-// }
+	return response.Success(c, "payment successfully processed and storage added", resp)
+}

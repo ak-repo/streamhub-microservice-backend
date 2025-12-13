@@ -138,18 +138,14 @@ func userRoutes(api fiber.Router, cfg *config.Config, clients *clients.Clients) 
 	ch.Get("/joins/:id", channel.ListChannelJoins) // tested
 	ch.Post("/updatereq", channel.UpdateRequestStatus)
 
-	// TODO just testing
-	//db
-	// pgDB, err := db.NewPostgresDB(context.Background(), cfg)
-	// if err != nil {
-	// 	log.Fatal("failed to connect db:", zap.Error(err))
-	// }
-	// defer pgDB.Close()
+	// --------------------------
+	// PAYMENT HANDLER  - Razorpay
+	// --------------------------
+	payHandler := handler.NewPaymentHandler(clients.Payment)
+	pay := api.Group("/payment")
+	pay.Use(middleware.AuthMiddleware(jwtMan))
 
-	// repo := payment.NewRepository(pgDB.Pool)
-	// paymentHandler := handler.NewPaymentHandler(repo)
-
-	// api.Post("/storage/checkout", paymentHandler.CreateCheckoutSession)
-	// api.Post("/storage/webhook", paymentHandler.HandleWebhook)
+	pay.Post("/session", payHandler.CreatePaymentSession)
+	pay.Post("/verify", payHandler.VerifyPayment)
 
 }

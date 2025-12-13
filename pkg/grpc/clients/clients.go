@@ -8,6 +8,7 @@ import (
 	"github.com/ak-repo/stream-hub/gen/authpb"
 	"github.com/ak-repo/stream-hub/gen/channelpb"
 	"github.com/ak-repo/stream-hub/gen/filespb"
+	"github.com/ak-repo/stream-hub/gen/paymentpb"
 	"github.com/ak-repo/stream-hub/pkg/logger"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -22,6 +23,7 @@ type Clients struct {
 	AdminFile    filespb.AdminFileServiceClient
 	Channel      channelpb.ChannelServiceClient
 	AdminChannel channelpb.AdminChannelServiceClient
+	Payment      paymentpb.PaymentServiceClient
 
 	conns []*grpc.ClientConn
 }
@@ -93,6 +95,13 @@ func NewClients(cfg *config.Config) *Clients {
 	// Chat / Channel Service (Admin) - Shares connection with User Channel
 	adminChannelClient := initChannelAdminClient(chatConn)
 	c.AdminChannel = adminChannelClient
+
+	// Payment service
+	paymentClient, payConn := initClient(cfg.Services.Payment.Host, cfg.Services.Payment.Port, func(conn *grpc.ClientConn) paymentpb.PaymentServiceClient {
+		return paymentpb.NewPaymentServiceClient(conn)
+	})
+	c.Payment = paymentClient
+	c.conns = append(c.conns, payConn)
 
 	return c
 }

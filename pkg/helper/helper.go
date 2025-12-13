@@ -24,7 +24,7 @@ func OverrideLocal(cfg *config.Config) {
 	cfg.Services.Auth.Host = "localhost"
 	cfg.Services.Chat.Host = "localhost"
 	cfg.Services.File.Host = "localhost"
-	cfg.Services.Notification.Host = "localhost"
+	cfg.Services.Payment.Host = "localhost"
 	cfg.Services.Users.Host = "localhost"
 	cfg.Services.Admin.Host = "localhost"
 }

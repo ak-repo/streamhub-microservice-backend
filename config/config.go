@@ -19,13 +19,12 @@ type Config struct {
 	Redis       RedisConfig      `mapstructure:"redis"`
 	FileService FileServiceConf  `mapstructure:"file_service"`
 	Cloudinary  CloudinaryConfig `mapstructure:"cloudinary"`
-	Stripe      StripeConfig     `mapstructure:"stripe"`
+	Razorpay    RazorpayConfig   `mapstructure:"razorpay"`
 }
 
-type StripeConfig struct {
+type RazorpayConfig struct {
 	SecretKey      string `mapstructure:"secret_key"`
 	PublishableKey string `mapstructure:"publishable_key"`
-	WebhookSecret  string `mapstructure:"webhook_secret"`
 }
 
 type CloudinaryConfig struct {
@@ -79,14 +78,14 @@ type MinioConfig struct {
 
 // SERVICES
 type ServicesConfig struct {
-	Admin        ServiceConfig `mapstructure:"admin"`
-	Auth         ServiceConfig `mapstructure:"auth"`
-	Users        ServiceConfig `mapstructure:"users"`
-	File         ServiceConfig `mapstructure:"file"`
-	Chat         ServiceConfig `mapstructure:"chat"`
-	Notification ServiceConfig `mapstructure:"notification"`
-	Gateway      ServiceConfig `mapstructure:"gateway"`
-	Front        ServiceConfig `mapstructure:"front"`
+	Admin   ServiceConfig `mapstructure:"admin"`
+	Auth    ServiceConfig `mapstructure:"auth"`
+	Users   ServiceConfig `mapstructure:"users"`
+	File    ServiceConfig `mapstructure:"file"`
+	Chat    ServiceConfig `mapstructure:"chat"`
+	Payment ServiceConfig `mapstructure:"payment"`
+	Gateway ServiceConfig `mapstructure:"gateway"`
+	Front   ServiceConfig `mapstructure:"front"`
 }
 
 type ServiceConfig struct {
