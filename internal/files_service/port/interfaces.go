@@ -23,14 +23,10 @@ type FileRepository interface {
 	IsChannelMember(ctx context.Context, channelID, userID string) (bool, error)
 	IsChannelAdmin(ctx context.Context, channelID, userID string) (bool, error)
 
-	GetStorageUsage(
-		ctx context.Context,
-		channelID string,
-	) (usedMB int64, limitMB int64, err error)
+
 	
 
-	// SetStorageLimit configures the maximum storage allowed for a user.
-	SetStorageLimit(ctx context.Context, channelID string, limit int64) error
+
 
 	// IsUserBlocked checks if a user is blocked from uploading.
 	IsUserBlocked(ctx context.Context, userID string) (bool, error)
@@ -41,7 +37,6 @@ type FileRepository interface {
 	// --- Admin Listings & Stats ---
 	ListAllFiles(ctx context.Context, limit int32, offset int32) ([]*domain.File, error)
 
-	GetGlobalStats(ctx context.Context) (*domain.StorageStats, error)
 }
 
 // FileStorage defines the contract for interacting with the object storage service (e.g., S3, GCS).
@@ -68,13 +63,13 @@ type FileService interface {
 	GenerateDownloadURL(ctx context.Context, fileID, requesterID string, expirySeconds int64) (string, error)
 	ListFiles(ctx context.Context, requesterID, channelID string) ([]*domain.File, error)
 	DeleteFile(ctx context.Context, fileID, requesterID string) error
-	GetStorageUsage(ctx context.Context, channelI string) (used int64, limit int64, err error)
+
 	
 
 	// Admin Operations (AdminFileService gRPC)
 	AdminListFiles(ctx context.Context, limit, offset int32) ([]*domain.File, error)
 	AdminDeleteFile(ctx context.Context, fileID, adminID string, force bool) error
-	AdminSetStorageLimit(ctx context.Context, channelID string, maxBytes int64) (prevLimit int64, err error)
+	// AdminSetStorageLimit(ctx context.Context, channelID string, maxBytes int64) (prevLimit int64, err error)
 	AdminBlockUploads(ctx context.Context, targetID string, block bool) error
-	AdminGetStats(ctx context.Context) (*domain.StorageStats, error)
+// 	AdminGetStats(ctx context.Context) (*domain.StorageStats, error)
 }

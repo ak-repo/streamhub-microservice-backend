@@ -385,3 +385,32 @@ func mapRequestsToProto(reqs []*domain.Request) []*channelpb.MembershipRequest {
 	}
 	return res
 }
+
+func (s *Server) UpdateUsedMB(ctx context.Context, req *channelpb.UpdateUsedMBRequest) (*channelpb.UpdateUsedMBResponse, error) {
+	if err := s.service.UpdateUsedMB(ctx, req.ChannelId, req.UsedBytes); err != nil {
+		return nil, err
+	}
+	return &channelpb.UpdateUsedMBResponse{Success: true}, nil
+}
+
+func (s *Server) UpdateChannelPlan(ctx context.Context, req *channelpb.ChannelPlanRequest) (*channelpb.ChannelPlanResponse, error) {
+	if err := s.service.UpdateChannelPlan(ctx, req.ChannelId, req.PlanId, req.LimitBytes); err != nil {
+		return nil, err
+	}
+	return &channelpb.ChannelPlanResponse{Success: true}, nil
+}
+
+func (s *Server) GetChannelStorage(ctx context.Context, req *channelpb.GetStorageUsageRequest) (*channelpb.GetStorageUsageResponse, error) {
+	used, limit, err := s.service.GetChannelStorage(ctx, req.ChannelId)
+	if err != nil {
+		return nil, err
+	}
+	if used <= 0 {
+		used = 1
+	}
+
+	return &channelpb.GetStorageUsageResponse{
+		UsedBytes:  used,
+		LimitBytes: limit,
+	}, nil
+}

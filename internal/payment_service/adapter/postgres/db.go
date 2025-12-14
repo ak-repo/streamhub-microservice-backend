@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"log"
 
 	"github.com/ak-repo/stream-hub/internal/payment_service/domain"
 	"github.com/ak-repo/stream-hub/internal/payment_service/port"
@@ -106,7 +108,7 @@ func (r *paymentRepo) GetHistoryByChannel(
 	return histories, nil
 }
 
-func (r *paymentRepo) GetSubscriptionPlans(ctx context.Context) ([]*domain.SubscriptionPlan, error) {
+func (r *paymentRepo) ListSubscriptionPlans(ctx context.Context) ([]*domain.SubscriptionPlan, error) {
 
 	raws, err := r.pool.Query(ctx, `SELECT id, name, storage_limit_mb, price_inr,  duration_days FROM  channel_storage_plans`)
 	if err != nil {
@@ -138,4 +140,28 @@ func (r *paymentRepo) PlanByID(ctx context.Context, planID string) (*domain.Subs
 
 	return plan, nil
 
+}
+
+func (r *paymentRepo) ChannelPlanID(ctx context.Context, channelID string) (string, error) {
+	var planID sql.NullString
+
+	row := r.pool.QueryRow(
+		ctx,
+		`SELECT active_plan_id FROM channels WHERE id = $1`,
+		channelID,
+	)
+
+	if err := row.Scan(&planID); err != nil {
+		// if errors.Is(err, pgx.ErrNoRows) {
+		// 	return "", ErrChannelNotFound
+		// }
+		return "", err
+	}
+
+	// if !planID.Valid {
+	// 	return "",fmt.Errorf("no active plan")
+	// }
+
+	log.Println("plan id: ", planID.String)
+	return planID.String, nil
 }

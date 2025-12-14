@@ -5,7 +5,9 @@ import (
 
 	"time"
 
+	"github.com/ak-repo/stream-hub/gen/channelpb"
 	"github.com/ak-repo/stream-hub/pkg/errors"
+	"github.com/ak-repo/stream-hub/pkg/grpc/clients"
 	"github.com/ak-repo/stream-hub/pkg/logger"
 	"go.uber.org/zap"
 
@@ -15,13 +17,14 @@ import (
 )
 
 type paymentService struct {
-	repo  port.Repository
-	redis port.Redis
-	pg    port.PaymentGateway
+	repo    port.Repository
+	redis   port.Redis
+	pg      port.PaymentGateway
+	clients *clients.Clients
 }
 
-func NewPaymentService(repo port.Repository, pg port.PaymentGateway, redis port.Redis) port.ApplicationService {
-	return &paymentService{repo: repo, pg: pg, redis: redis}
+func NewPaymentService(repo port.Repository, pg port.PaymentGateway, redis port.Redis, clients *clients.Clients) port.ApplicationService {
+	return &paymentService{repo: repo, pg: pg, redis: redis, clients: clients}
 }
 
 func (s *paymentService) CreatePaymentSession(ctx context.Context, session *domain.PaymentSession) (string, error) {
@@ -36,6 +39,7 @@ func (s *paymentService) CreatePaymentSession(ctx context.Context, session *doma
 		return "", errors.New(errors.CodeInternal, "failed to create order id", err)
 	}
 	session.RazorpayOrderID = orderID
+	session.StorageLimitMB = plan.StorageLimitMB
 
 	if err := s.redis.SavePaymentSession(ctx, session); err != nil {
 		return "", errors.New(errors.CodeInternal, "failed to save order session", err)
@@ -75,6 +79,10 @@ func (s *paymentService) VerifyPaymentAndAddStorage(ctx context.Context, razorpa
 
 	// TODO update channels plans in channels table
 
+	if s, err := s.clients.Channel.UpdateChannelPlan(ctx, &channelpb.ChannelPlanRequest{ChannelId: history.ChannelID, PlanId: history.PlanID, LimitBytes: session.StorageLimitMB}); err != nil || !s.Success {
+		return errors.New(errors.CodeInternal, "failed to update chanel plan", err)
+	}
+
 	return nil
 }
 
@@ -82,7 +90,11 @@ func (s *paymentService) GetHistoryByChannel(ctx context.Context, channelID uuid
 	return s.repo.GetHistoryByChannel(ctx, channelID)
 }
 
-func (s *paymentService) GetSubscriptionPlans(ctx context.Context, requesterID, channelID string) ([]*domain.SubscriptionPlan, error) {
+func (s *paymentService) ListSubscriptionPlans(ctx context.Context, requesterID, channelID string) ([]*domain.SubscriptionPlan, error) {
 	// TODO verify the channelID and user are valid
-	return s.repo.GetSubscriptionPlans(ctx)
+	return s.repo.ListSubscriptionPlans(ctx)
+}
+
+func (s *paymentService) ChannelPlanID(ctx context.Context, channelID string) (string, error) {
+	return s.repo.ChannelPlanID(ctx, channelID)
 }

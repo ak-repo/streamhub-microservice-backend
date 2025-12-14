@@ -8,6 +8,7 @@ type PaymentSession struct {
 	ChannelID       string `json:"channel_id"`
 	PurchaserUserID string `json:"purchaser_user_id"`
 	PlanID          string `json:"plan_id"`
+	StorageLimitMB  int64  `json:"storage_limit_mb"` // MB
 
 	AmountINR int32 `json:"amount_inr"`
 

@@ -54,7 +54,7 @@ func (s *Server) VerifyPayment(ctx context.Context, req *paymentpb.VerifyPayment
 
 func (s *Server) ListSubscriptionPlans(ctx context.Context, req *paymentpb.SubscriptionPlanRequest) (*paymentpb.SubscriptionPlanResponse, error) {
 
-	plans, err := s.appService.GetSubscriptionPlans(ctx, req.RequesterId, req.ChannelId)
+	plans, err := s.appService.ListSubscriptionPlans(ctx, req.RequesterId, req.ChannelId)
 	if err != nil {
 		return nil, err
 	}
@@ -70,6 +70,11 @@ func (s *Server) ListSubscriptionPlans(ctx context.Context, req *paymentpb.Subsc
 		})
 	}
 
-	return &paymentpb.SubscriptionPlanResponse{Plans: resp}, nil
+	planId, err := s.appService.ChannelPlanID(ctx, req.ChannelId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &paymentpb.SubscriptionPlanResponse{Plans: resp, CurrentPlanId: planId}, nil
 
 }

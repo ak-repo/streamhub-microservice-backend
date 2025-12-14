@@ -27,12 +27,12 @@ func NewChannelRepo(pool *pgxpool.Pool) port.ChannelRepository {
 
 func (r *channelRepo) CreateChannel(ctx context.Context, c *domain.Channel) error {
 	const q = `
-		INSERT INTO channels (id, name, description, visibility, created_by, created_at, is_frozen)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO channels (id, name, description, visibility, created_by, created_at, is_frozen,active_plan_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 	_, err := r.db.Exec(ctx, q,
 		c.ID, c.Name, c.Description, c.Visibility,
-		c.CreatedBy, c.CreatedAt, c.IsFrozen,
+		c.CreatedBy, c.CreatedAt, c.IsFrozen, c.ActivePlanID,
 	)
 	return err
 }
@@ -270,8 +270,6 @@ func (r *channelRepo) CreateRequest(ctx context.Context, req *domain.Request) er
 	return err
 }
 
-
-
 func (r *channelRepo) CheckExistingRequest(ctx context.Context, userID, channelID, reqType string) bool {
 	const q = `
 		SELECT 1
@@ -423,12 +421,6 @@ func (r *channelRepo) AdminListChannels(ctx context.Context, limit, offset int32
     ORDER BY cm.joined_at ASC
 `
 
-	// const qm = `
-	// 	SELECT channel_id, user_id, role, joined_at
-	// 	FROM channel_members
-	// 	WHERE channel_id = ANY($1)
-	// `
-
 	mRows, err := r.db.Query(ctx, xx, channelIDs)
 	if err != nil {
 		return nil, err
@@ -479,4 +471,85 @@ func (r *channelRepo) FreezeChannel(ctx context.Context, channelID string, freez
 		freeze, channelID,
 	)
 	return err
+}
+
+// New
+
+func (r *channelRepo) GetChannelStorage(
+	ctx context.Context,
+	channelID string,
+) (usedMB int64, limitMB int64, err error) {
+
+	const query = `
+		SELECT storage_used_mb, storage_limit_mb
+		FROM channels
+		WHERE id = $1
+	`
+
+	row := r.db.QueryRow(ctx, query, channelID)
+
+	if err = row.Scan(&usedMB, &limitMB); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, 0, fmt.Errorf("channel %s not found", channelID)
+		}
+		return 0, 0, err
+	}
+
+	return usedMB, limitMB, nil
+}
+
+// UpdateUsedMB updates the storage usage for a channel.
+func (r *channelRepo) UpdateUsedMB(
+	ctx context.Context,
+	channelID string,
+	deltaMB int64,
+) error {
+
+	if deltaMB == 0 {
+		return nil
+	}
+
+	const query = `
+		UPDATE channels
+		SET storage_used_mb = GREATEST(storage_used_mb + $1, 0)
+		WHERE id = $2
+	`
+
+	ct, err := r.db.Exec(ctx, query, deltaMB, channelID)
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return fmt.Errorf("channel %s not found", channelID)
+	}
+
+	return nil
+}
+
+// UpdateChannelPlan updates the active plan and storage limit for a channel.
+func (r *channelRepo) UpdateChannelPlan(
+	ctx context.Context,
+	channelID string,
+	planID string,
+	limitMB int64,
+) error {
+
+	const query = `
+		UPDATE channels
+		SET storage_limit_mb = $1,
+		    active_plan_id  = $2
+		WHERE id = $3
+	`
+
+	ct, err := r.db.Exec(ctx, query, limitMB, planID, channelID)
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return fmt.Errorf("channel %s not found", channelID)
+	}
+
+	return nil
 }

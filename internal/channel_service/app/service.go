@@ -102,13 +102,14 @@ func (s *channelService) SubscribeToChannel(ctx context.Context, channelID strin
 
 func (s *channelService) CreateChannel(ctx context.Context, name, description, visibility, creatorID string) (*domain.Channel, error) {
 	ch := &domain.Channel{
-		ID:          uuid.New().String(),
-		Name:        name,
-		Description: description,
-		Visibility:  visibility,
-		CreatedBy:     creatorID,
-		CreatedAt:   time.Now().UTC(),
-		IsFrozen:    false,
+		ID:           uuid.New().String(),
+		Name:         name,
+		Description:  description,
+		Visibility:   visibility,
+		CreatedBy:    creatorID,
+		CreatedAt:    time.Now().UTC(),
+		ActivePlanID: "6c378084-4d59-405a-8eab-1c3de20fe0f5",
+		IsFrozen:     false,
 	}
 
 	// 1. Create Channel
@@ -404,4 +405,23 @@ func (s *channelService) NotifyAdminUserJoined(ctx context.Context, channelID, n
 	log.Println("insode notify")
 
 	return nil
+}
+
+// for other services
+func (s *channelService) GetChannelStorage(
+	ctx context.Context,
+	channelID string,
+) (usedMB int64, limitMB int64, err error) {
+	return s.repo.GetChannelStorage(ctx, channelID)
+
+}
+func (s *channelService) UpdateUsedMB(ctx context.Context, channelID string, usedMB int64) error {
+	return s.repo.UpdateUsedMB(ctx, channelID, usedMB)
+
+}
+func (s *channelService) UpdateChannelPlan(ctx context.Context, channelID string, planID string, limitMB int64,
+) error {
+
+	return s.repo.UpdateChannelPlan(ctx, channelID, planID, limitMB)
+
 }

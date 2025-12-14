@@ -108,7 +108,6 @@ func userRoutes(api fiber.Router, cfg *config.Config, clients *clients.Clients) 
 	fileR.Get("/download-url", file.GenerateDownloadURL) // tested
 	fileR.Get("/", file.ListFiles)                       // tested
 	fileR.Delete("/:file_id", file.DeleteFile)           // tested
-	fileR.Get("/storage/:channel_id", file.GetStorageUsage)
 
 	// --------------------------
 	// CHANNEL HANDLER (WebSockets and Authenticated)
@@ -131,6 +130,7 @@ func userRoutes(api fiber.Router, cfg *config.Config, clients *clients.Clients) 
 	ch.Get("/channel/:channelId", channel.GetChannel)   // tested
 	ch.Get("/members/:channelId", channel.ListMembers)  // tested
 	ch.Get("/:channelId/history", channel.ListMessages) //tested
+	ch.Get("/storage/:channel_id", channel.GetChannelStorage)
 
 	// Request Handling (Invites/Joins)
 	ch.Post("/sendinvite", channel.SendInvite)     // tested

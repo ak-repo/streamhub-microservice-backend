@@ -13,7 +13,8 @@ type ApplicationService interface {
 	CreatePaymentSession(ctx context.Context, session *domain.PaymentSession) (razorpayOrderID string, err error)
 	VerifyPaymentAndAddStorage(ctx context.Context, razorpayOrderID, razorpayPaymentID, razorpaySignature string) error
 	GetHistoryByChannel(ctx context.Context, channelID uuid.UUID) ([]*domain.PaymentHistory, error)
-	GetSubscriptionPlans(ctx context.Context, requesterID, channelID string) ([]*domain.SubscriptionPlan, error)
+	ListSubscriptionPlans(ctx context.Context, requesterID, channelID string) ([]*domain.SubscriptionPlan, error)
+	ChannelPlanID(ctx context.Context, channelID string) (string, error)
 }
 
 // Repository is an OUTGOING port (for database access).
@@ -21,8 +22,9 @@ type ApplicationService interface {
 type Repository interface {
 	RecordPaymentHistory(ctx context.Context, history *domain.PaymentHistory) error
 	GetHistoryByChannel(ctx context.Context, channelID uuid.UUID) ([]*domain.PaymentHistory, error)
-	GetSubscriptionPlans(ctx context.Context) ([]*domain.SubscriptionPlan, error)
+	ListSubscriptionPlans(ctx context.Context) ([]*domain.SubscriptionPlan, error)
 	PlanByID(ctx context.Context, planID string) (*domain.SubscriptionPlan, error)
+	ChannelPlanID(ctx context.Context, channelID string) (string, error)
 }
 
 // PaymentGateway is an OUTGOING port (for Razorpay interaction).

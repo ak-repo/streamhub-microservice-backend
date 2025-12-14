@@ -15,6 +15,7 @@ import (
 
 	"github.com/ak-repo/stream-hub/internal/payment_service/app"
 	"github.com/ak-repo/stream-hub/pkg/db"
+	"github.com/ak-repo/stream-hub/pkg/grpc/clients"
 	"github.com/ak-repo/stream-hub/pkg/grpc/interceptors"
 	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/ak-repo/stream-hub/pkg/logger"
@@ -47,6 +48,10 @@ func main() {
 	}
 	defer pgDB.Close()
 
+	// ---- Create gRPC Client Container ----
+	clientContainer := clients.NewClients(cfg)
+	defer clientContainer.CloseAll()
+
 	repo := postgres.NewPaymentRepo(pgDB.Pool)
 	pay := pay.NewRazorpayGateway(cfg)
 	// Redis
@@ -55,7 +60,7 @@ func main() {
 
 	redis := paymentredis.NewPaymentRedis(redisclient.Client, time.Minute*15)
 
-	service := app.NewPaymentService(repo, pay, redis)
+	service := app.NewPaymentService(repo, pay, redis, clientContainer)
 
 	server := paymentgrpc.NewGrpcServer(service)
 

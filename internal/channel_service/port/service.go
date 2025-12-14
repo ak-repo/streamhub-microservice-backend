@@ -52,4 +52,13 @@ type ChannelService interface {
 	AdminListChannels(ctx context.Context, limit, offset int32) ([]*domain.ChannelWithMembers, error)
 	AdminFreezeChannel(ctx context.Context, channelID string, freeze bool, reason string) error
 	AdminDeleteChannel(ctx context.Context, channelID string) error
+
+	// for other services
+	GetChannelStorage(
+		ctx context.Context,
+		channelID string,
+	) (usedMB int64, limitMB int64, err error)
+	UpdateUsedMB(ctx context.Context, channelID string, usedMB int64) error
+	UpdateChannelPlan(ctx context.Context, channelID string, planID string, limitMB int64,
+	) error
 }

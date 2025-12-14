@@ -293,31 +293,6 @@ func scanFileSimple(row pgx.Row, f *domain.File) error {
 	return nil
 }
 
-func (r *fileRepo) GetStorageUsage(
-	ctx context.Context,
-	channelID string,
-) (usedMB int64, limitMB int64, err error) {
-
-	const query = `
-        SELECT storage_used_mb, storage_limit_mb
-        FROM channels
-        WHERE id = $1
-    `
-
-	row := r.pool.QueryRow(ctx, query, channelID)
-
-	if err = row.Scan(&usedMB, &limitMB); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, 0, fmt.Errorf("no channels found")
-		}
-		return 0, 0, err
-	}
-
-	return usedMB, limitMB, nil
-}
-
-
-
 func (r *fileRepo) IsUserBlocked(ctx context.Context, userID string) (bool, error) {
 	// TODO: implement block check
 	return false, nil
@@ -326,14 +301,4 @@ func (r *fileRepo) IsUserBlocked(ctx context.Context, userID string) (bool, erro
 func (r *fileRepo) SetUserBlocked(ctx context.Context, userID string, block bool) error {
 	// TODO: implement
 	return nil
-}
-
-func (r *fileRepo) SetStorageLimit(ctx context.Context, ownerID string, limit int64) error {
-	// TODO: implement
-	return nil
-}
-
-func (r *fileRepo) GetGlobalStats(ctx context.Context) (*domain.StorageStats, error) {
-	// TODO: implement real stats
-	return &domain.StorageStats{}, nil
 }

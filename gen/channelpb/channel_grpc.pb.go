@@ -34,6 +34,9 @@ const (
 	ChannelService_SearchChannels_FullMethodName      = "/channel.ChannelService/SearchChannels"
 	ChannelService_ListUserInvites_FullMethodName     = "/channel.ChannelService/ListUserInvites"
 	ChannelService_ListChannelJoins_FullMethodName    = "/channel.ChannelService/ListChannelJoins"
+	ChannelService_UpdateUsedMB_FullMethodName        = "/channel.ChannelService/UpdateUsedMB"
+	ChannelService_UpdateChannelPlan_FullMethodName   = "/channel.ChannelService/UpdateChannelPlan"
+	ChannelService_GetChannelStorage_FullMethodName   = "/channel.ChannelService/GetChannelStorage"
 )
 
 // ChannelServiceClient is the client API for ChannelService service.
@@ -55,6 +58,10 @@ type ChannelServiceClient interface {
 	SearchChannels(ctx context.Context, in *SearchChannelRequest, opts ...grpc.CallOption) (*SearchChannelResponse, error)
 	ListUserInvites(ctx context.Context, in *ListUserInvitesRequest, opts ...grpc.CallOption) (*ListUserInvitesResponse, error)
 	ListChannelJoins(ctx context.Context, in *ListChannelJoinsRequest, opts ...grpc.CallOption) (*ListChannelJoinsResponse, error)
+	// other services calls
+	UpdateUsedMB(ctx context.Context, in *UpdateUsedMBRequest, opts ...grpc.CallOption) (*UpdateUsedMBResponse, error)
+	UpdateChannelPlan(ctx context.Context, in *ChannelPlanRequest, opts ...grpc.CallOption) (*ChannelPlanResponse, error)
+	GetChannelStorage(ctx context.Context, in *GetStorageUsageRequest, opts ...grpc.CallOption) (*GetStorageUsageResponse, error)
 }
 
 type channelServiceClient struct {
@@ -218,6 +225,36 @@ func (c *channelServiceClient) ListChannelJoins(ctx context.Context, in *ListCha
 	return out, nil
 }
 
+func (c *channelServiceClient) UpdateUsedMB(ctx context.Context, in *UpdateUsedMBRequest, opts ...grpc.CallOption) (*UpdateUsedMBResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateUsedMBResponse)
+	err := c.cc.Invoke(ctx, ChannelService_UpdateUsedMB_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *channelServiceClient) UpdateChannelPlan(ctx context.Context, in *ChannelPlanRequest, opts ...grpc.CallOption) (*ChannelPlanResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ChannelPlanResponse)
+	err := c.cc.Invoke(ctx, ChannelService_UpdateChannelPlan_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *channelServiceClient) GetChannelStorage(ctx context.Context, in *GetStorageUsageRequest, opts ...grpc.CallOption) (*GetStorageUsageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetStorageUsageResponse)
+	err := c.cc.Invoke(ctx, ChannelService_GetChannelStorage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChannelServiceServer is the server API for ChannelService service.
 // All implementations must embed UnimplementedChannelServiceServer
 // for forward compatibility.
@@ -237,6 +274,10 @@ type ChannelServiceServer interface {
 	SearchChannels(context.Context, *SearchChannelRequest) (*SearchChannelResponse, error)
 	ListUserInvites(context.Context, *ListUserInvitesRequest) (*ListUserInvitesResponse, error)
 	ListChannelJoins(context.Context, *ListChannelJoinsRequest) (*ListChannelJoinsResponse, error)
+	// other services calls
+	UpdateUsedMB(context.Context, *UpdateUsedMBRequest) (*UpdateUsedMBResponse, error)
+	UpdateChannelPlan(context.Context, *ChannelPlanRequest) (*ChannelPlanResponse, error)
+	GetChannelStorage(context.Context, *GetStorageUsageRequest) (*GetStorageUsageResponse, error)
 	mustEmbedUnimplementedChannelServiceServer()
 }
 
@@ -291,6 +332,15 @@ func (UnimplementedChannelServiceServer) ListUserInvites(context.Context, *ListU
 }
 func (UnimplementedChannelServiceServer) ListChannelJoins(context.Context, *ListChannelJoinsRequest) (*ListChannelJoinsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListChannelJoins not implemented")
+}
+func (UnimplementedChannelServiceServer) UpdateUsedMB(context.Context, *UpdateUsedMBRequest) (*UpdateUsedMBResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateUsedMB not implemented")
+}
+func (UnimplementedChannelServiceServer) UpdateChannelPlan(context.Context, *ChannelPlanRequest) (*ChannelPlanResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateChannelPlan not implemented")
+}
+func (UnimplementedChannelServiceServer) GetChannelStorage(context.Context, *GetStorageUsageRequest) (*GetStorageUsageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetChannelStorage not implemented")
 }
 func (UnimplementedChannelServiceServer) mustEmbedUnimplementedChannelServiceServer() {}
 func (UnimplementedChannelServiceServer) testEmbeddedByValue()                        {}
@@ -572,6 +622,60 @@ func _ChannelService_ListChannelJoins_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChannelService_UpdateUsedMB_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateUsedMBRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChannelServiceServer).UpdateUsedMB(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChannelService_UpdateUsedMB_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChannelServiceServer).UpdateUsedMB(ctx, req.(*UpdateUsedMBRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChannelService_UpdateChannelPlan_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChannelPlanRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChannelServiceServer).UpdateChannelPlan(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChannelService_UpdateChannelPlan_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChannelServiceServer).UpdateChannelPlan(ctx, req.(*ChannelPlanRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChannelService_GetChannelStorage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStorageUsageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChannelServiceServer).GetChannelStorage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChannelService_GetChannelStorage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChannelServiceServer).GetChannelStorage(ctx, req.(*GetStorageUsageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ChannelService_ServiceDesc is the grpc.ServiceDesc for ChannelService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -634,6 +738,18 @@ var ChannelService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListChannelJoins",
 			Handler:    _ChannelService_ListChannelJoins_Handler,
+		},
+		{
+			MethodName: "UpdateUsedMB",
+			Handler:    _ChannelService_UpdateUsedMB_Handler,
+		},
+		{
+			MethodName: "UpdateChannelPlan",
+			Handler:    _ChannelService_UpdateChannelPlan_Handler,
+		},
+		{
+			MethodName: "GetChannelStorage",
+			Handler:    _ChannelService_GetChannelStorage_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

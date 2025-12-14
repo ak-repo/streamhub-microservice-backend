@@ -2431,6 +2431,310 @@ func (x *AdminDeleteChannelResponse) GetSuccess() bool {
 	return false
 }
 
+type GetStorageUsageRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChannelId     string                 `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	RequesterId   string                 `protobuf:"bytes,2,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStorageUsageRequest) Reset() {
+	*x = GetStorageUsageRequest{}
+	mi := &file_api_proto_channel_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStorageUsageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStorageUsageRequest) ProtoMessage() {}
+
+func (x *GetStorageUsageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStorageUsageRequest.ProtoReflect.Descriptor instead.
+func (*GetStorageUsageRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *GetStorageUsageRequest) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
+func (x *GetStorageUsageRequest) GetRequesterId() string {
+	if x != nil {
+		return x.RequesterId
+	}
+	return ""
+}
+
+type GetStorageUsageResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UsedBytes     int64                  `protobuf:"varint,1,opt,name=used_bytes,json=usedBytes,proto3" json:"used_bytes,omitempty"`
+	LimitBytes    int64                  `protobuf:"varint,2,opt,name=limit_bytes,json=limitBytes,proto3" json:"limit_bytes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStorageUsageResponse) Reset() {
+	*x = GetStorageUsageResponse{}
+	mi := &file_api_proto_channel_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStorageUsageResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStorageUsageResponse) ProtoMessage() {}
+
+func (x *GetStorageUsageResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStorageUsageResponse.ProtoReflect.Descriptor instead.
+func (*GetStorageUsageResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *GetStorageUsageResponse) GetUsedBytes() int64 {
+	if x != nil {
+		return x.UsedBytes
+	}
+	return 0
+}
+
+func (x *GetStorageUsageResponse) GetLimitBytes() int64 {
+	if x != nil {
+		return x.LimitBytes
+	}
+	return 0
+}
+
+type ChannelPlanRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChannelId     string                 `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	PlanId        string                 `protobuf:"bytes,2,opt,name=plan_id,json=planId,proto3" json:"plan_id,omitempty"`
+	LimitBytes    int64                  `protobuf:"varint,3,opt,name=limit_bytes,json=limitBytes,proto3" json:"limit_bytes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChannelPlanRequest) Reset() {
+	*x = ChannelPlanRequest{}
+	mi := &file_api_proto_channel_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChannelPlanRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChannelPlanRequest) ProtoMessage() {}
+
+func (x *ChannelPlanRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChannelPlanRequest.ProtoReflect.Descriptor instead.
+func (*ChannelPlanRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *ChannelPlanRequest) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
+func (x *ChannelPlanRequest) GetPlanId() string {
+	if x != nil {
+		return x.PlanId
+	}
+	return ""
+}
+
+func (x *ChannelPlanRequest) GetLimitBytes() int64 {
+	if x != nil {
+		return x.LimitBytes
+	}
+	return 0
+}
+
+type ChannelPlanResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChannelPlanResponse) Reset() {
+	*x = ChannelPlanResponse{}
+	mi := &file_api_proto_channel_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChannelPlanResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChannelPlanResponse) ProtoMessage() {}
+
+func (x *ChannelPlanResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChannelPlanResponse.ProtoReflect.Descriptor instead.
+func (*ChannelPlanResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *ChannelPlanResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+type UpdateUsedMBRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChannelId     string                 `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	UsedBytes     int64                  `protobuf:"varint,2,opt,name=used_bytes,json=usedBytes,proto3" json:"used_bytes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateUsedMBRequest) Reset() {
+	*x = UpdateUsedMBRequest{}
+	mi := &file_api_proto_channel_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateUsedMBRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateUsedMBRequest) ProtoMessage() {}
+
+func (x *UpdateUsedMBRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateUsedMBRequest.ProtoReflect.Descriptor instead.
+func (*UpdateUsedMBRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *UpdateUsedMBRequest) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
+func (x *UpdateUsedMBRequest) GetUsedBytes() int64 {
+	if x != nil {
+		return x.UsedBytes
+	}
+	return 0
+}
+
+type UpdateUsedMBResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateUsedMBResponse) Reset() {
+	*x = UpdateUsedMBResponse{}
+	mi := &file_api_proto_channel_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateUsedMBResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateUsedMBResponse) ProtoMessage() {}
+
+func (x *UpdateUsedMBResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_channel_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateUsedMBResponse.ProtoReflect.Descriptor instead.
+func (*UpdateUsedMBResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_channel_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *UpdateUsedMBResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
 var File_api_proto_channel_proto protoreflect.FileDescriptor
 
 const file_api_proto_channel_proto_rawDesc = "" +
@@ -2611,7 +2915,31 @@ const file_api_proto_channel_proto_rawDesc = "" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x19\n" +
 	"\badmin_id\x18\x02 \x01(\tR\aadminId\"6\n" +
 	"\x1aAdminDeleteChannelResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess2\xa2\t\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"Z\n" +
+	"\x16GetStorageUsageRequest\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x01 \x01(\tR\tchannelId\x12!\n" +
+	"\frequester_id\x18\x02 \x01(\tR\vrequesterId\"Y\n" +
+	"\x17GetStorageUsageResponse\x12\x1d\n" +
+	"\n" +
+	"used_bytes\x18\x01 \x01(\x03R\tusedBytes\x12\x1f\n" +
+	"\vlimit_bytes\x18\x02 \x01(\x03R\n" +
+	"limitBytes\"m\n" +
+	"\x12ChannelPlanRequest\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x17\n" +
+	"\aplan_id\x18\x02 \x01(\tR\x06planId\x12\x1f\n" +
+	"\vlimit_bytes\x18\x03 \x01(\x03R\n" +
+	"limitBytes\"/\n" +
+	"\x13ChannelPlanResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"S\n" +
+	"\x13UpdateUsedMBRequest\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x1d\n" +
+	"\n" +
+	"used_bytes\x18\x02 \x01(\x03R\tusedBytes\"0\n" +
+	"\x14UpdateUsedMBResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess2\x97\v\n" +
 	"\x0eChannelService\x12>\n" +
 	"\aConnect\x12\x16.channel.StreamRequest\x1a\x17.channel.StreamResponse(\x010\x01\x12K\n" +
 	"\fListMessages\x12\x1c.channel.ListMessagesRequest\x1a\x1d.channel.ListMessagesResponse\x12N\n" +
@@ -2629,7 +2957,10 @@ const file_api_proto_channel_proto_rawDesc = "" +
 	"\x13UpdateRequestStatus\x12#.channel.UpdateRequestStatusRequest\x1a$.channel.UpdateRequestStatusResponse\x12O\n" +
 	"\x0eSearchChannels\x12\x1d.channel.SearchChannelRequest\x1a\x1e.channel.SearchChannelResponse\x12T\n" +
 	"\x0fListUserInvites\x12\x1f.channel.ListUserInvitesRequest\x1a .channel.ListUserInvitesResponse\x12W\n" +
-	"\x10ListChannelJoins\x12 .channel.ListChannelJoinsRequest\x1a!.channel.ListChannelJoinsResponse2\xaf\x02\n" +
+	"\x10ListChannelJoins\x12 .channel.ListChannelJoinsRequest\x1a!.channel.ListChannelJoinsResponse\x12K\n" +
+	"\fUpdateUsedMB\x12\x1c.channel.UpdateUsedMBRequest\x1a\x1d.channel.UpdateUsedMBResponse\x12N\n" +
+	"\x11UpdateChannelPlan\x12\x1b.channel.ChannelPlanRequest\x1a\x1c.channel.ChannelPlanResponse\x12V\n" +
+	"\x11GetChannelStorage\x12\x1f.channel.GetStorageUsageRequest\x1a .channel.GetStorageUsageResponse2\xaf\x02\n" +
 	"\x13AdminChannelService\x12Z\n" +
 	"\x11AdminListChannels\x12!.channel.AdminListChannelsRequest\x1a\".channel.AdminListChannelsResponse\x12]\n" +
 	"\x12AdminFreezeChannel\x12\".channel.AdminFreezeChannelRequest\x1a#.channel.AdminFreezeChannelResponse\x12]\n" +
@@ -2647,7 +2978,7 @@ func file_api_proto_channel_proto_rawDescGZIP() []byte {
 	return file_api_proto_channel_proto_rawDescData
 }
 
-var file_api_proto_channel_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
+var file_api_proto_channel_proto_msgTypes = make([]protoimpl.MessageInfo, 50)
 var file_api_proto_channel_proto_goTypes = []any{
 	(*Channel)(nil),                     // 0: channel.Channel
 	(*ChannelMember)(nil),               // 1: channel.ChannelMember
@@ -2693,6 +3024,12 @@ var file_api_proto_channel_proto_goTypes = []any{
 	(*AdminFreezeChannelResponse)(nil),  // 41: channel.AdminFreezeChannelResponse
 	(*AdminDeleteChannelRequest)(nil),   // 42: channel.AdminDeleteChannelRequest
 	(*AdminDeleteChannelResponse)(nil),  // 43: channel.AdminDeleteChannelResponse
+	(*GetStorageUsageRequest)(nil),      // 44: channel.GetStorageUsageRequest
+	(*GetStorageUsageResponse)(nil),     // 45: channel.GetStorageUsageResponse
+	(*ChannelPlanRequest)(nil),          // 46: channel.ChannelPlanRequest
+	(*ChannelPlanResponse)(nil),         // 47: channel.ChannelPlanResponse
+	(*UpdateUsedMBRequest)(nil),         // 48: channel.UpdateUsedMBRequest
+	(*UpdateUsedMBResponse)(nil),        // 49: channel.UpdateUsedMBResponse
 }
 var file_api_proto_channel_proto_depIdxs = []int32{
 	5,  // 0: channel.StreamRequest.connect:type_name -> channel.StreamConnect
@@ -2727,29 +3064,35 @@ var file_api_proto_channel_proto_depIdxs = []int32{
 	23, // 29: channel.ChannelService.SearchChannels:input_type -> channel.SearchChannelRequest
 	31, // 30: channel.ChannelService.ListUserInvites:input_type -> channel.ListUserInvitesRequest
 	33, // 31: channel.ChannelService.ListChannelJoins:input_type -> channel.ListChannelJoinsRequest
-	38, // 32: channel.AdminChannelService.AdminListChannels:input_type -> channel.AdminListChannelsRequest
-	40, // 33: channel.AdminChannelService.AdminFreezeChannel:input_type -> channel.AdminFreezeChannelRequest
-	42, // 34: channel.AdminChannelService.AdminDeleteChannel:input_type -> channel.AdminDeleteChannelRequest
-	7,  // 35: channel.ChannelService.Connect:output_type -> channel.StreamResponse
-	36, // 36: channel.ChannelService.ListMessages:output_type -> channel.ListMessagesResponse
-	9,  // 37: channel.ChannelService.CreateChannel:output_type -> channel.CreateChannelResponse
-	13, // 38: channel.ChannelService.ListUserChannels:output_type -> channel.ListUserChannelsResponse
-	11, // 39: channel.ChannelService.GetChannel:output_type -> channel.GetChannelResponse
-	15, // 40: channel.ChannelService.DeleteChannel:output_type -> channel.DeleteChannelResponse
-	17, // 41: channel.ChannelService.AddMember:output_type -> channel.AddMemberResponse
-	19, // 42: channel.ChannelService.RemoveMember:output_type -> channel.RemoveMemberResponse
-	21, // 43: channel.ChannelService.ListMembers:output_type -> channel.ListMembersResponse
-	26, // 44: channel.ChannelService.SendInvite:output_type -> channel.SendInviteResponse
-	28, // 45: channel.ChannelService.SendJoin:output_type -> channel.SendJoinResponse
-	30, // 46: channel.ChannelService.UpdateRequestStatus:output_type -> channel.UpdateRequestStatusResponse
-	24, // 47: channel.ChannelService.SearchChannels:output_type -> channel.SearchChannelResponse
-	32, // 48: channel.ChannelService.ListUserInvites:output_type -> channel.ListUserInvitesResponse
-	34, // 49: channel.ChannelService.ListChannelJoins:output_type -> channel.ListChannelJoinsResponse
-	39, // 50: channel.AdminChannelService.AdminListChannels:output_type -> channel.AdminListChannelsResponse
-	41, // 51: channel.AdminChannelService.AdminFreezeChannel:output_type -> channel.AdminFreezeChannelResponse
-	43, // 52: channel.AdminChannelService.AdminDeleteChannel:output_type -> channel.AdminDeleteChannelResponse
-	35, // [35:53] is the sub-list for method output_type
-	17, // [17:35] is the sub-list for method input_type
+	48, // 32: channel.ChannelService.UpdateUsedMB:input_type -> channel.UpdateUsedMBRequest
+	46, // 33: channel.ChannelService.UpdateChannelPlan:input_type -> channel.ChannelPlanRequest
+	44, // 34: channel.ChannelService.GetChannelStorage:input_type -> channel.GetStorageUsageRequest
+	38, // 35: channel.AdminChannelService.AdminListChannels:input_type -> channel.AdminListChannelsRequest
+	40, // 36: channel.AdminChannelService.AdminFreezeChannel:input_type -> channel.AdminFreezeChannelRequest
+	42, // 37: channel.AdminChannelService.AdminDeleteChannel:input_type -> channel.AdminDeleteChannelRequest
+	7,  // 38: channel.ChannelService.Connect:output_type -> channel.StreamResponse
+	36, // 39: channel.ChannelService.ListMessages:output_type -> channel.ListMessagesResponse
+	9,  // 40: channel.ChannelService.CreateChannel:output_type -> channel.CreateChannelResponse
+	13, // 41: channel.ChannelService.ListUserChannels:output_type -> channel.ListUserChannelsResponse
+	11, // 42: channel.ChannelService.GetChannel:output_type -> channel.GetChannelResponse
+	15, // 43: channel.ChannelService.DeleteChannel:output_type -> channel.DeleteChannelResponse
+	17, // 44: channel.ChannelService.AddMember:output_type -> channel.AddMemberResponse
+	19, // 45: channel.ChannelService.RemoveMember:output_type -> channel.RemoveMemberResponse
+	21, // 46: channel.ChannelService.ListMembers:output_type -> channel.ListMembersResponse
+	26, // 47: channel.ChannelService.SendInvite:output_type -> channel.SendInviteResponse
+	28, // 48: channel.ChannelService.SendJoin:output_type -> channel.SendJoinResponse
+	30, // 49: channel.ChannelService.UpdateRequestStatus:output_type -> channel.UpdateRequestStatusResponse
+	24, // 50: channel.ChannelService.SearchChannels:output_type -> channel.SearchChannelResponse
+	32, // 51: channel.ChannelService.ListUserInvites:output_type -> channel.ListUserInvitesResponse
+	34, // 52: channel.ChannelService.ListChannelJoins:output_type -> channel.ListChannelJoinsResponse
+	49, // 53: channel.ChannelService.UpdateUsedMB:output_type -> channel.UpdateUsedMBResponse
+	47, // 54: channel.ChannelService.UpdateChannelPlan:output_type -> channel.ChannelPlanResponse
+	45, // 55: channel.ChannelService.GetChannelStorage:output_type -> channel.GetStorageUsageResponse
+	39, // 56: channel.AdminChannelService.AdminListChannels:output_type -> channel.AdminListChannelsResponse
+	41, // 57: channel.AdminChannelService.AdminFreezeChannel:output_type -> channel.AdminFreezeChannelResponse
+	43, // 58: channel.AdminChannelService.AdminDeleteChannel:output_type -> channel.AdminDeleteChannelResponse
+	38, // [38:59] is the sub-list for method output_type
+	17, // [17:38] is the sub-list for method input_type
 	17, // [17:17] is the sub-list for extension type_name
 	17, // [17:17] is the sub-list for extension extendee
 	0,  // [0:17] is the sub-list for field type_name
@@ -2773,7 +3116,7 @@ func file_api_proto_channel_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_channel_proto_rawDesc), len(file_api_proto_channel_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   44,
+			NumMessages:   50,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

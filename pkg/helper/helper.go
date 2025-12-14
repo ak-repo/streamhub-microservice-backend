@@ -2,6 +2,7 @@ package helper
 
 import (
 	"context"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -151,4 +152,11 @@ func ParsePaginationDefaults(page, limit int32) (int, int) {
 // SanitizeString removes leading/trailing spaces and lowers case (good for emails/usernames)
 func SanitizeString(s string) string {
 	return strings.ToLower(strings.TrimSpace(s))
+}
+
+func BytesToMB(bytes int64) int64 {
+	if bytes <= 0 {
+		return 0
+	}
+	return int64(math.Ceil(float64(bytes) / 1_000_000))
 }

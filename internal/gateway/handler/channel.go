@@ -292,3 +292,30 @@ func (h *ChannelHandler) UpdateRequestStatus(c *fiber.Ctx) error {
 	}
 	return response.Success(c, "request updated", resp)
 }
+
+func (h *ChannelHandler) GetChannelStorage(c *fiber.Ctx) error {
+	req := new(channelpb.GetStorageUsageRequest)
+
+	req.ChannelId = c.Params("channel_id")
+	uid, ok := c.Locals("userID").(string)
+	if !ok || uid == "" {
+		return response.Error(c, fiber.StatusUnauthorized, fiber.Map{"error": "unauthorized"})
+	}
+	req.RequesterId = uid
+
+	if req.ChannelId == "" || req.RequesterId == "" {
+		return response.InvalidReqBody(c)
+	}
+
+	ctx, cancel := helper.WithGRPCTimeout()
+	defer cancel()
+
+	resp, err := h.client.GetChannelStorage(ctx, req)
+	if err != nil {
+		code, body := errors.GRPCToFiber(err)
+		return response.Error(c, code, body)
+	}
+
+	return response.Success(c, "storage usage", resp)
+
+}

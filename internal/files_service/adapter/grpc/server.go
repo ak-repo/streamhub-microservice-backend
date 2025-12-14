@@ -101,20 +101,6 @@ func (s *Server) DeleteFile(ctx context.Context, req *filespb.DeleteFileRequest)
 	return &filespb.DeleteFileResponse{Success: true}, nil
 }
 
-func (s *Server) GetStorageUsage(ctx context.Context, req *filespb.GetStorageUsageRequest) (*filespb.GetStorageUsageResponse, error) {
-	used, limit, err := s.service.GetStorageUsage(ctx, req.ChannelId)
-	if err != nil {
-		return nil, err
-	}
-
-	return &filespb.GetStorageUsageResponse{
-		UsedBytes:  used,
-		LimitBytes: limit,
-	}, nil
-}
-
-
-
 // =============================================================================
 // ADMIN FILE SERVICE
 // =============================================================================
@@ -143,28 +129,12 @@ func (s *Server) AdminDeleteFile(ctx context.Context, req *filespb.AdminDeleteFi
 	return &filespb.AdminDeleteFileResponse{Success: true}, nil
 }
 
-func (s *Server) AdminSetStorageLimit(ctx context.Context, req *filespb.AdminSetStorageLimitRequest) (*filespb.AdminSetStorageLimitResponse, error) {
-	prev, err := s.service.AdminSetStorageLimit(ctx, req.TargetId, req.MaxBytes)
-	if err != nil {
-		return nil, err
-	}
-	return &filespb.AdminSetStorageLimitResponse{Success: true, PreviousLimit: prev}, nil
-}
-
 func (s *Server) AdminBlockUploads(ctx context.Context, req *filespb.AdminBlockUploadsRequest) (*filespb.AdminBlockUploadsResponse, error) {
 	err := s.service.AdminBlockUploads(ctx, req.TargetUserId, req.Block)
 	if err != nil {
 		return nil, err
 	}
 	return &filespb.AdminBlockUploadsResponse{Success: true}, nil
-}
-
-func (s *Server) AdminGetStats(ctx context.Context, req *filespb.AdminGetStatsRequest) (*filespb.AdminGetStatsResponse, error) {
-	stats, err := s.service.AdminGetStats(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &filespb.AdminGetStatsResponse{Stats: mapStatsToProto(stats)}, nil
 }
 
 // =============================================================================

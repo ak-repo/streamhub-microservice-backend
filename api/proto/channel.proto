@@ -286,10 +286,52 @@ service ChannelService {
   rpc ListUserInvites(ListUserInvitesRequest) returns (ListUserInvitesResponse);
   rpc ListChannelJoins(ListChannelJoinsRequest) returns (ListChannelJoinsResponse);
 
+
+  // other services calls
+  rpc UpdateUsedMB(UpdateUsedMBRequest)returns (UpdateUsedMBResponse);
+  rpc UpdateChannelPlan(ChannelPlanRequest)returns(ChannelPlanResponse);
+    rpc GetChannelStorage (GetStorageUsageRequest) returns (GetStorageUsageResponse);
 }
+
+message GetStorageUsageRequest {
+  string channel_id = 1; 
+  string requester_id = 2;
+
+}
+
+message GetStorageUsageResponse {
+  int64 used_bytes = 1;
+  int64 limit_bytes = 2;
+}
+
+message ChannelPlanRequest{
+  string channel_id = 1;
+  string plan_id = 2;
+  int64 limit_bytes = 3;
+}
+message ChannelPlanResponse{
+  bool success = 1;
+}
+
+message UpdateUsedMBRequest{
+  string channel_id = 1;
+  int64 used_bytes = 2;
+}
+
+message UpdateUsedMBResponse{
+  bool success = 1;
+}
+
 
 service AdminChannelService {
   rpc AdminListChannels(AdminListChannelsRequest) returns (AdminListChannelsResponse);
   rpc AdminFreezeChannel(AdminFreezeChannelRequest) returns (AdminFreezeChannelResponse);
   rpc AdminDeleteChannel(AdminDeleteChannelRequest) returns (AdminDeleteChannelResponse);
 }
+
+
+
+//TODO , 
+//update plan and limit when payment success, 
+// update used mp when new file added or deleted file
+

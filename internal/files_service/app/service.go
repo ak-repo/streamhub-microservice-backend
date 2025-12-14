@@ -6,10 +6,12 @@ import (
 	"log"
 	"time"
 
+	"github.com/ak-repo/stream-hub/gen/channelpb"
 	"github.com/ak-repo/stream-hub/internal/files_service/domain"
 	"github.com/ak-repo/stream-hub/internal/files_service/port"
 	"github.com/ak-repo/stream-hub/pkg/errors"
 	"github.com/ak-repo/stream-hub/pkg/grpc/clients"
+	"github.com/ak-repo/stream-hub/pkg/helper"
 	"github.com/google/uuid"
 )
 
@@ -52,12 +54,12 @@ func (s *fileService) GenerateUploadURL(ctx context.Context, ownerID, channelID,
 	}
 
 	// 2. Check storage limits
-	used, limit, err := s.repo.GetStorageUsage(ctx, ownerID)
-	log.Println("limi: ",limit," used: ",used)
+	resp, err := s.clients.Channel.GetChannelStorage(ctx, &channelpb.GetStorageUsageRequest{ChannelId: channelID, RequesterId: ownerID})
 	if err != nil {
 		return "", "", "", errors.New(errors.CodeInternal, "failed to check storage usage", err)
 	}
-	if limit > 0 && (used+size) > limit {
+
+	if resp.LimitBytes > 0 && (resp.UsedBytes+helper.BytesToMB(size)) > resp.LimitBytes {
 		return "", "", "", errors.New(errors.CodeForbidden, "storage limit exceeded", nil)
 	}
 
@@ -113,6 +115,12 @@ func (s *fileService) ConfirmUpload(ctx context.Context, fileID string) (*domain
 	}
 
 	s.redis.DeleteTemp(ctx, fileID)
+
+	// Update channel storage
+	_, err = s.clients.Channel.UpdateUsedMB(ctx, &channelpb.UpdateUsedMBRequest{ChannelId: f.ChannelID, UsedBytes: helper.BytesToMB(f.Size)})
+	if err != nil {
+		return nil, errors.New(errors.CodeInternal, "failed to update channel storage", err)
+	}
 	return f, nil
 }
 
@@ -168,17 +176,20 @@ func (s *fileService) DeleteFile(ctx context.Context, fileID, requesterID string
 			return errors.New(errors.CodeInternal, "failed to delete from storage", err)
 		}
 
-		return s.repo.Delete(ctx, fileID)
+		if err := s.repo.Delete(ctx, fileID); err != nil {
+			return errors.New(errors.CodeInternal, "failed to delete from DB", err)
+		}
+
+		m := helper.BytesToMB(f.Size)
+		if _, err := s.clients.Channel.UpdateUsedMB(ctx, &channelpb.UpdateUsedMBRequest{ChannelId: f.ChannelID, UsedBytes: -m}); err != nil {
+			return errors.New(errors.CodeInternal, "failed to update channel storage", err)
+		}
+
+		return nil
 	}
 	return errors.New(errors.CodeForbidden, "permission denied", nil)
 
 }
-
-// for channel
-func (s *fileService) GetStorageUsage(ctx context.Context, channelID string) (int64, int64, error) {
-	return s.repo.GetStorageUsage(ctx, channelID)
-}
-
 
 // =============================================================================
 // ADMIN OPERATIONS
@@ -205,18 +216,6 @@ func (s *fileService) AdminDeleteFile(ctx context.Context, fileID, adminID strin
 	return s.repo.Delete(ctx, fileID)
 }
 
-func (s *fileService) AdminSetStorageLimit(ctx context.Context, channelID string, maxBytes int64) (int64, error) {
-	_, currentLimit, _ := s.repo.GetStorageUsage(ctx, channelID)
-	if err := s.repo.SetStorageLimit(ctx, channelID, maxBytes); err != nil {
-		return 0, errors.New(errors.CodeInternal, "failed to set limit", err)
-	}
-	return currentLimit, nil
-}
-
 func (s *fileService) AdminBlockUploads(ctx context.Context, targetID string, block bool) error {
 	return s.repo.SetUserBlocked(ctx, targetID, block)
-}
-
-func (s *fileService) AdminGetStats(ctx context.Context) (*domain.StorageStats, error) {
-	return s.repo.GetGlobalStats(ctx)
 }
