@@ -68,12 +68,13 @@ type JWTConfig struct {
 
 // MINIO / S3
 type MinioConfig struct {
-	Endpoint  string `mapstructure:"endpoint"`
-	AccessKey string `mapstructure:"access_key"`
-	SecretKey string `mapstructure:"secret_key"`
-	Bucket    string `mapstructure:"bucket"`
-	UseSSL    bool   `mapstructure:"use_ssl"`
-	Region    string `mapstructure:"region"`
+	Endpoint       string `mapstructure:"endpoint"`
+	PublicEndpoint string `mapstructure:"public_endpoint"`
+	AccessKey      string `mapstructure:"access_key"`
+	SecretKey      string `mapstructure:"secret_key"`
+	Bucket         string `mapstructure:"bucket"`
+	UseSSL         bool   `mapstructure:"use_ssl"`
+	Region         string `mapstructure:"region"`
 }
 
 // SERVICES
@@ -110,10 +111,10 @@ type ServerConfig struct {
 
 // SENDGRID
 type SendGrid struct {
-	Key           string `mapstructure:"api_key"`
-	MagicTemplate string `mapstructure:"magic_id"`
-	OTPTemplate   string `mapstructure:"otp_id"`
-	AdminInfo     string `mapstructure:"admin_info"`
+	APIKey          string `mapstructure:"api_key"`
+	MagicTemplateID string `mapstructure:"magic_id"`
+	OTPTemplateID   string `mapstructure:"otp_id"`
+	AdminTemplateID string `mapstructure:"admin_info"`
 }
 
 // REDIS (NEW)

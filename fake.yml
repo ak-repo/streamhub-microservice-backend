@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: streamhub-postgres
+    environment:
+      POSTGRES_USER: streamhub_user
+      POSTGRES_PASSWORD: streamhub_password
+      POSTGRES_DB: streamhub
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  auth:
+    image: streamhub-auth:latest
+    depends_on:
+      - postgres
+    ports:
+      - "50051:50051"
+
+volumes:
+  pgdata:

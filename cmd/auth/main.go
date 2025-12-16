@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"time"
@@ -47,7 +48,7 @@ func main() {
 	jwtMan := jwt.NewJWTManager(cfg.JWT.Secret, tokenExpiry, tokenExpiry)
 
 	// Redis
-	rAddr := cfg.Redis.Host + ":" + cfg.Redis.Port
+	rAddr := fmt.Sprintf("%s:%s", cfg.Redis.Host, cfg.Redis.Port)
 	redisclient.Init(rAddr)
 	rClient := redisclient.Client
 
@@ -64,20 +65,29 @@ func main() {
 	service := app.NewAuthService(repo, jwtMan, cfg, otpStore, cloudCli)
 	server := authgrpc.NewServer(service)
 
-	addr := ":" + cfg.Services.Auth.Port
+
+	addr := fmt.Sprintf(":%s", cfg.Services.Auth.Port)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatal("listen failed", zap.Error(err))
 	}
 
 	grpcServer := grpc.NewServer(
-		grpc.ChainUnaryInterceptor(interceptors.AppErrorInterceptor(), interceptors.UnaryLoggingInterceptor()))
+		grpc.ChainUnaryInterceptor(
+			interceptors.AppErrorInterceptor(),
+			interceptors.UnaryLoggingInterceptor(),
+		),
+	)
 
 	authpb.RegisterAuthServiceServer(grpcServer, server)
 	authpb.RegisterAdminAuthServiceServer(grpcServer, server)
 
-	log.Println("auth-service started at:", cfg.Services.Auth.Host+addr)
+	logger.Log.Info("auth-service listening",
+		zap.String("addr", addr),
+	)
+
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatal("grpc auth server failed ", zap.Error(err))
+		log.Fatal("grpc auth server failed", zap.Error(err))
 	}
+
 }

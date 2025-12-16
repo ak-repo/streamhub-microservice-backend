@@ -5,6 +5,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/ak-repo/stream-hub/config"
 	"github.com/ak-repo/stream-hub/internal/files_service/domain"
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -14,29 +15,30 @@ type S3Storage struct {
 	client     *minio.Client
 	bucket     string
 	useSSL     bool
+	cfg        *config.Config
 	presignTTL time.Duration
 }
 
-func NewS3Storage(endpoint, accessKey, secretKey, bucket string, useSSL bool, presignTTL time.Duration) (*S3Storage, error) {
-	client, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
-		Secure: useSSL,
+func NewS3Storage(cfg *config.Config, presignTTL time.Duration) (*S3Storage, error) {
+	client, err := minio.New(cfg.MinIO.Endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(cfg.MinIO.AccessKey, cfg.MinIO.SecretKey, ""),
+		Secure: cfg.MinIO.UseSSL,
 	})
 	if err != nil {
 		return nil, err
 	}
 	// ensure bucket exists
 	ctx := context.Background()
-	ok, err := client.BucketExists(ctx, bucket)
+	ok, err := client.BucketExists(ctx, cfg.MinIO.Bucket)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		if err := client.MakeBucket(ctx, bucket, minio.MakeBucketOptions{}); err != nil {
+		if err := client.MakeBucket(ctx, cfg.MinIO.Bucket, minio.MakeBucketOptions{}); err != nil {
 			return nil, err
 		}
 	}
-	return &S3Storage{client: client, bucket: bucket, useSSL: useSSL, presignTTL: presignTTL}, nil
+	return &S3Storage{client: client, bucket: cfg.MinIO.Bucket, useSSL: cfg.MinIO.UseSSL, presignTTL: presignTTL, cfg: cfg}, nil
 }
 
 func (s *S3Storage) GenerateUploadURL(file *domain.File) (string, error) {
@@ -47,6 +49,13 @@ func (s *S3Storage) GenerateUploadURL(file *domain.File) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	// log.Println("public: ", s.cfg.MinIO.PublicEndpoint)
+	// parsed, _ := u.Parse(u.String())
+	// parsed.Host = s.cfg.MinIO.PublicEndpoint
+	// parsed.Scheme = "http"
+
+	// return parsed.String(), nil
 	return u.String(), nil
 }
 
@@ -63,8 +72,6 @@ func (s *S3Storage) DeleteObject(file *domain.File) error {
 	ctx := context.Background()
 	return s.client.RemoveObject(ctx, s.bucket, file.StoragePath, minio.RemoveObjectOptions{})
 }
-
-
 
 func (s *S3Storage) Upload(file *domain.File, data []byte) error {
 	_, err := s.client.PutObject(context.Background(), s.bucket, file.StoragePath, bytes.NewReader(data), file.Size, minio.PutObjectOptions{

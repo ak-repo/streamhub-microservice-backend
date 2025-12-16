@@ -2,9 +2,9 @@ package clients
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/ak-repo/stream-hub/config"
-	"github.com/ak-repo/stream-hub/gen/adminpb"
 	"github.com/ak-repo/stream-hub/gen/authpb"
 	"github.com/ak-repo/stream-hub/gen/channelpb"
 	"github.com/ak-repo/stream-hub/gen/filespb"
@@ -16,7 +16,7 @@ import (
 )
 
 type Clients struct {
-	Admin        adminpb.AdminServiceClient
+	// Admin        adminpb.AdminServiceClient
 	Auth         authpb.AuthServiceClient
 	AdminAuth    authpb.AdminAuthServiceClient
 	File         filespb.FileServiceClient
@@ -29,8 +29,9 @@ type Clients struct {
 }
 
 // Generic gRPC client initializer
-func initClient[T any](host, port string, factory func(*grpc.ClientConn) T) (T, *grpc.ClientConn) {
+func initClient[T any](host string, port string, factory func(*grpc.ClientConn) T) (T, *grpc.ClientConn) {
 	addr := fmt.Sprintf("%s:%s", host, port)
+	log.Println("client addr: ", addr)
 
 	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -51,11 +52,11 @@ func NewClients(cfg *config.Config) *Clients {
 	}
 
 	// Admin Service (Generic Admin)
-	adminClient, adminConn := initClient(cfg.Services.Admin.Host, cfg.Services.Admin.Port, func(conn *grpc.ClientConn) adminpb.AdminServiceClient {
-		return adminpb.NewAdminServiceClient(conn)
-	})
-	c.Admin = adminClient
-	c.conns = append(c.conns, adminConn)
+	// adminClient, adminConn := initClient(cfg.Services.Admin.Host, cfg.Services.Admin.Port, func(conn *grpc.ClientConn) adminpb.AdminServiceClient {
+	// 	return adminpb.NewAdminServiceClient(conn)
+	// })
+	// c.Admin = adminClient
+	// c.conns = append(c.conns, adminConn)
 
 	// Auth Service (User)
 	authClient, authConn := initClient(cfg.Services.Auth.Host, cfg.Services.Auth.Port,

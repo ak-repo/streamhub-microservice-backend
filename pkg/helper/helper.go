@@ -26,8 +26,9 @@ func OverrideLocal(cfg *config.Config) {
 	cfg.Services.Chat.Host = "localhost"
 	cfg.Services.File.Host = "localhost"
 	cfg.Services.Payment.Host = "localhost"
-	cfg.Services.Users.Host = "localhost"
 	cfg.Services.Admin.Host = "localhost"
+	cfg.Redis.Host = "localhost"
+	cfg.MinIO.Endpoint = "localhost:9000"
 }
 
 // GetEnv retrieves an environment variable or returns a default value
@@ -35,6 +36,7 @@ func GetEnv(key, defaultValue string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
 	}
+
 	return defaultValue
 }
 

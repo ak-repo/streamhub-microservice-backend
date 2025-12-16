@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"time"
@@ -55,7 +56,7 @@ func main() {
 	repo := postgres.NewPaymentRepo(pgDB.Pool)
 	pay := pay.NewRazorpayGateway(cfg)
 	// Redis
-	rAddr := cfg.Redis.Host + ":" + cfg.Redis.Port
+	rAddr := fmt.Sprintf("%s:%s", cfg.Redis.Host, cfg.Redis.Port)
 	redisclient.Init(rAddr)
 
 	redis := paymentredis.NewPaymentRedis(redisclient.Client, time.Minute*15)
@@ -64,18 +65,20 @@ func main() {
 
 	server := paymentgrpc.NewGrpcServer(service)
 
-	addr := ":" + cfg.Services.Payment.Port
+	addr := fmt.Sprintf(":%s", cfg.Services.Payment.Port)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.Fatal("listen failed", zap.Error(err))
 	}
-
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(interceptors.AppErrorInterceptor(), interceptors.UnaryLoggingInterceptor()))
 
 	paymentpb.RegisterPaymentServiceServer(grpcServer, server)
 
-	log.Println("file-service started at:", cfg.Services.Payment.Host+addr)
+	logger.Log.Info("payment-service listening",
+		zap.String("addr", addr),
+	)
+
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatal("grpc file server failed ", zap.Error(err))
 	}

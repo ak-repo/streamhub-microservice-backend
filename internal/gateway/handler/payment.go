@@ -35,7 +35,7 @@ func (h *PaymentHandler) CreatePaymentSession(c *fiber.Ctx) error {
 		return response.InvalidReqBody(c)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	resp, err := h.client.CreatePaymentSession(ctx, req)
@@ -56,7 +56,7 @@ func (h *PaymentHandler) VerifyPayment(c *fiber.Ctx) error {
 		return response.InvalidReqBody(c)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	resp, err := h.client.VerifyPayment(ctx, req)

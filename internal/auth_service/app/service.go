@@ -128,14 +128,14 @@ func (s *authService) SendMagicLink(email string) (string, string, error) {
 	message := mail.NewV3Mail()
 	message.SetFrom(from)
 	message.Subject = "Your Magic Login Link"
-	message.SetTemplateID(s.cfg.SendGrid.MagicTemplate)
+	message.SetTemplateID(s.cfg.SendGrid.MagicTemplateID)
 
 	p := mail.NewPersonalization()
 	p.AddTos(to)
 	p.SetDynamicTemplateData("magic_link", magicLink)
 	message.AddPersonalizations(p)
 
-	client := sendgrid.NewSendClient(s.cfg.SendGrid.Key)
+	client := sendgrid.NewSendClient(s.cfg.SendGrid.APIKey)
 	response, err := client.Send(message)
 
 	if err != nil || response.StatusCode >= 300 {
@@ -270,7 +270,7 @@ func (s *authService) PasswordReset(ctx context.Context, email string) error {
 	message := mail.NewV3Mail()
 	message.SetFrom(from)
 	message.Subject = "Your Password Reset Code"
-	message.SetTemplateID(s.cfg.SendGrid.OTPTemplate)
+	message.SetTemplateID(s.cfg.SendGrid.OTPTemplateID)
 
 	p := mail.NewPersonalization()
 	p.AddTos(to)
@@ -279,7 +279,7 @@ func (s *authService) PasswordReset(ctx context.Context, email string) error {
 	p.SetDynamicTemplateData("support_email", "support@streamhub.com")
 	message.AddPersonalizations(p)
 
-	client := sendgrid.NewSendClient(s.cfg.SendGrid.Key)
+	client := sendgrid.NewSendClient(s.cfg.SendGrid.APIKey)
 	resp, err := client.Send(message)
 	
 

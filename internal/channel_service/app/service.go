@@ -245,7 +245,7 @@ func (s *channelService) CheckMembership(ctx context.Context, channelID, userID 
 // =============================================================================
 
 func (s *channelService) SendInvite(ctx context.Context, targetUserID, channelID, senderID string) error {
-	if exists := s.repo.CheckExistingRequest(ctx, targetUserID, channelID, "join"); exists {
+	if exists := s.repo.CheckExistingRequest(ctx, targetUserID, channelID, "invite"); exists {
 		return errors.New(errors.CodeForbidden, "request already exists", nil)
 	}
 
@@ -316,11 +316,11 @@ func (s *channelService) RespondToRequest(ctx context.Context, requestID, userID
 }
 
 func (s *channelService) ListUserInvites(ctx context.Context, userID string) ([]*domain.Request, error) {
-	return s.repo.ListPendingRequests(ctx, userID, "")
+	return s.repo.ListPendingRequests(ctx, userID, "", "invite")
 }
 
 func (s *channelService) ListChannelJoins(ctx context.Context, channelID string) ([]*domain.Request, error) {
-	return s.repo.ListPendingRequests(ctx, "", channelID)
+	return s.repo.ListPendingRequests(ctx, "", channelID, "join")
 }
 
 // =============================================================================
@@ -380,7 +380,7 @@ func (s *channelService) NotifyAdminUserJoined(ctx context.Context, channelID, n
 	message := mail.NewV3Mail()
 	message.SetFrom(from)
 	message.Subject = "New Member Joined Your Channel"
-	message.SetTemplateID(s.cfg.SendGrid.AdminInfo) // Template ID from SendGrid
+	message.SetTemplateID(s.cfg.SendGrid.AdminTemplateID) // Template ID from SendGrid
 
 	p := mail.NewPersonalization()
 	p.AddTos(to)
@@ -393,7 +393,7 @@ func (s *channelService) NotifyAdminUserJoined(ctx context.Context, channelID, n
 
 	message.AddPersonalizations(p)
 
-	client := sendgrid.NewSendClient(s.cfg.SendGrid.Key)
+	client := sendgrid.NewSendClient(s.cfg.SendGrid.APIKey)
 	resp, err := client.Send(message)
 
 	if err != nil || resp.StatusCode >= 300 {

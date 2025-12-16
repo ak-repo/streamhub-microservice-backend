@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/ak-repo/stream-hub/config"
@@ -38,10 +39,11 @@ func main() {
 	routes.New(app, cfg, clientContainer)
 
 	// ---- Start Gateway HTTP Server ----
-	addr := cfg.Services.Gateway.Host + ":" + cfg.Services.Gateway.Port
-	log.Println("gateway started: ", addr)
+	addr := fmt.Sprintf(":%s", cfg.Services.Gateway.Port)
+	log.Println("gateway listening on", addr)
 
 	if err := app.Listen(addr); err != nil {
-		log.Fatal("gateway startup failed ", err.Error())
+		log.Fatal("gateway startup failed", err)
 	}
+
 }

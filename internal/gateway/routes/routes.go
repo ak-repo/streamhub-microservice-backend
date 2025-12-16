@@ -32,9 +32,7 @@ func New(app *fiber.App, cfg *config.Config, clients *clients.Clients) {
 
 }
 
-// ---
-// 🔒 Admin Routes
-// ---
+
 
 func adminRoutes(api fiber.Router, clients *clients.Clients, cfg *config.Config) {
 
@@ -67,9 +65,7 @@ func adminRoutes(api fiber.Router, clients *clients.Clients, cfg *config.Config)
 
 }
 
-// ---
-// 👤 User Routes
-// ---
+
 
 func userRoutes(api fiber.Router, cfg *config.Config, clients *clients.Clients) {
 	jwtMan := jwt.NewJWTManager(cfg.JWT.Secret, cfg.JWT.Expiry, cfg.JWT.Expiry*7)

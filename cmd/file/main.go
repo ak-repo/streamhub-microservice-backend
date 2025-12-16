@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"time"
@@ -43,8 +44,7 @@ func main() {
 	defer pgDB.Close()
 
 	// MinIO storage
-	s3, err := storage.NewS3Storage(cfg.MinIO.Endpoint, cfg.MinIO.AccessKey,
-		cfg.MinIO.SecretKey, cfg.MinIO.Bucket, cfg.MinIO.UseSSL, 15*time.Minute)
+	s3, err := storage.NewS3Storage(cfg, 15*time.Minute)
 	if err != nil {
 		log.Fatal("failed to connect MinIo storage:", zap.Error(err))
 	}
@@ -54,7 +54,7 @@ func main() {
 	defer clientContainer.CloseAll()
 
 	// Redis
-	rAddr := cfg.Redis.Host + ":" + cfg.Redis.Port
+	rAddr := fmt.Sprintf("%s:%s", cfg.Redis.Host, cfg.Redis.Port)
 	redisclient.Init(rAddr)
 	tempStore := redisstore.NewTempStore(redisclient.Client, 15*time.Minute)
 
@@ -63,19 +63,21 @@ func main() {
 	service := app.NewFileService(repo, tempStore, s3, 15*time.Minute, *clientContainer)
 	server := filegrpc.NewServer(service)
 
-	addr := ":" + cfg.Services.File.Port
+	addr := fmt.Sprintf(":%s", cfg.Services.File.Port)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatal("listen failed", zap.Error(err))
 	}
-
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(interceptors.AppErrorInterceptor(), interceptors.UnaryLoggingInterceptor()))
 
 	filespb.RegisterFileServiceServer(grpcServer, server)
-	filespb.RegisterAdminFileServiceServer(grpcServer,server)
+	filespb.RegisterAdminFileServiceServer(grpcServer, server)
 
-	log.Println("file-service started at:", cfg.Services.Auth.Host+addr)
+	logger.Log.Info("channel-service listening",
+		zap.String("addr", addr),
+	)
+
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatal("grpc file server failed ", zap.Error(err))
 	}

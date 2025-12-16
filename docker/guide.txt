@@ -1,0 +1,40 @@
+docker build cmd: docker build -f docker/Dockerfile.auth -t streamhub-auth:latest .
+
+
+docker run cmd: docker run --rm -p 50051:50051 streamhub-auth:latest
+
+
+
+# Auth
+docker build -f docker/Dockerfile.auth -t streamhub-auth .
+
+# Gateway
+docker build -f docker/Dockerfile.gateway -t streamhub-gateway .
+
+
+
+
+restart container cmd: docker compose up -d --build gateway
+
+
+full rebuild: docker compose up -d --build
+
+
+
+// logs
+cmd: docker logs streamhub-gateway
+
+real time: docker logs -f streamhub-gateway
+
+
+
+// Removes
+remove all container: docker rm -f $(docker ps -aq)
+
+
+one line: 
+docker build -f docker/Dockerfile.auth -t streamhub-auth . \
+&& docker build -f docker/Dockerfile.gateway -t streamhub-gateway . \
+&& docker build -f docker/Dockerfile.channel -t streamhub-channel . \
+&& docker build -f docker/Dockerfile.file -t streamhub-file . \
+&& docker build -f docker/Dockerfile.payment -t streamhub-payment .

@@ -319,14 +319,21 @@ func (r *channelRepo) UpdateRequestStatus(ctx context.Context, requestID, status
 	return &req, nil
 }
 
-func (r *channelRepo) ListPendingRequests(ctx context.Context, userID, channelID string) ([]*domain.Request, error) {
+func (r *channelRepo) ListPendingRequests(
+	ctx context.Context,
+	userID string,
+	channelID string,
+	reqType string,
+) ([]*domain.Request, error) {
+
 	q := `
 		SELECT id, user_id, channel_id, type, status, created_at
 		FROM requests
-		WHERE status = 'pending'
+		WHERE status = 'pending' AND type = $1
 	`
-	var args []any
-	i := 1
+
+	args := []any{reqType}
+	i := 2
 
 	if userID != "" {
 		q += fmt.Sprintf(" AND user_id = $%d", i)
@@ -362,6 +369,10 @@ func (r *channelRepo) ListPendingRequests(ctx context.Context, userID, channelID
 			return nil, err
 		}
 		list = append(list, req)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return list, nil

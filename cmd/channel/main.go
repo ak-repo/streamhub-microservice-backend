@@ -2,11 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/ak-repo/stream-hub/config"
 	"github.com/ak-repo/stream-hub/gen/channelpb"
@@ -50,7 +48,7 @@ func main() {
 	defer clientContainer.CloseAll()
 
 	// Redis
-	rAddr := cfg.Redis.Host + ":" + cfg.Redis.Port
+	rAddr := fmt.Sprintf("%s:%s", cfg.Redis.Host, cfg.Redis.Port)
 	redisclient.Init(rAddr)
 	rClient := redisclient.Client
 
@@ -61,10 +59,10 @@ func main() {
 	grpcHandler := channelgrpc.NewServer(svc)
 
 	// 5. Start gRPC server
-	port := ":" + cfg.Services.Chat.Port
-	lis, err := net.Listen("tcp", port)
+	addr := fmt.Sprintf(":%s", cfg.Services.Chat.Port)
+	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Fatalf("failed to listen on port %s: %v", port, err)
+		log.Fatal("listen failed", zap.Error(err))
 	}
 
 	grpcServer := grpc.NewServer(
@@ -72,21 +70,11 @@ func main() {
 	channelpb.RegisterChannelServiceServer(grpcServer, grpcHandler)
 	channelpb.RegisterAdminChannelServiceServer(grpcServer, grpcHandler)
 
-	//  Graceful shutdown
-	go func() {
-		log.Printf("Channel Service (gRPC) running on %s", port)
-		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("failed to serve gRPC: %v", err)
-		}
-	}()
+	logger.Log.Info("channel-service listening",
+		zap.String("addr", addr),
+	)
 
-	// Wait for interrupt signal
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-	<-sigChan
-
-	log.Println("Shutting down gRPC server...")
-	grpcServer.GracefulStop()
-	log.Println("Server stopped")
-
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatal("grpc channel server failed", zap.Error(err))
+	}
 }

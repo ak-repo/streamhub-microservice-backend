@@ -29,28 +29,27 @@ jwt:
 services:
   auth:
     port: 50051
-    host: auth-service
+    host: streamhub-auth
+
   file:
     port: 50059
-    host: file-service
+    host: streamhub-file
+
   chat:
     port: 50053
-    host: chat-service
+    host: streamhub-channel
   payment:
     port: 50060
-    host: payment-service
-  users:
-    port: 50055
-    host: users-service
+    host: streamhub-payment
   gateway:
     port: 8080
-    host: api-gateway
+    host: streamhub-gateway
   front:
     host: localhost
     port: 5173
   admin:
     port: 50056
-    host: admin-service
+    host: streamhub-admin
 
 # Logging Configuration
 logging:
@@ -72,7 +71,7 @@ sendgrid:
 
 # Redis
 redis:
-  host: localhost
+  host: streamhub-redis
   port: 6379
   db: 0
   password: ""
@@ -82,7 +81,8 @@ redis:
 
 # MinIO / S3
 minio:
-  endpoint: localhost:9000
+  endpoint: streamhub-minio:9000  
+  public_endpoint: localhost:9000
   access_key: minioadmin
   secret_key: minioadmin
   bucket: channel-uploads
@@ -110,4 +110,5 @@ cloudinary:
 
 #  test mode
 razorpay:
+  secret_key: 
   publishable_key: rzp_test_RqwWzgHgoIe4Eu
